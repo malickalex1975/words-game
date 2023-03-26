@@ -17,7 +17,7 @@ class WordGame {
     localStorage.setItem("currentLevel", level.toString());
   }
   getMaxLevel() {
-    if (localStorage.getItem("maxLevel") !== undefined) {
+    if (localStorage.getItem("maxLevel")) {
       maxLevel = +localStorage.getItem("maxLevel");
     } else {
       this.setMaxLevel(2);
