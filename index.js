@@ -1,4 +1,4 @@
-const url='https://learnlangapp1.herokuapp.com/'
+const url = "https://learnlangapp1.herokuapp.com/";
 let currentLevel, maxLevel;
 const levelContainer = document.querySelector(".level-container");
 const buttonStart = document.querySelector(".button-start");
@@ -17,7 +17,7 @@ class WordGame {
     localStorage.setItem("currentLevel", level.toString());
   }
   getMaxLevel() {
-    if (localStorage.getItem("maxLevel")) {
+    if (localStorage.getItem("maxLevel") && localStorage.getItem("maxLevel")==='0') {
       maxLevel = +localStorage.getItem("maxLevel");
     } else {
       this.setMaxLevel(2);
@@ -82,7 +82,8 @@ class WordGame {
     levelContainer.style.visibility = "hidden";
   }
   handleButtonStart() {
-    buttonStart.addEventListener("click", () => {
+    buttonStart.addEventListener("click", (e) => {
+      e.preventDefault();
       this.hideButtonStart();
       this.startGame();
       this.hideLevelsContainer();
