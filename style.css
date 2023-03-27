@@ -90,7 +90,7 @@
   position: fixed;
   top: 10vh;
   left: 10vw;
-  height: 80vh;
+  height: 75vh;
   width: 80vw;
   border: 2px solid #ffeeee;
   border-radius: 10px;
@@ -156,6 +156,7 @@
     top: 2vh;
     left: 10vw;
     width: 70vw;
+    min-width: 10px;
     height: 20px;
     background-image:linear-gradient(#00ff00, #00aa00);
     border-radius: 10px;

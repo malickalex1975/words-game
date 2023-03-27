@@ -154,7 +154,7 @@ class WordGame {
       let URL = url + `level-${currentLevel}.json`;
       fetch(URL)
         .then((response) => response.json())
-        .then(item=>item.data)
+        .then((item) => item.data)
         .then((arr) => {
           wordsArray = [...arr];
           this.afterLoading();
@@ -196,12 +196,16 @@ class WordGame {
   }
   clockStyle(time) {
     clockStrip.style.width = `${(70 / timeAll) * time}vw`;
-    if (time <= 20000) {
-      clockStrip.style.backgroundImage = "linear-gradient(#ff0000, #aa0000)";
+   
+      clockStrip.style.backgroundImage = `linear-gradient(rgba(${
+        (255 / timeAll) * (timeAll - time)
+      },${(255 / timeAll) * time},100,1), rgba(${
+        (200 / timeAll) * (timeAll - time)
+      },${(200 / timeAll) * time},100,1))`;
     }
-  }
+  
   clockStyleReset() {
-    clockStrip.style.backgroundImage = "linear-gradient(#00ff00, #00aa00)";
+    clockStrip.style.backgroundImage = "linear-gradient(rgba(0,255,100,1), rgba(0,200,100,1))";
     clockStrip.style.width = `70vw`;
   }
   convertTime(time) {
