@@ -35,6 +35,7 @@
   font-size: 20px;
   cursor: pointer;
   transition: 200ms;
+  
 }
 .button-start {
   position: fixed;
@@ -55,6 +56,26 @@
 .button-start:active {
   background-image: linear-gradient(#fff, #eee);
   color: green;
+}
+.button-stop {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  bottom: 2vh;
+  left: 40vw;
+  width: 20vw;
+  height: 40px;
+  border-radius: 10px;
+  color: white;
+  font-size: 30px;
+  background-image: linear-gradient(#ff0000, #aa0000);
+  cursor: pointer;
+  visibility: hidden;
+}
+.button-stop:active {
+  background-image: linear-gradient(#fff, #eee);
+  color:red;
 }
 .loading {
   position: fixed;
@@ -106,4 +127,49 @@
 }
 .button:active{
     box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
+}
+.clock-container{
+    visibility: hidden;
+    opacity: 0;
+    position: fixed;
+    top: 2vh;
+    left: 10vw;
+    width: 80vw;
+    height: 20px;
+    transition: 1s;
+}
+.strip-container{
+    position: fixed;
+    top: 2vh;
+    left: 10vw;
+    width: 70vw;
+    height: 20px;
+    background-color: #aaa;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+   
+}
+.clock-strip{
+    position: fixed;
+    top: 2vh;
+    left: 10vw;
+    width: 70vw;
+    height: 20px;
+    background-image:linear-gradient(#00ff00, #00aa00);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+   
+}
+.clock{
+    position: fixed;
+    top: 2vh;
+    left: 82vw;
+    width: 8vw;
+    height: 20px;
+    font-size: 20px;
+    color:red
 }
