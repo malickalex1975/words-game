@@ -1,6 +1,6 @@
-const url = "https://learnlangapp1.herokuapp.com/";
+const url = "./assets/json/";
 let currentLevel, maxLevel, lastLevel;
-const initialMaxLevel = 2;
+const initialMaxLevel = 6;
 const initialLevel = 1;
 const timeAll = 120000;
 let timeRemained = 120000;
@@ -128,7 +128,7 @@ class WordGame {
     buttonStop.addEventListener("click", (e) => {
       e.preventDefault();
       vibrate("ordinary");
-    this.stopGame()
+      this.stopGame();
     });
   }
   startGame() {
@@ -142,26 +142,22 @@ class WordGame {
   stopGame() {
     lastLevel = currentLevel;
     this.hideClock();
-    this.clockStyleReset()
+    this.clockStyleReset();
     this.hideGamePad();
     this.hideButtonStop();
     this.showButtonStart();
     this.showLevelsContainer();
   }
-  loadWords(page = 0) {
+  loadWords() {
     this.showLoading(true);
     if (lastLevel !== currentLevel) {
-      let URL = url + `words/?group=${currentLevel - 1}&page=${page}`;
+      let URL = url + `level-${currentLevel}.json`;
       fetch(URL)
         .then((response) => response.json())
-        .then((arr) => (wordsArray = [...wordsArray, ...arr]))
-        .then(() => {
-          if (page < 29) {
-            page++;
-            setTimeout(() => this.loadWords(page));
-          } else {
-            this.afterLoading();
-          }
+        .then(item=>item.data)
+        .then((arr) => {
+          wordsArray = [...arr];
+          this.afterLoading();
         })
         .catch(console.log);
     } else {
@@ -183,31 +179,31 @@ class WordGame {
   }
   operateClock() {
     timeStart = Date.now();
-    this.operateEverySecond()
+    this.operateEverySecond();
     let interval = setInterval(() => {
-     this.operateEverySecond()
+      this.operateEverySecond();
       if (timeRemained <= 0) {
         clearInterval(interval);
         this.stopGame();
       }
     }, 500);
   }
-  operateEverySecond(){
+  operateEverySecond() {
     timeCurrent = Date.now();
     timeRemained = timeAll - (timeCurrent - timeStart);
     clock.textContent = this.convertTime(timeRemained);
-    this.clockStyle(timeRemained)
+    this.clockStyle(timeRemained);
   }
-clockStyle(time){
-    clockStrip.style.width=`${70/timeAll*time}vw`;
-    if(time<=20000){
-        clockStrip.style.backgroundImage="linear-gradient(#ff0000, #aa0000)"
-    }  
-}
-clockStyleReset(){
-    clockStrip.style.backgroundImage="linear-gradient(#00ff00, #00aa00)";
-    clockStrip.style.width=`70vw`
-}
+  clockStyle(time) {
+    clockStrip.style.width = `${(70 / timeAll) * time}vw`;
+    if (time <= 20000) {
+      clockStrip.style.backgroundImage = "linear-gradient(#ff0000, #aa0000)";
+    }
+  }
+  clockStyleReset() {
+    clockStrip.style.backgroundImage = "linear-gradient(#00ff00, #00aa00)";
+    clockStrip.style.width = `70vw`;
+  }
   convertTime(time) {
     let min = 0;
     let sec = Math.floor(time / 1000);
