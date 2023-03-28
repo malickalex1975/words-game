@@ -90,7 +90,7 @@
   position: fixed;
   top: 10vh;
   left: 10vw;
-  height: 75vh;
+  height: 72vh;
   width: 80vw;
   border: 2px solid #ffeeee;
   border-radius: 10px;
@@ -99,7 +99,7 @@
   transition: 1s;
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: space-evenly;
 }
 .right-column,
 .left-column {
@@ -133,16 +133,16 @@
     opacity: 0;
     position: fixed;
     top: 2vh;
-    left: 10vw;
-    width: 80vw;
+    left: 5vw;
+    width: 90vw;
     height: 20px;
     transition: 1s;
 }
 .strip-container{
     position: fixed;
     top: 2vh;
-    left: 10vw;
-    width: 70vw;
+    left: 20vw;
+    width: 60vw;
     height: 20px;
     background-color: #aaa;
     border-radius: 10px;
@@ -154,8 +154,8 @@
 .clock-strip{
     position: fixed;
     top: 2vh;
-    left: 10vw;
-    width: 70vw;
+    left: 20vw;
+    width: 60vw;
     min-width: 10px;
     height: 20px;
     background-image:linear-gradient(#00ff00, #00aa00);
@@ -169,8 +169,69 @@
     position: fixed;
     top: 2vh;
     left: 82vw;
-    width: 8vw;
+    width: 13vw;
     height: 20px;
     font-size: 20px;
     color:red
+}
+.info{
+    position: fixed;
+    left: 20vw;
+    top: 30vh;
+    width: 60vw;
+    height: 40vh;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transform: translateY(-200%);
+    transition: 1000ms;
+    opacity: 0;
+    font-size: 24px;
+    color:#555;
+    background-image: linear-gradient(#fff,#eee);
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+}
+.info  p{
+    font-size: 24px;
+    color:#555; 
+}
+.info span{
+    font-size: 24px;
+    color:red; 
+}
+.life-container{
+    position: fixed;
+    top: 2vh;
+    left: 5vw;
+    width: 13vw;
+    height: 23px;
+    font-size: 20px;
+    color:red;
+    display:flex;
+    align-items: center;
+    justify-content: space-evenly;
+   
+}
+.heart{
+    position: fixed;
+    top:2vh;
+    left:5vw;
+    width: 23px;
+    height: 23px;
+    background-image: url(./assets/images/red-heart.png);
+}
+.white-heart{
+    position: fixed;
+    top:2vh;
+    left:5vw;
+    width: 23px;
+    height: 23px;
+    background-image: url(./assets/images/white-heart.png);
+}
+.life{
+    position: fixed;
+    top:2vh;
+    left:calc(5vw + 30px);
 }

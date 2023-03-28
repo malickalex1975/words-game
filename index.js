@@ -1,11 +1,15 @@
 const url = "./assets/json/";
-let currentLevel, maxLevel, lastLevel;
+const failedSound = "./assets/mp3/failed.mp3";
+let currentLevel, maxLevel, lastLevel, audio;
 const initialMaxLevel = 6;
 const initialLevel = 1;
 const timeAll = 120000;
+const maxLife = 5;
 let timeRemained = 120000;
 let timeStart = 0;
 let timeCurrent = 0;
+let score = 0;
+let currentLife = maxLife;
 const levelContainer = document.querySelector(".level-container");
 const buttonStart = document.querySelector(".button-start");
 const buttonStop = document.querySelector(".button-stop");
@@ -14,6 +18,9 @@ const clockContainer = document.querySelector(".clock-container");
 const clockStrip = document.querySelector(".clock-strip");
 const clock = document.querySelector(".clock");
 const gamepad = document.querySelector(".gamepad-container");
+const info = document.querySelector(".info");
+const life = document.querySelector(".life");
+const heart = document.querySelector(".heart");
 let wordsArray = [];
 
 class WordGame {
@@ -83,6 +90,27 @@ class WordGame {
     el.style.backgroundImage = "radial-gradient(#eee, #aaa)";
     el.style.color = "#999";
   }
+  getLastRecord() {
+    let value = localStorage.getItem(`level-${currentLevel}`);
+    if (value) {
+      return value;
+    } else {
+      value = 0;
+      this.setRecord(value);
+    }
+  }
+  setRecord(score) {
+    localStorage.setItem(`level-${currentLevel}`, score);
+  }
+  showInfo(html) {
+    info.style.opacity = "1";
+    info.style.transform = "translateY(0%)";
+    info.innerHTML = html;
+    setTimeout(() => {
+      info.style.opacity = "0";
+      info.style.transform = "translateY(-200%)";
+    }, 4000);
+  }
   showGamepad() {
     gamepad.style.visibility = "visible";
     gamepad.style.opacity = "1";
@@ -132,6 +160,9 @@ class WordGame {
     });
   }
   startGame() {
+    score = 0;
+    currentLife = maxLife;
+    this.setLife();
     this.hideButtonStart();
     this.hideLevelsContainer();
     if (lastLevel !== currentLevel) {
@@ -147,6 +178,18 @@ class WordGame {
     this.hideButtonStop();
     this.showButtonStart();
     this.showLevelsContainer();
+    let lastRecord = this.getLastRecord();
+    this.showInfo(
+      `<p>Вы нашли <span> ${score}</span> слов. Предыдущий рекорд на уровне <span> ${currentLevel} </span> был <span> ${lastRecord} </span> слов.</p>`
+    );
+    if (score > lastRecord) {
+      this.setRecord(score);
+    }
+  }
+
+  setLife() {
+    life.textContent = currentLife;
+    heart.style.opacity = `${1 * (currentLife / maxLife)}`;
   }
   loadWords() {
     this.showLoading(true);
@@ -191,22 +234,26 @@ class WordGame {
   operateEverySecond() {
     timeCurrent = Date.now();
     timeRemained = timeAll - (timeCurrent - timeStart);
+    if (timeRemained <= 1000) {
+      playAudio(failedSound);
+    }
     clock.textContent = this.convertTime(timeRemained);
     this.clockStyle(timeRemained);
   }
   clockStyle(time) {
-    clockStrip.style.width = `${(70 / timeAll) * time}vw`;
-   
-      clockStrip.style.backgroundImage = `linear-gradient(rgba(${
-        (255 / timeAll) * (timeAll - time)
-      },${(255 / timeAll) * time},100,1), rgba(${
-        (200 / timeAll) * (timeAll - time)
-      },${(200 / timeAll) * time},100,1))`;
-    }
-  
+    clockStrip.style.width = `${(60 / timeAll) * time}vw`;
+
+    clockStrip.style.backgroundImage = `linear-gradient(rgba(${
+      (255 / timeAll) * (timeAll - time)
+    },${(255 / timeAll) * time},100,1), rgba(${
+      (200 / timeAll) * (timeAll - time)
+    },${(200 / timeAll) * time},100,1))`;
+  }
+
   clockStyleReset() {
-    clockStrip.style.backgroundImage = "linear-gradient(rgba(0,255,100,1), rgba(0,200,100,1))";
-    clockStrip.style.width = `70vw`;
+    clockStrip.style.backgroundImage =
+      "linear-gradient(rgba(0,255,100,1), rgba(0,200,100,1))";
+    clockStrip.style.width = `60vw`;
   }
   convertTime(time) {
     let min = 0;
@@ -255,8 +302,11 @@ function wakeLock() {
 }
 function vibrate(type) {
   let pattern =
-    type === "right" ? [50, 10, 50] : type === "wrong" ? [100, 10, 100] : [50];
+    type === "right" ? [50, 10, 50] : type === "wrong" ? [100, 50, 100] : [50];
   navigator.vibrate(pattern);
 }
-
+function playAudio(src) {
+  audio = new Audio(src);
+  audio.play();
+}
 document.addEventListener("DOMContentLoaded", init);
