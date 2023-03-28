@@ -214,7 +214,13 @@
     justify-content: space-evenly;
    
 }
+@keyframes heart-animation{
+  from{transform: scale(1.07);}
+  to{transform: scale(0.95);}
+}
 .heart{
+  animation: heart-animation infinite;
+  animation-duration: 1s;
     position: fixed;
     top:2vh;
     left:5vw;

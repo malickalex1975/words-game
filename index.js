@@ -1,7 +1,8 @@
+const mainUrl = "https://learnlangapp1.herokuapp.com/";
 const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
-let currentLevel, maxLevel, lastLevel, audio;
+let currentLevel, maxLevel, lastLevel;
 const initialMaxLevel = 6;
 const initialLevel = 1;
 const timeAll = 120000;
@@ -41,6 +42,7 @@ const info = document.querySelector(".info");
 const life = document.querySelector(".life");
 const heart = document.querySelector(".heart");
 let wordsArray = [];
+const audio = new Audio();
 
 class WordGame {
   constructor() {}
@@ -188,6 +190,7 @@ class WordGame {
       wordsArray = [];
     }
     this.loadWords();
+    this.playWords();
   }
   stopGame() {
     lastLevel = currentLevel;
@@ -235,8 +238,7 @@ class WordGame {
     this.setWordsIndexes();
     this.defineLeftWords();
     this.defineRightWords();
-    this.firstTimeShowWords()
-  
+    this.firstTimeShowWords();
   }
   showLoading(visibility) {
     let v = visibility ? "visible" : "hidden";
@@ -302,26 +304,26 @@ class WordGame {
     }
     console.log(wordsIndexes);
   }
-  defineLeftWords(){
-    let arr=[...wordsIndexes]
-    for(let i=0; i<wordsQuantity;i++){
-       let value=this.getRandomBoolean()?arr.pop():arr.shift();
-        leftWords[`left${i}`]=value;
+  defineLeftWords() {
+    let arr = [...wordsIndexes];
+    for (let i = 0; i < wordsQuantity; i++) {
+      let value = this.getRandomBoolean() ? arr.pop() : arr.shift();
+      leftWords[`left${i}`] = value;
     }
   }
-  defineRightWords(){
-    let arr=[...wordsIndexes]
-    for(let i=0; i<wordsQuantity;i++){
-        let value=this.getRandomBoolean()?arr.pop():arr.shift();
-        rightWords[`right${i}`]=value;
+  defineRightWords() {
+    let arr = [...wordsIndexes];
+    for (let i = 0; i < wordsQuantity; i++) {
+      let value = this.getRandomBoolean() ? arr.pop() : arr.shift();
+      rightWords[`right${i}`] = value;
     }
   }
-  firstTimeShowWords(){
-    for(let i=0; i<wordsQuantity;i++){
-       let rusEl=document.querySelector(`.left-button-${i}`)
-       let enEl=document.querySelector(`.right-button-${i}`)
-       enEl.textContent=wordsArray[rightWords[`right${i}`]].word
-       rusEl.textContent=wordsArray[leftWords[`left${i}`]].wordTranslate
+  firstTimeShowWords() {
+    for (let i = 0; i < wordsQuantity; i++) {
+      let rusEl = document.querySelector(`.left-button-${i}`);
+      let enEl = document.querySelector(`.right-button-${i}`);
+      enEl.textContent = wordsArray[rightWords[`right${i}`]].word;
+      rusEl.textContent = wordsArray[leftWords[`left${i}`]].wordTranslate;
     }
   }
 
@@ -330,6 +332,17 @@ class WordGame {
   }
   getRandomBoolean() {
     return 0.5 - Math.random() > 0;
+  }
+  playWords() {
+    gamepad.addEventListener("click", (e) => {
+      let el = e.target;
+      let index;
+      if (el.className.includes("right-button")) {
+        index = el.className.at(-1);
+        let endpoint=wordsArray[rightWords[`right${index}`]].audio;
+        playAudio(mainUrl+endpoint)
+      }
+    });
   }
 }
 const game = new WordGame();
@@ -367,7 +380,8 @@ function vibrate(type) {
   navigator.vibrate(pattern);
 }
 function playAudio(src) {
-  audio = new Audio(src);
-  audio.play();
+  audio.pause();
+  audio.src = src;
+  audio.play().catch(console.log);
 }
 document.addEventListener("DOMContentLoaded", init);
