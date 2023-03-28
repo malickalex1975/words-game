@@ -1,15 +1,34 @@
 const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
+const successSound = "./assets/mp3/success.mp3";
 let currentLevel, maxLevel, lastLevel, audio;
 const initialMaxLevel = 6;
 const initialLevel = 1;
 const timeAll = 120000;
 const maxLife = 5;
+const leftWords = {
+  left0: undefined,
+  left1: undefined,
+  left2: undefined,
+  left3: undefined,
+  left4: undefined,
+  left5: undefined,
+};
+const rightWords = {
+  right0: undefined,
+  right1: undefined,
+  right2: undefined,
+  right3: undefined,
+  right4: undefined,
+  right5: undefined,
+};
+const wordsQuantity = 6;
 let timeRemained = 120000;
 let timeStart = 0;
 let timeCurrent = 0;
 let score = 0;
 let currentLife = maxLife;
+let wordsIndexes = [];
 const levelContainer = document.querySelector(".level-container");
 const buttonStart = document.querySelector(".button-start");
 const buttonStop = document.querySelector(".button-stop");
@@ -213,8 +232,11 @@ class WordGame {
     this.showGamepad();
     this.showClock();
     this.operateClock();
-
-    console.log(wordsArray);
+    this.setWordsIndexes();
+    this.defineLeftWords();
+    this.defineRightWords();
+    this.firstTimeShowWords()
+  
   }
   showLoading(visibility) {
     let v = visibility ? "visible" : "hidden";
@@ -269,6 +291,45 @@ class WordGame {
       sec = "0" + sec.toString();
     }
     return `${min}:${sec}`;
+  }
+  setWordsIndexes() {
+    wordsIndexes = [];
+    while (wordsIndexes.length < wordsQuantity) {
+      let num = this.getRandomNumber(0, 599);
+      if (!wordsIndexes.includes(num)) {
+        wordsIndexes.push(num);
+      }
+    }
+    console.log(wordsIndexes);
+  }
+  defineLeftWords(){
+    let arr=[...wordsIndexes]
+    for(let i=0; i<wordsQuantity;i++){
+       let value=this.getRandomBoolean()?arr.pop():arr.shift();
+        leftWords[`left${i}`]=value;
+    }
+  }
+  defineRightWords(){
+    let arr=[...wordsIndexes]
+    for(let i=0; i<wordsQuantity;i++){
+        let value=this.getRandomBoolean()?arr.pop():arr.shift();
+        rightWords[`right${i}`]=value;
+    }
+  }
+  firstTimeShowWords(){
+    for(let i=0; i<wordsQuantity;i++){
+       let rusEl=document.querySelector(`.left-button-${i}`)
+       let enEl=document.querySelector(`.right-button-${i}`)
+       enEl.textContent=wordsArray[rightWords[`right${i}`]].word
+       rusEl.textContent=wordsArray[leftWords[`left${i}`]].wordTranslate
+    }
+  }
+
+  getRandomNumber(from, to) {
+    return from + Math.floor(Math.random() * (to - from));
+  }
+  getRandomBoolean() {
+    return 0.5 - Math.random() > 0;
   }
 }
 const game = new WordGame();
