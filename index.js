@@ -360,35 +360,35 @@ class WordGame {
   }
 
   listenButtons() {
-    gamepad.addEventListener("click", (e) => {
-      
-      let el = e.target;
-      console.log(el)
-      let index;
-      if (el.className.includes("right-button")) {
-        index = Number(el.className.at(-1));
-        if (activeRightButton === index) {
-          activeRightButton = undefined;
-        } else {
-          activeRightButton = index;
-        }
-      } else if (el.className.includes("left-button")) {
-        index = Number(el.className.at(-1));
-        if (activeLeftButton === index) {
-          activeLeftButton = undefined;
-        } else {
-          activeLeftButton = index;
-        }
-      }
-        this.showActiveButtons();
-        console.log(activeLeftButton,activeRightButton)
-      
-      if (activeRightButton !== undefined && activeLeftButton !== undefined) {
-        this.proccessResult();
-      }
-    });
+    gamepad.addEventListener("click",this.listenHandler
+    );
   }
-
+  listenHandler(e) { 
+    let el = e.target;
+    console.log(el)
+    let index;
+    if (el.className.includes("right-button")) {
+      index = Number(el.className.at(-1));
+      if (activeRightButton === index) {
+        activeRightButton = undefined;
+      } else {
+        activeRightButton = index;
+      }
+    } else if (el.className.includes("left-button")) {
+      index = Number(el.className.at(-1));
+      if (activeLeftButton === index) {
+        activeLeftButton = undefined;
+      } else {
+        activeLeftButton = index;
+      }
+    }
+      game.showActiveButtons();
+      console.log(activeLeftButton,activeRightButton)
+    
+    if (activeRightButton !== undefined && activeLeftButton !== undefined) {
+      game.proccessResult();
+    }
+  }
   showActiveButtons() {
     for (let i = 0; i < initialMaxLevel; i++) {
       let buttonRight = gamepad.querySelector(`.right-button-${i}`);
