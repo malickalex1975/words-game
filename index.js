@@ -2,9 +2,9 @@ const mainUrl = "https://learnlangapp1.herokuapp.com/";
 const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
-let currentLevel, maxLevel, lastLevel, targetElement;
-let currentX=0;
-let currentY=0;
+let currentLevel, maxLevel, lastLevel;
+let activeLeftButton = undefined;
+let activeRightButton = undefined;
 const initialMaxLevel = 6;
 const initialLevel = 1;
 const timeAll = 120000;
@@ -32,6 +32,7 @@ let timeCurrent = 0;
 let score = 0;
 let currentLife = maxLife;
 let wordsIndexes = [];
+const mainContainer = document.querySelector(".main-container");
 const levelContainer = document.querySelector(".level-container");
 const buttonStart = document.querySelector(".button-start");
 const buttonStop = document.querySelector(".button-stop");
@@ -126,14 +127,16 @@ class WordGame {
     localStorage.setItem(`level-${currentLevel}`, score);
   }
   showInfo(html) {
-    info.style.opacity = "1";
     info.style.transform = "translateY(0%)";
     info.innerHTML = html;
     setTimeout(() => {
-      info.style.opacity = "0";
       info.style.transform = "translateY(-200%)";
     }, 4000);
   }
+  hideInfo() {
+    info.style.transform = "translateY(-200%)";
+  }
+
   showGamepad() {
     gamepad.style.visibility = "visible";
     gamepad.style.opacity = "1";
@@ -178,6 +181,7 @@ class WordGame {
   handleButtonStop() {
     buttonStop.addEventListener("click", (e) => {
       e.preventDefault();
+      e.stopPropagation();
       vibrate("ordinary");
       this.stopGame();
     });
@@ -193,7 +197,7 @@ class WordGame {
     }
     this.loadWords();
     this.playWords();
-    this.moveLeftWord()
+    this.listenButtons();
   }
   stopGame() {
     lastLevel = currentLevel;
@@ -347,30 +351,43 @@ class WordGame {
       }
     });
   }
-  moveLeftWord() {
-    gamepad.addEventListener("mousedown", (e) => {
+
+  listenButtons() {
+    gamepad.addEventListener("click", (e) => {
       let el = e.target;
       let index;
-      let initialX= e.clientX;
-      let initialY= e.clientY
-      if (el.className.includes("left-button")) {
-        index = el.className.at(-1);
-        targetElement = el;
+      if (el.className.includes("right-button")) {
+        index = Number(el.className.at(-1));
+        if (activeRightButton === index) {
+          activeRightButton = undefined;
+        } else {
+          activeRightButton = index;
+        }
+        this.showActiveButton();
       }
-      if(targetElement){
-        console.log(targetElement)
-        gamepad.addEventListener('mousemove',(e)=>{
-currentX=e.clientX;
-currentY= e.clientY;
-//console.log(currentX, currentY)
-targetElement.style.transform=`translate(${currentX-initialX}px,${currentY-initialY}px)`
-
-        })
+      if (activeRightButton && activeLeftButton) {
+        this.proccessResult();
       }
     });
   }
+
+  showActiveButton() {
+    
+      for (let i = 0; i < initialMaxLevel; i++) {
+        let button = gamepad.querySelector(`.right-button-${i}`);
+        if (i === activeRightButton) {
+          button.style.backgroundImage = "linear-gradient(#ddf, #cce)";
+        } else {
+          button.style.backgroundImage = "linear-gradient(#fff, #eee)";
+        }
+      }
+    
+  }
+  proccessResult() {}
 }
 const game = new WordGame();
+mainContainer.addEventListener("click", game.hideInfo);
+info.addEventListener("click", game.hideInfo);
 
 function levelChooseHandler() {
   levelContainer.addEventListener("click", (e) => {

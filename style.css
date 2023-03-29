@@ -187,7 +187,6 @@
     text-align: center;
     transform: translateY(-200%);
     transition: 1000ms;
-    opacity: 0;
     font-size: 24px;
     color:#555;
     background-image: linear-gradient(#fff,#eee);
