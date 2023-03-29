@@ -2,7 +2,9 @@ const mainUrl = "https://learnlangapp1.herokuapp.com/";
 const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
-let currentLevel, maxLevel, lastLevel;
+let currentLevel, maxLevel, lastLevel, targetElement;
+let currentX=0;
+let currentY=0;
 const initialMaxLevel = 6;
 const initialLevel = 1;
 const timeAll = 120000;
@@ -191,6 +193,7 @@ class WordGame {
     }
     this.loadWords();
     this.playWords();
+    this.moveLeftWord()
   }
   stopGame() {
     lastLevel = currentLevel;
@@ -339,8 +342,30 @@ class WordGame {
       let index;
       if (el.className.includes("right-button")) {
         index = el.className.at(-1);
-        let endpoint=wordsArray[rightWords[`right${index}`]].audio;
-        playAudio(mainUrl+endpoint)
+        let endpoint = wordsArray[rightWords[`right${index}`]].audio;
+        playAudio(mainUrl + endpoint);
+      }
+    });
+  }
+  moveLeftWord() {
+    gamepad.addEventListener("mousedown", (e) => {
+      let el = e.target;
+      let index;
+      let initialX= e.clientX;
+      let initialY= e.clientY
+      if (el.className.includes("left-button")) {
+        index = el.className.at(-1);
+        targetElement = el;
+      }
+      if(targetElement){
+        console.log(targetElement)
+        gamepad.addEventListener('mousemove',(e)=>{
+currentX=e.clientX;
+currentY= e.clientY;
+//console.log(currentX, currentY)
+targetElement.style.transform=`translate(${currentX-initialX}px,${currentY-initialY}px)`
+
+        })
       }
     });
   }
@@ -380,7 +405,7 @@ function vibrate(type) {
   navigator.vibrate(pattern);
 }
 function playAudio(src) {
-  audio.pause();
+  // if(!audio.paused){audio.pause();}
   audio.src = src;
   audio.play().catch(console.log);
 }
