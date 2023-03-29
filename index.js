@@ -186,17 +186,24 @@ class WordGame {
       this.stopGame();
     });
   }
-  startGame() {
+  resetBeforeStart() {
     score = 0;
+    activeLeftButton = undefined;
+    activeRightButton = undefined;
     currentLife = maxLife;
     this.setLife();
-    this.hideButtonStart();
-    this.hideLevelsContainer();
     if (lastLevel !== currentLevel) {
       wordsArray = [];
     }
+  }
+
+  startGame() {
+    this.resetBeforeStart();
+    this.hideButtonStart();
+    this.hideLevelsContainer();
     this.loadWords();
     this.playWords();
+    this.showActiveButtons();
     this.listenButtons();
   }
   stopGame() {
@@ -354,7 +361,9 @@ class WordGame {
 
   listenButtons() {
     gamepad.addEventListener("click", (e) => {
+      
       let el = e.target;
+      console.log(el)
       let index;
       if (el.className.includes("right-button")) {
         index = Number(el.className.at(-1));
@@ -363,27 +372,42 @@ class WordGame {
         } else {
           activeRightButton = index;
         }
-        this.showActiveButton();
+      } else if (el.className.includes("left-button")) {
+        index = Number(el.className.at(-1));
+        if (activeLeftButton === index) {
+          activeLeftButton = undefined;
+        } else {
+          activeLeftButton = index;
+        }
       }
-      if (activeRightButton && activeLeftButton) {
+        this.showActiveButtons();
+        console.log(activeLeftButton,activeRightButton)
+      
+      if (activeRightButton !== undefined && activeLeftButton !== undefined) {
         this.proccessResult();
       }
     });
   }
 
-  showActiveButton() {
-    
-      for (let i = 0; i < initialMaxLevel; i++) {
-        let button = gamepad.querySelector(`.right-button-${i}`);
-        if (i === activeRightButton) {
-          button.style.backgroundImage = "linear-gradient(#ddf, #cce)";
-        } else {
-          button.style.backgroundImage = "linear-gradient(#fff, #eee)";
-        }
+  showActiveButtons() {
+    for (let i = 0; i < initialMaxLevel; i++) {
+      let buttonRight = gamepad.querySelector(`.right-button-${i}`);
+      let buttonLeft = gamepad.querySelector(`.left-button-${i}`);
+      if (i === activeRightButton) {
+        buttonRight.style.backgroundImage = "linear-gradient(#ddf, #cce)";
+      } else {
+        buttonRight.style.backgroundImage = "linear-gradient(#fff, #eee)";
       }
-    
+      if (i === activeLeftButton) {
+        buttonLeft.style.backgroundImage = "linear-gradient(#ddf, #cce)";
+      } else {
+        buttonLeft.style.backgroundImage = "linear-gradient(#fff, #eee)";
+      }
+    }
   }
-  proccessResult() {}
+  proccessResult() {
+    console.log("result");
+  }
 }
 const game = new WordGame();
 mainContainer.addEventListener("click", game.hideInfo);
