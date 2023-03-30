@@ -215,6 +215,7 @@ class WordGame {
   startGame() {
     this.resetBeforeStart();
     this.hideButtonStart();
+    this.hideInfo();
     this.hideLevelsContainer();
     this.loadWords();
     this.playWords();
@@ -433,7 +434,7 @@ class WordGame {
   }
 }
 const game = new WordGame();
-mainContainer.addEventListener("click", game.hideInfo);
+//mainContainer.addEventListener("click", game.hideInfo);
 info.addEventListener("click", game.hideInfo);
 
 function levelChooseHandler() {
@@ -443,6 +444,7 @@ function levelChooseHandler() {
       let level = game.getElementLevel(el);
       if (level <= maxLevel) {
         vibrate("ordinary");
+        game.hideInfo();
         game.chooseLevel(level);
       }
     }
