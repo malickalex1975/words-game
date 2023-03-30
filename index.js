@@ -5,6 +5,8 @@ const successSound = "./assets/mp3/success.mp3";
 let currentLevel, maxLevel, lastLevel;
 let activeLeftButton = undefined;
 let activeRightButton = undefined;
+let emptyLeftButtons = [];
+let emptyRightButtons = [];
 const initialMaxLevel = 6;
 const initialLevel = 1;
 const timeAll = 120000;
@@ -32,6 +34,7 @@ let timeCurrent = 0;
 let score = 0;
 let currentLife = maxLife;
 let wordsIndexes = [];
+let threeWordsIndexes = [];
 const mainContainer = document.querySelector(".main-container");
 const levelContainer = document.querySelector(".level-container");
 const buttonStart = document.querySelector(".button-start");
@@ -130,7 +133,7 @@ class WordGame {
 
   showScore(value) {
     let visibility = value ? "visible" : "hidden";
-    let opacity=value?'1':'0'
+    let opacity = value ? "1" : "0";
     scorePlace.style.visibility = visibility;
     scorePlace.style.opacity = opacity;
   }
@@ -220,7 +223,7 @@ class WordGame {
     this.hideInfo();
     this.hideLevelsContainer();
     this.loadWords();
-    this.playWords();
+   // this.playWords();
     this.showActiveButtons();
     this.listenButtons();
   }
@@ -235,7 +238,7 @@ class WordGame {
     this.showLevelsContainer();
     let lastRecord = this.getLastRecord();
     this.showInfo(
-      `<p>Вы нашли <span> ${score}</span> слов. Предыдущий рекорд на уровне <span> ${currentLevel} </span> был <span> ${lastRecord} </span> слов.</p>`
+      `<p>Вы набрали <span> ${score}</span> . Предыдущий рекорд на уровне <span> ${currentLevel} </span> был <span> ${lastRecord} </span> .</p>`
     );
     if (score > lastRecord) {
       this.setRecord(score);
@@ -335,7 +338,15 @@ class WordGame {
         wordsIndexes.push(num);
       }
     }
-    console.log(wordsIndexes);
+  }
+  setThreeWordsIndexes() {
+    threeWordsIndexes = [];
+    while (threeWordsIndexes.length < 3) {
+      let num = this.getRandomNumber(0, 599);
+      if (!wordsIndexes.includes(num) && !threeWordsIndexes.includes(num)) {
+        threeWordsIndexes.push(num);
+      }
+    }
   }
   defineLeftWords() {
     let arr = [...wordsIndexes];
@@ -344,12 +355,28 @@ class WordGame {
       leftWords[`left${i}`] = value;
     }
   }
+  defineThreeLeftWords() {
+    let arr = [...threeWordsIndexes];
+    for (let i of emptyLeftButtons) {
+      let value = this.getRandomBoolean() ? arr.pop() : arr.shift();
+      leftWords[`left${i}`] = value;
+    }
+    emptyLeftButtons = [];
+  }
   defineRightWords() {
     let arr = [...wordsIndexes];
     for (let i = 0; i < wordsQuantity; i++) {
       let value = this.getRandomBoolean() ? arr.pop() : arr.shift();
       rightWords[`right${i}`] = value;
     }
+  }
+  defineThreeRightWords() {
+    let arr = [...threeWordsIndexes];
+    for (let i of emptyRightButtons) {
+      let value = this.getRandomBoolean() ? arr.pop() : arr.shift();
+      rightWords[`right${i}`] = value;
+    }
+    emptyRightButtons = [];
   }
   firstTimeShowWords() {
     for (let i = 0; i < wordsQuantity; i++) {
@@ -429,10 +456,50 @@ class WordGame {
     let buttonLeft = gamepad.querySelector(`.left-button-${leftIndex}`);
     if (rightWords[`right${rightIndex}`] === leftWords[`left${leftIndex}`]) {
       console.log("right");
+      buttonLeft.classList.add("green");
+      buttonRight.classList.add("green");
+      score++;
+      this.setScore();
+      setTimeout(() => {
+        buttonLeft.classList.remove("green");
+        buttonRight.classList.remove("green");
+        buttonLeft.textContent = "";
+        buttonRight.textContent = "";
+        emptyLeftButtons.push(activeLeftButton);
+        emptyRightButtons.push(activeRightButton);
+        console.log(emptyLeftButtons,emptyRightButtons)
+        if (emptyLeftButtons.length=== 3) {
+          this.addNewWords();
+        }
+        activeLeftButton = undefined;
+        activeRightButton = undefined;
+        this.showActiveButtons();
+      }, 500);
     } else {
-      console.log("wrong");
       buttonLeft.classList.add("red");
+      buttonRight.classList.add("red");
+      setTimeout(() => {
+        buttonLeft.classList.remove("red");
+        buttonRight.classList.remove("red");
+        activeLeftButton = undefined;
+        activeRightButton = undefined;
+        this.showActiveButtons();
+        currentLife--;
+        this.setLife();
+        if (currentLife === 0) {
+          this.stopGame();
+        }
+      }, 500);
     }
+  }
+  addNewWords() {
+    console.log(rightWords,leftWords)
+    this.setThreeWordsIndexes();
+    console.log(threeWordsIndexes)
+    this.defineThreeLeftWords();
+    this.defineThreeRightWords();
+    console.log(rightWords,leftWords)
+    this.firstTimeShowWords();
   }
 }
 const game = new WordGame();
