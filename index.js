@@ -41,6 +41,7 @@ const clockContainer = document.querySelector(".clock-container");
 const clockStrip = document.querySelector(".clock-strip");
 const clock = document.querySelector(".clock");
 const gamepad = document.querySelector(".gamepad-container");
+const scorePlace = document.querySelector(".score-place");
 const info = document.querySelector(".info");
 const life = document.querySelector(".life");
 const heart = document.querySelector(".heart");
@@ -107,7 +108,7 @@ class WordGame {
     el.style.cursor = "auto";
   }
   showCurrentLevel(el) {
-    el.style.backgroundImage = "radial-gradient(#0a0, #0f0)";
+    el.style.backgroundImage = "radial-gradient(#0f0, #0a0)";
     el.style.color = "white";
   }
   showInactiveLevel(el) {
@@ -125,6 +126,11 @@ class WordGame {
   }
   setRecord(score) {
     localStorage.setItem(`level-${currentLevel}`, score);
+  }
+
+  showScore(value) {
+    let visibility = value ? "visible" : "hidden";
+    scorePlace.style.visibility = visibility;
   }
   showInfo(html) {
     info.style.transform = "translateY(0%)";
@@ -167,27 +173,36 @@ class WordGame {
   }
   showLevelsContainer() {
     levelContainer.style.visibility = "visible";
+    levelContainer.style.opacity = "1";
   }
   hideLevelsContainer() {
     levelContainer.style.visibility = "hidden";
+    levelContainer.style.opacity = "0";
   }
   handleButtonStart() {
-    buttonStart.addEventListener("click", (e) => {
+    buttonStart.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       vibrate("ordinary");
       this.startGame();
     });
   }
   handleButtonStop() {
-    buttonStop.addEventListener("click", (e) => {
+    buttonStop.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       e.stopPropagation();
       vibrate("ordinary");
       this.stopGame();
     });
   }
+  setScore() {
+    scorePlace.textContent = score.toString();
+    scorePlace.style.transform = "scale(1.2)";
+    setTimeout(() => (scorePlace.style.transform = "scale(1)"), 500);
+  }
   resetBeforeStart() {
     score = 0;
+    this.setScore();
+    this.showScore(true);
     activeLeftButton = undefined;
     activeRightButton = undefined;
     currentLife = maxLife;
@@ -209,6 +224,7 @@ class WordGame {
   stopGame() {
     lastLevel = currentLevel;
     this.hideClock();
+    this.showScore(false);
     this.clockStyleReset();
     this.hideGamePad();
     this.hideButtonStop();
@@ -360,12 +376,11 @@ class WordGame {
   }
 
   listenButtons() {
-    gamepad.addEventListener("click",this.listenHandler
-    );
+    gamepad.addEventListener("pointerdown", this.listenHandler);
   }
-  listenHandler(e) { 
+  listenHandler(e) {
     let el = e.target;
-    console.log(el)
+    console.log(el);
     let index;
     if (el.className.includes("right-button")) {
       index = Number(el.className.at(-1));
@@ -382,9 +397,8 @@ class WordGame {
         activeLeftButton = index;
       }
     }
-      game.showActiveButtons();
-      console.log(activeLeftButton,activeRightButton)
-    
+    game.showActiveButtons();
+
     if (activeRightButton !== undefined && activeLeftButton !== undefined) {
       game.proccessResult();
     }
@@ -406,7 +420,16 @@ class WordGame {
     }
   }
   proccessResult() {
-    console.log("result");
+    let rightIndex = activeRightButton;
+    let leftIndex = activeLeftButton;
+    let buttonRight = gamepad.querySelector(`.right-button-${rightIndex}`);
+    let buttonLeft = gamepad.querySelector(`.left-button-${leftIndex}`);
+    if (rightWords[`right${rightIndex}`] === leftWords[`left${leftIndex}`]) {
+      console.log("right");
+    } else {
+      console.log("wrong");
+      buttonLeft.classList.add("red");
+    }
   }
 }
 const game = new WordGame();
@@ -414,7 +437,7 @@ mainContainer.addEventListener("click", game.hideInfo);
 info.addEventListener("click", game.hideInfo);
 
 function levelChooseHandler() {
-  levelContainer.addEventListener("click", (e) => {
+  levelContainer.addEventListener("pointerdown", (e) => {
     let el = e.target;
     if (el.className.includes("level-element")) {
       let level = game.getElementLevel(el);
