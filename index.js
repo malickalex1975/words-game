@@ -130,7 +130,9 @@ class WordGame {
 
   showScore(value) {
     let visibility = value ? "visible" : "hidden";
+    let opacity=value?'1':'0'
     scorePlace.style.visibility = visibility;
+    scorePlace.style.opacity = opacity;
   }
   showInfo(html) {
     info.style.transform = "translateY(0%)";

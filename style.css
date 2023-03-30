@@ -38,8 +38,9 @@
   font-size: 40px;
   color: orange;
   text-shadow: 2px 2px 6px orangered;
-  transition: scale 500ms, visibility 0s;
+  transition: scale 500ms, visibility 500ms, opacity 300ms;
   visibility: hidden;
+  opacity: 0;
 }
 
 .level-element {
