@@ -384,6 +384,8 @@ class WordGame {
       setTimeout(() => {
         rusEl.style.opacity = 1;
         enEl.style.opacity = 1;
+        rusEl.style.visibility = 'visible';
+        enEl.style.visibility = 'visible';
         enEl.textContent = wordsArray[rightWords[`right${i}`]].word;
         rusEl.textContent = wordsArray[leftWords[`left${i}`]].wordTranslate;
       }, 200 * i);
@@ -480,6 +482,8 @@ class WordGame {
           buttonRight.textContent = "";
           buttonLeft.style.opacity = 0;
           buttonRight.style.opacity = 0;
+          buttonLeft.style.visibility = 'hidden';
+          buttonRight.style.visibility = 'hidden';
 
           this.showActiveButtons();
         }, 300);
@@ -503,12 +507,9 @@ class WordGame {
     }
   }
   addNewWords() {
-    console.log(rightWords, leftWords);
     this.setThreeWordsIndexes();
-    console.log(threeWordsIndexes);
     this.defineThreeLeftWords();
     this.defineThreeRightWords();
-    console.log(rightWords, leftWords);
     this.firstTimeShowWords();
   }
 }
