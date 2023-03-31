@@ -84,7 +84,7 @@ class WordGame {
         el.textContent = elementLevel.toString();
       }
       if (elementLevel > maxLevel) {
-        el.textContent = "lock";
+
         game.showDisabledLevel(el);
       }
       if (elementLevel === currentLevel) {
@@ -106,7 +106,7 @@ class WordGame {
   }
 
   showDisabledLevel(el) {
-    el.style.backgroundImage = "radial-gradient(#fff, #eee)";
+    el.style.backgroundImage = "url(./assets/images/lock.png)";
     el.style.color = "#999";
     el.style.cursor = "auto";
   }
@@ -223,7 +223,7 @@ class WordGame {
     this.hideInfo();
     this.hideLevelsContainer();
     this.loadWords();
-   // this.playWords();
+    this.playWords();
     this.showActiveButtons();
     this.listenButtons();
   }
@@ -382,8 +382,12 @@ class WordGame {
     for (let i = 0; i < wordsQuantity; i++) {
       let rusEl = document.querySelector(`.left-button-${i}`);
       let enEl = document.querySelector(`.right-button-${i}`);
-      enEl.textContent = wordsArray[rightWords[`right${i}`]].word;
-      rusEl.textContent = wordsArray[leftWords[`left${i}`]].wordTranslate;
+      setTimeout(() => {
+        rusEl.style.opacity = 1;
+        enEl.style.opacity = 1;
+        enEl.textContent = wordsArray[rightWords[`right${i}`]].word;
+        rusEl.textContent = wordsArray[leftWords[`left${i}`]].wordTranslate;
+      }, 200 * i);
     }
   }
 
@@ -399,8 +403,10 @@ class WordGame {
       let index;
       if (el.className.includes("right-button")) {
         index = el.className.at(-1);
-        let endpoint = wordsArray[rightWords[`right${index}`]].audio;
-        playAudio(mainUrl + endpoint);
+        let endpoint = wordsArray?.[rightWords?.[`right${index}`]]?.audio;
+        if (endpoint) {
+          playAudio(mainUrl + endpoint);
+        }
       }
     });
   }
@@ -437,12 +443,12 @@ class WordGame {
     for (let i = 0; i < initialMaxLevel; i++) {
       let buttonRight = gamepad.querySelector(`.right-button-${i}`);
       let buttonLeft = gamepad.querySelector(`.left-button-${i}`);
-      if (i === activeRightButton) {
+      if (i === activeRightButton && buttonRight.textContent !== "") {
         buttonRight.style.backgroundImage = "linear-gradient(#ddf, #cce)";
       } else {
         buttonRight.style.backgroundImage = "linear-gradient(#fff, #eee)";
       }
-      if (i === activeLeftButton) {
+      if (i === activeLeftButton && buttonLeft.textContent !== "") {
         buttonLeft.style.backgroundImage = "linear-gradient(#ddf, #cce)";
       } else {
         buttonLeft.style.backgroundImage = "linear-gradient(#fff, #eee)";
@@ -454,51 +460,55 @@ class WordGame {
     let leftIndex = activeLeftButton;
     let buttonRight = gamepad.querySelector(`.right-button-${rightIndex}`);
     let buttonLeft = gamepad.querySelector(`.left-button-${leftIndex}`);
-    if (rightWords[`right${rightIndex}`] === leftWords[`left${leftIndex}`]) {
-      console.log("right");
-      buttonLeft.classList.add("green");
-      buttonRight.classList.add("green");
-      score++;
-      this.setScore();
-      setTimeout(() => {
-        buttonLeft.classList.remove("green");
-        buttonRight.classList.remove("green");
-        buttonLeft.textContent = "";
-        buttonRight.textContent = "";
-        emptyLeftButtons.push(activeLeftButton);
-        emptyRightButtons.push(activeRightButton);
-        console.log(emptyLeftButtons,emptyRightButtons)
-        if (emptyLeftButtons.length=== 3) {
-          this.addNewWords();
-        }
-        activeLeftButton = undefined;
-        activeRightButton = undefined;
-        this.showActiveButtons();
-      }, 500);
-    } else {
-      buttonLeft.classList.add("red");
-      buttonRight.classList.add("red");
-      setTimeout(() => {
-        buttonLeft.classList.remove("red");
-        buttonRight.classList.remove("red");
-        activeLeftButton = undefined;
-        activeRightButton = undefined;
-        this.showActiveButtons();
-        currentLife--;
-        this.setLife();
-        if (currentLife === 0) {
-          this.stopGame();
-        }
-      }, 500);
+    if (buttonLeft.textContent !== "" && buttonRight.textContent !== "") {
+      if (rightWords[`right${rightIndex}`] === leftWords[`left${leftIndex}`]) {
+        vibrate("right");
+        buttonLeft.classList.add("green");
+        buttonRight.classList.add("green");
+        score++;
+        this.setScore();
+        setTimeout(() => {
+          buttonLeft.classList.remove("green");
+          buttonRight.classList.remove("green");
+          buttonLeft.textContent = "";
+          buttonRight.textContent = "";
+          buttonLeft.style.opacity = 0;
+          buttonRight.style.opacity = 0;
+          emptyLeftButtons.push(activeLeftButton);
+          emptyRightButtons.push(activeRightButton);
+          if (emptyLeftButtons.length === 3) {
+            this.addNewWords();
+          }
+          activeLeftButton = undefined;
+          activeRightButton = undefined;
+          this.showActiveButtons();
+        }, 300);
+      } else {
+        vibrate("wrong");
+        buttonLeft.classList.add("red");
+        buttonRight.classList.add("red");
+        setTimeout(() => {
+          buttonLeft.classList.remove("red");
+          buttonRight.classList.remove("red");
+          activeLeftButton = undefined;
+          activeRightButton = undefined;
+          this.showActiveButtons();
+          currentLife--;
+          this.setLife();
+          if (currentLife === 0) {
+            this.stopGame();
+          }
+        }, 300);
+      }
     }
   }
   addNewWords() {
-    console.log(rightWords,leftWords)
+    console.log(rightWords, leftWords);
     this.setThreeWordsIndexes();
-    console.log(threeWordsIndexes)
+    console.log(threeWordsIndexes);
     this.defineThreeLeftWords();
     this.defineThreeRightWords();
-    console.log(rightWords,leftWords)
+    console.log(rightWords, leftWords);
     this.firstTimeShowWords();
   }
 }
