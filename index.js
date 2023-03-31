@@ -470,9 +470,7 @@ class WordGame {
         emptyRightButtons.push(activeRightButton);
         activeLeftButton = undefined;
         activeRightButton = undefined;
-        if (emptyLeftButtons.length === 3) {
-          this.addNewWords();
-        }
+        
         score++;
         this.setScore();
         setTimeout(() => {
@@ -484,7 +482,9 @@ class WordGame {
           buttonRight.style.opacity = 0;
           buttonLeft.style.visibility = 'hidden';
           buttonRight.style.visibility = 'hidden';
-
+          if (emptyLeftButtons.length === 3) {
+            this.addNewWords();
+          }
           this.showActiveButtons();
         }, 300);
       } else {
