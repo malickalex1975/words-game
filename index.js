@@ -84,7 +84,6 @@ class WordGame {
         el.textContent = elementLevel.toString();
       }
       if (elementLevel > maxLevel) {
-
         game.showDisabledLevel(el);
       }
       if (elementLevel === currentLevel) {
@@ -465,6 +464,13 @@ class WordGame {
         vibrate("right");
         buttonLeft.classList.add("green");
         buttonRight.classList.add("green");
+        emptyLeftButtons.push(activeLeftButton);
+        emptyRightButtons.push(activeRightButton);
+        activeLeftButton = undefined;
+        activeRightButton = undefined;
+        if (emptyLeftButtons.length === 3) {
+          this.addNewWords();
+        }
         score++;
         this.setScore();
         setTimeout(() => {
@@ -474,30 +480,24 @@ class WordGame {
           buttonRight.textContent = "";
           buttonLeft.style.opacity = 0;
           buttonRight.style.opacity = 0;
-          emptyLeftButtons.push(activeLeftButton);
-          emptyRightButtons.push(activeRightButton);
-          if (emptyLeftButtons.length === 3) {
-            this.addNewWords();
-          }
-          activeLeftButton = undefined;
-          activeRightButton = undefined;
+
           this.showActiveButtons();
         }, 300);
       } else {
         vibrate("wrong");
         buttonLeft.classList.add("red");
         buttonRight.classList.add("red");
+        activeLeftButton = undefined;
+        activeRightButton = undefined;
+        currentLife--;
+        this.setLife();
+        if (currentLife === 0) {
+          this.stopGame();
+        }
         setTimeout(() => {
           buttonLeft.classList.remove("red");
           buttonRight.classList.remove("red");
-          activeLeftButton = undefined;
-          activeRightButton = undefined;
           this.showActiveButtons();
-          currentLife--;
-          this.setLife();
-          if (currentLife === 0) {
-            this.stopGame();
-          }
         }, 300);
       }
     }
