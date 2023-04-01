@@ -7,10 +7,12 @@ let activeLeftButton = undefined;
 let activeRightButton = undefined;
 let emptyLeftButtons = [];
 let emptyRightButtons = [];
-const initialMaxLevel = 6;
+let wordsInColumn=6;
+const initialMaxLevel = 1;
 const initialLevel = 1;
 const timeAll = 120000;
 const maxLife = 5;
+let scoreToNextLevel = 50;
 const leftWords = {
   left0: undefined,
   left1: undefined,
@@ -39,6 +41,7 @@ const mainContainer = document.querySelector(".main-container");
 const levelContainer = document.querySelector(".level-container");
 const buttonStart = document.querySelector(".button-start");
 const buttonStop = document.querySelector(".button-stop");
+const wordButtons = document.querySelectorAll(".button");
 const loadingElement = document.querySelector(".loading");
 const clockContainer = document.querySelector(".clock-container");
 const clockStrip = document.querySelector(".clock-strip");
@@ -148,12 +151,20 @@ class WordGame {
   }
 
   showGamepad() {
-    gamepad.style.visibility = "visible";
+    gamepad.style.display = "visible";
     gamepad.style.opacity = "1";
+    wordButtons.forEach((wordButton) => {
+      wordButton.style.visibility = "visible";
+      wordButton.style.opacity = "1";
+    });
   }
   hideGamePad() {
     gamepad.style.visibility = "hidden";
     gamepad.style.opacity = "0";
+    wordButtons.forEach((wordButton) => {
+      wordButton.style.visibility = "hidden";
+      wordButton.style.opacity = "0";
+    });
   }
   showClock() {
     clockContainer.style.visibility = "visible";
@@ -202,6 +213,9 @@ class WordGame {
     scorePlace.textContent = score.toString();
     scorePlace.style.transform = "scale(1.2)";
     setTimeout(() => (scorePlace.style.transform = "scale(1)"), 500);
+    if (score >= scoreToNextLevel && currentLevel === maxLevel) {
+      this.increaseLevel();
+    }
   }
   resetBeforeStart() {
     score = 0;
@@ -227,6 +241,7 @@ class WordGame {
     this.listenButtons();
   }
   stopGame() {
+    gamepad.removeEventListener("pointerdown", this.listenHandler);
     lastLevel = currentLevel;
     this.hideClock();
     this.showScore(false);
@@ -236,8 +251,13 @@ class WordGame {
     this.showButtonStart();
     this.showLevelsContainer();
     let lastRecord = this.getLastRecord();
+    let addition = "";
+    if (score < scoreToNextLevel && currentLevel === maxLevel) {
+      addition = `<p>Для открытия нового уровня наберите <span> ${scoreToNextLevel}.</span></p>`;
+    }
     this.showInfo(
-      `<p>Вы набрали <span> ${score}</span> . Предыдущий рекорд на уровне <span> ${currentLevel} </span> был <span> ${lastRecord} </span> .</p>`
+      `<p>Вы набрали <span> ${score}</span> . Предыдущий рекорд на уровне <span> ${currentLevel} </span> был <span> ${lastRecord} </span> .</p>` +
+        addition
     );
     if (score > lastRecord) {
       this.setRecord(score);
@@ -384,8 +404,8 @@ class WordGame {
       setTimeout(() => {
         rusEl.style.opacity = 1;
         enEl.style.opacity = 1;
-        rusEl.style.visibility = 'visible';
-        enEl.style.visibility = 'visible';
+        rusEl.style.visibility = "visible";
+        enEl.style.visibility = "visible";
         enEl.textContent = wordsArray[rightWords[`right${i}`]].word;
         rusEl.textContent = wordsArray[leftWords[`left${i}`]].wordTranslate;
       }, 200 * i);
@@ -441,7 +461,7 @@ class WordGame {
     }
   }
   showActiveButtons() {
-    for (let i = 0; i < initialMaxLevel; i++) {
+    for (let i = 0; i < wordsInColumn; i++) {
       let buttonRight = gamepad.querySelector(`.right-button-${i}`);
       let buttonLeft = gamepad.querySelector(`.left-button-${i}`);
       if (i === activeRightButton && buttonRight.textContent !== "") {
@@ -470,7 +490,7 @@ class WordGame {
         emptyRightButtons.push(activeRightButton);
         activeLeftButton = undefined;
         activeRightButton = undefined;
-        
+
         score++;
         this.setScore();
         setTimeout(() => {
@@ -480,8 +500,8 @@ class WordGame {
           buttonRight.textContent = "";
           buttonLeft.style.opacity = 0;
           buttonRight.style.opacity = 0;
-          buttonLeft.style.visibility = 'hidden';
-          buttonRight.style.visibility = 'hidden';
+          buttonLeft.style.visibility = "hidden";
+          buttonRight.style.visibility = "hidden";
           if (emptyLeftButtons.length === 3) {
             this.addNewWords();
           }
@@ -511,6 +531,12 @@ class WordGame {
     this.defineThreeLeftWords();
     this.defineThreeRightWords();
     this.firstTimeShowWords();
+  }
+  increaseLevel() {
+    if (maxLevel < 6) {
+      this.setMaxLevel(maxLevel + 1);
+      this.showLevels();
+    }
   }
 }
 const game = new WordGame();
