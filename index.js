@@ -7,7 +7,7 @@ let activeLeftButton = undefined;
 let activeRightButton = undefined;
 let emptyLeftButtons = [];
 let emptyRightButtons = [];
-let wordsInColumn=6;
+let wordsInColumn = 6;
 const initialMaxLevel = 1;
 const initialLevel = 1;
 const timeAll = 120000;
@@ -37,6 +37,7 @@ let score = 0;
 let currentLife = maxLife;
 let wordsIndexes = [];
 let threeWordsIndexes = [];
+const orientationWarning=document.querySelector(".warning-container");
 const mainContainer = document.querySelector(".main-container");
 const levelContainer = document.querySelector(".level-container");
 const buttonStart = document.querySelector(".button-start");
@@ -437,8 +438,15 @@ class WordGame {
   }
   listenHandler(e) {
     let el = e.target;
+    let downX, downY;
     console.log(el);
     let index;
+    if (
+      !el.className.includes("right-button") &&
+      !el.className.includes("left-button")
+    ) {
+      return;
+    }
     if (el.className.includes("right-button")) {
       index = Number(el.className.at(-1));
       if (activeRightButton === index) {
@@ -459,7 +467,24 @@ class WordGame {
     if (activeRightButton !== undefined && activeLeftButton !== undefined) {
       game.proccessResult();
     }
+    downX = e.clientX;
+    downY = e.clientY;
+    gamepad.addEventListener("pointermove", function(e){
+      game.moveHandler(el,e.clientX, e.clientY, downX, downY)}
+    );
+    gamepad.addEventListener("pointerup", () => {
+      gamepad.removeEventListener("pointermove", function(e){
+        game.moveHandler(el,e.clientX, e.clientY, downX, downY)}
+      );
+      game.moveHandler(el,0,0,0,0)
+    });
   }
+
+  moveHandler(el, x, y, downX, downY) {
+    console.log(x-downX, y-downY);
+    el.style.transform = `translate(${x - downX}px,${y - downY}px)`;
+  }
+
   showActiveButtons() {
     for (let i = 0; i < wordsInColumn; i++) {
       let buttonRight = gamepad.querySelector(`.right-button-${i}`);
@@ -559,6 +584,7 @@ function levelChooseHandler() {
 
 function init() {
   wakeLock();
+  window.addEventListener("orientationchange", checkOrientation)
   game.getLevel();
   game.getMaxLevel();
   game.showLevelsContainer();
@@ -573,12 +599,21 @@ function wakeLock() {
 }
 function vibrate(type) {
   let pattern =
-    type === "right" ? [50, 10, 50] : type === "wrong" ? [100, 50, 100] : [50];
+    type === "right" ? [50, 10, 50] : type === "wrong" ? [100, 50, 100,50,100] : [50];
   navigator.vibrate(pattern);
 }
 function playAudio(src) {
   // if(!audio.paused){audio.pause();}
   audio.src = src;
   audio.play().catch(console.log);
+}
+function checkOrientation() {
+  let orientation = screen.orientation.type;
+  if (orientation.includes("portrait")) {
+    orientationWarning.style.visibility = "hidden";
+  }
+  if (orientation.includes("landscape")) {
+    orientationWarning.style.visibility = "visible";
+  }
 }
 document.addEventListener("DOMContentLoaded", init);
