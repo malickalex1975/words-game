@@ -145,7 +145,7 @@
   font-size: 16px;
   color: #000066;
   cursor: pointer;
-  transition: 1000ms;
+  transition: 100ms;
   text-align: center;
   opacity: 0;
   visibility: hidden;
@@ -242,7 +242,7 @@
 }
 @keyframes heart-animation {
   from {
-    transform: scale(1.07);
+    transform: scale(1.1);
   }
   to {
     transform: scale(0.95);

@@ -3,6 +3,7 @@ const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 let currentLevel, maxLevel, lastLevel;
+let downX, downY;
 let activeLeftButton = undefined;
 let activeRightButton = undefined;
 let emptyLeftButtons = [];
@@ -37,7 +38,7 @@ let score = 0;
 let currentLife = maxLife;
 let wordsIndexes = [];
 let threeWordsIndexes = [];
-const orientationWarning=document.querySelector(".warning-container");
+const orientationWarning = document.querySelector(".warning-container");
 const mainContainer = document.querySelector(".main-container");
 const levelContainer = document.querySelector(".level-container");
 const buttonStart = document.querySelector(".button-start");
@@ -324,16 +325,18 @@ class WordGame {
     clockStrip.style.width = `${(60 / timeAll) * time}vw`;
 
     clockStrip.style.backgroundImage = `linear-gradient(rgba(${
-      (255 / timeAll) * (timeAll - time)
-    },${(255 / timeAll) * time},100,1), rgba(${
-      (200 / timeAll) * (timeAll - time)
-    },${(200 / timeAll) * time},100,1))`;
+      (255 / timeAll) * (timeAll - time / 6)
+    },${(255 / timeAll) * time * 2},0,1), rgba(${
+      (200 / timeAll) * (timeAll - time / 6)
+    },${(200 / timeAll) * time * 2},0,1))`;
   }
 
   clockStyleReset() {
-    clockStrip.style.backgroundImage =
-      "linear-gradient(rgba(0,255,100,1), rgba(0,200,100,1))";
-    clockStrip.style.width = `60vw`;
+    setTimeout(() => {
+      clockStrip.style.backgroundImage =
+        "linear-gradient(rgba(0,255,0,1), rgba(0,200,0,1))";
+      clockStrip.style.width = `60vw`;
+    }, 200);
   }
   convertTime(time) {
     let min = 0;
@@ -367,6 +370,8 @@ class WordGame {
         threeWordsIndexes.push(num);
       }
     }
+    wordsIndexes = [...wordsIndexes, ...threeWordsIndexes];
+    console.log(wordsIndexes);
   }
   defineLeftWords() {
     let arr = [...wordsIndexes];
@@ -438,21 +443,27 @@ class WordGame {
   }
   listenHandler(e) {
     let el = e.target;
-    let downX, downY;
-    console.log(el);
     let index;
     if (
-      !el.className.includes("right-button") &&
-      !el.className.includes("left-button")
+      !el?.className.includes("right-button") &&
+      !el?.className.includes("left-button")
     ) {
       return;
     }
-    if (el.className.includes("right-button")) {
+    if (el?.className.includes("right-button")) {
       index = Number(el.className.at(-1));
       if (activeRightButton === index) {
         activeRightButton = undefined;
+        el.removeEventListener("pointermove", game.moveHandler);
       } else {
         activeRightButton = index;
+        downX = e.clientX;
+        downY = e.clientY;
+        el.addEventListener("pointermove", game.moveHandler);
+        gamepad.addEventListener("pointerup", (e) => {
+          el.removeEventListener("pointermove", game.moveHandler);
+          game.moveHandler(e);
+        });
       }
     } else if (el.className.includes("left-button")) {
       index = Number(el.className.at(-1));
@@ -467,21 +478,14 @@ class WordGame {
     if (activeRightButton !== undefined && activeLeftButton !== undefined) {
       game.proccessResult();
     }
-    downX = e.clientX;
-    downY = e.clientY;
-    gamepad.addEventListener("pointermove", function(e){
-      game.moveHandler(el,e.clientX, e.clientY, downX, downY)}
-    );
-    gamepad.addEventListener("pointerup", () => {
-      gamepad.removeEventListener("pointermove", function(e){
-        game.moveHandler(el,e.clientX, e.clientY, downX, downY)}
-      );
-      game.moveHandler(el,0,0,0,0)
-    });
   }
 
-  moveHandler(el, x, y, downX, downY) {
-    console.log(x-downX, y-downY);
+  moveHandler(e) {
+    let el = e.target;
+    let x = e.clientX;
+    let y = e.clientY;
+    console.log(x - downX, y - downY);
+
     el.style.transform = `translate(${x - downX}px,${y - downY}px)`;
   }
 
@@ -506,9 +510,12 @@ class WordGame {
     let leftIndex = activeLeftButton;
     let buttonRight = gamepad.querySelector(`.right-button-${rightIndex}`);
     let buttonLeft = gamepad.querySelector(`.left-button-${leftIndex}`);
+    let wordIndex;
     if (buttonLeft.textContent !== "" && buttonRight.textContent !== "") {
+      wordIndex = rightWords[`right${rightIndex}`];
       if (rightWords[`right${rightIndex}`] === leftWords[`left${leftIndex}`]) {
         vibrate("right");
+        wordsIndexes = [...wordsIndexes.filter((i) => i !== wordIndex)];
         buttonLeft.classList.add("green");
         buttonRight.classList.add("green");
         emptyLeftButtons.push(activeLeftButton);
@@ -584,7 +591,7 @@ function levelChooseHandler() {
 
 function init() {
   wakeLock();
-  window.addEventListener("orientationchange", checkOrientation)
+  window.addEventListener("orientationchange", checkOrientation);
   game.getLevel();
   game.getMaxLevel();
   game.showLevelsContainer();
@@ -599,7 +606,11 @@ function wakeLock() {
 }
 function vibrate(type) {
   let pattern =
-    type === "right" ? [50, 10, 50] : type === "wrong" ? [100, 50, 100,50,100] : [50];
+    type === "right"
+      ? [50, 10, 50]
+      : type === "wrong"
+      ? [100, 50, 100, 50, 100]
+      : [50];
   navigator.vibrate(pattern);
 }
 function playAudio(src) {
@@ -616,4 +627,5 @@ function checkOrientation() {
     orientationWarning.style.visibility = "visible";
   }
 }
+
 document.addEventListener("DOMContentLoaded", init);
