@@ -145,7 +145,7 @@
   font-size: 16px;
   color: #000066;
   cursor: pointer;
-  transition: 100ms;
+  transition: 0ms;
   text-align: center;
   opacity: 0;
   visibility: hidden;

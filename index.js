@@ -455,14 +455,18 @@ class WordGame {
       if (activeRightButton === index) {
         activeRightButton = undefined;
         el.removeEventListener("pointermove", game.moveHandler);
+       
+        game.moveToInitPosition(el)
       } else {
         activeRightButton = index;
         downX = e.clientX;
         downY = e.clientY;
         el.addEventListener("pointermove", game.moveHandler);
-        gamepad.addEventListener("pointerup", (e) => {
+        
+        el.addEventListener("pointerup", (e) => {
           el.removeEventListener("pointermove", game.moveHandler);
-          game.moveHandler(e);
+          
+          game.moveToInitPosition(el);
         });
       }
     } else if (el.className.includes("left-button")) {
@@ -484,9 +488,17 @@ class WordGame {
     let el = e.target;
     let x = e.clientX;
     let y = e.clientY;
-    console.log(x - downX, y - downY);
-
     el.style.transform = `translate(${x - downX}px,${y - downY}px)`;
+    game.checkElementPosition(el)
+  }
+  
+  moveToInitPosition(el){
+    el.style.transform = `translate(0px,0px)`
+  }
+  checkElementPosition(el){
+    let x1=el.getBoundingClientRect().x;
+    let y1=el.getBoundingClientRect().y;
+    console.log(x1,y1)
   }
 
   showActiveButtons() {
