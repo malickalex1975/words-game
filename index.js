@@ -4,8 +4,11 @@ const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 let currentLevel, maxLevel, lastLevel;
 let downX, downY;
+let rightMovingElement, leftMovingElement;
 let activeLeftButton = undefined;
 let activeRightButton = undefined;
+let lastActiveLeftButton = undefined;
+let lastActiveRightButton = undefined;
 let emptyLeftButtons = [];
 let emptyRightButtons = [];
 let wordsInColumn = 6;
@@ -244,6 +247,8 @@ class WordGame {
   }
   stopGame() {
     gamepad.removeEventListener("pointerdown", this.listenHandler);
+    document.querySelectorAll('.button').forEach(el=>
+    el.removeEventListener("pointermove", game.moveHandler));
     lastLevel = currentLevel;
     this.hideClock();
     this.showScore(false);
@@ -455,18 +460,20 @@ class WordGame {
       if (activeRightButton === index) {
         activeRightButton = undefined;
         el.removeEventListener("pointermove", game.moveHandler);
-       
-        game.moveToInitPosition(el)
+        game.moveToInitPosition(el);
       } else {
         activeRightButton = index;
         downX = e.clientX;
         downY = e.clientY;
         el.addEventListener("pointermove", game.moveHandler);
-        
+
         el.addEventListener("pointerup", (e) => {
           el.removeEventListener("pointermove", game.moveHandler);
-          
-          game.moveToInitPosition(el);
+          if (game.getCrossElementFromLeft(el) !== null) {
+            game.proccessResult();
+          } else {
+            game.moveToInitPosition(el);
+          }
         });
       }
     } else if (el.className.includes("left-button")) {
@@ -476,6 +483,7 @@ class WordGame {
       } else {
         activeLeftButton = index;
       }
+      lastActiveLeftButton = activeLeftButton;
     }
     game.showActiveButtons();
 
@@ -486,19 +494,47 @@ class WordGame {
 
   moveHandler(e) {
     let el = e.target;
+    if (el?.className.includes("right-button")) {
+      rightMovingElement = el;
+      leftMovingElement = undefined;
+    } else if (el?.className.includes("left-button")) {
+      leftMovingElement = el;
+      rightMovingElement = undefined;
+    }
     let x = e.clientX;
     let y = e.clientY;
     el.style.transform = `translate(${x - downX}px,${y - downY}px)`;
-    game.checkElementPosition(el)
+    let crossLeftElement = game.getCrossElementFromLeft(el);
+    if (crossLeftElement !== null) {
+      let index = Number(crossLeftElement.className.at(-1));
+
+      activeLeftButton = index;
+    }
+    game.showActiveButtons();
   }
-  
-  moveToInitPosition(el){
-    el.style.transform = `translate(0px,0px)`
+
+  moveToInitPosition(el) {
+    el.style.transform = `translate(0px,0px)`;
   }
-  checkElementPosition(el){
-    let x1=el.getBoundingClientRect().x;
-    let y1=el.getBoundingClientRect().y;
-    console.log(x1,y1)
+  getCrossElementFromLeft(el) {
+    let crossElements = [];
+    let left = el.getBoundingClientRect().left;
+    let top = el.getBoundingClientRect().top;
+    let right = el.getBoundingClientRect().right;
+    let bottom = el.getBoundingClientRect().bottom;
+    let vertexes = [
+      [left, top],
+      [left, bottom],
+      [right, top],
+      [right, bottom],
+    ];
+    crossElements = vertexes
+      .map((i) => document.elementFromPoint(i[0], i[1]))
+      .filter((el) => el.className.includes("left-button"));
+    if (crossElements.length === 1) {
+      return crossElements[0];
+    }
+    return null;
   }
 
   showActiveButtons() {
@@ -520,6 +556,7 @@ class WordGame {
   proccessResult() {
     let rightIndex = activeRightButton;
     let leftIndex = activeLeftButton;
+    console.log(activeLeftButton, activeRightButton);
     let buttonRight = gamepad.querySelector(`.right-button-${rightIndex}`);
     let buttonLeft = gamepad.querySelector(`.left-button-${leftIndex}`);
     let wordIndex;
@@ -546,6 +583,12 @@ class WordGame {
           buttonRight.style.opacity = 0;
           buttonLeft.style.visibility = "hidden";
           buttonRight.style.visibility = "hidden";
+          if (rightMovingElement) {
+            this.moveToInitPosition(rightMovingElement);
+          }
+          if (leftMovingElement) {
+            this.moveToInitPosition(leftMovingElement);
+          }
           if (emptyLeftButtons.length === 3) {
             this.addNewWords();
           }
@@ -555,8 +598,8 @@ class WordGame {
         vibrate("wrong");
         buttonLeft.classList.add("red");
         buttonRight.classList.add("red");
-        activeLeftButton = undefined;
-        activeRightButton = undefined;
+        //activeLeftButton = undefined;
+       // activeRightButton = undefined;
         currentLife--;
         this.setLife();
         if (currentLife === 0) {
@@ -565,6 +608,12 @@ class WordGame {
         setTimeout(() => {
           buttonLeft.classList.remove("red");
           buttonRight.classList.remove("red");
+          if (rightMovingElement) {
+            this.moveToInitPosition(rightMovingElement);
+          }
+          if (leftMovingElement) {
+            this.moveToInitPosition(leftMovingElement);
+          }
           this.showActiveButtons();
         }, 300);
       }
