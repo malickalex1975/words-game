@@ -2,6 +2,7 @@ const mainUrl = "https://learnlangapp1.herokuapp.com/";
 const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
+let isMoving = false;
 let currentLevel, maxLevel, lastLevel;
 let downX, downY;
 let rightMovingElement, leftMovingElement;
@@ -228,6 +229,8 @@ class WordGame {
     this.showScore(true);
     activeLeftButton = undefined;
     activeRightButton = undefined;
+    emptyLeftButtons = [];
+    emptyRightButtons = [];
     currentLife = maxLife;
     this.setLife();
     if (lastLevel !== currentLevel) {
@@ -247,8 +250,11 @@ class WordGame {
   }
   stopGame() {
     gamepad.removeEventListener("pointerdown", this.listenHandler);
-    document.querySelectorAll('.button').forEach(el=>
-    el.removeEventListener("pointermove", game.moveHandler));
+    document.querySelectorAll(".button").forEach((el) => {
+      el.removeEventListener("pointermove", game.moveHandler);
+      this.moveToInitPosition(el);
+      el.style.zIndex=1;
+    });
     lastLevel = currentLevel;
     this.hideClock();
     this.showScore(false);
@@ -413,12 +419,16 @@ class WordGame {
       let rusEl = document.querySelector(`.left-button-${i}`);
       let enEl = document.querySelector(`.right-button-${i}`);
       setTimeout(() => {
+        rusEl.style.transition = `${200*i}ms`;
+        enEl.style.transition = `${200*i}ms`;
         rusEl.style.opacity = 1;
         enEl.style.opacity = 1;
         rusEl.style.visibility = "visible";
         enEl.style.visibility = "visible";
         enEl.textContent = wordsArray[rightWords[`right${i}`]].word;
         rusEl.textContent = wordsArray[leftWords[`left${i}`]].wordTranslate;
+        setTimeout(()=>{rusEl.style.transition = '0ms';
+        enEl.style.transition = '0ms';},200*i)
       }, 200 * i);
     }
   }
@@ -467,14 +477,21 @@ class WordGame {
         downY = e.clientY;
         el.addEventListener("pointermove", game.moveHandler);
 
-        el.addEventListener("pointerup", (e) => {
-          el.removeEventListener("pointermove", game.moveHandler);
-          if (game.getCrossElementFromLeft(el) !== null) {
-            game.proccessResult();
-          } else {
-            game.moveToInitPosition(el);
-          }
-        });
+        el.addEventListener(
+          "pointerup",
+          (e) => {
+           el.style.zIndex='2';
+            el.removeEventListener("pointermove", game.moveHandler);
+            if (game.getCrossElement(el, "left") !== null) {
+              game.proccessResult();
+            } else {
+              game.moveToInitPosition(el);
+              activeLeftButton = undefined;
+              game.showActiveButtons();
+            }
+          },
+          { once: true }
+        );
       }
     } else if (el.className.includes("left-button")) {
       index = Number(el.className.at(-1));
@@ -483,16 +500,20 @@ class WordGame {
       } else {
         activeLeftButton = index;
       }
-      lastActiveLeftButton = activeLeftButton;
     }
     game.showActiveButtons();
 
-    if (activeRightButton !== undefined && activeLeftButton !== undefined) {
+    if (
+      activeRightButton !== undefined &&
+      activeLeftButton !== undefined 
+    ) {
+      
       game.proccessResult();
     }
   }
 
   moveHandler(e) {
+    isMoving = true;
     let el = e.target;
     if (el?.className.includes("right-button")) {
       rightMovingElement = el;
@@ -503,8 +524,9 @@ class WordGame {
     }
     let x = e.clientX;
     let y = e.clientY;
+    el.style.zIndex='10';
     el.style.transform = `translate(${x - downX}px,${y - downY}px)`;
-    let crossLeftElement = game.getCrossElementFromLeft(el);
+    let crossLeftElement = game.getCrossElement(el, "left");
     if (crossLeftElement !== null) {
       let index = Number(crossLeftElement.className.at(-1));
 
@@ -516,7 +538,8 @@ class WordGame {
   moveToInitPosition(el) {
     el.style.transform = `translate(0px,0px)`;
   }
-  getCrossElementFromLeft(el) {
+  getCrossElement(el, side) {
+    let name = side === "left" ? "left-button" : "right-button";
     let crossElements = [];
     let left = el.getBoundingClientRect().left;
     let top = el.getBoundingClientRect().top;
@@ -530,9 +553,14 @@ class WordGame {
     ];
     crossElements = vertexes
       .map((i) => document.elementFromPoint(i[0], i[1]))
-      .filter((el) => el.className.includes("left-button"));
+      .filter((el) => el?.className.includes(name));
     if (crossElements.length === 1) {
       return crossElements[0];
+    }
+    if (side === "left") {
+      activeLeftButton = undefined;
+    } else if (side === "right") {
+      activeRightButton = undefined;
     }
     return null;
   }
@@ -556,7 +584,6 @@ class WordGame {
   proccessResult() {
     let rightIndex = activeRightButton;
     let leftIndex = activeLeftButton;
-    console.log(activeLeftButton, activeRightButton);
     let buttonRight = gamepad.querySelector(`.right-button-${rightIndex}`);
     let buttonLeft = gamepad.querySelector(`.left-button-${leftIndex}`);
     let wordIndex;
@@ -569,9 +596,6 @@ class WordGame {
         buttonRight.classList.add("green");
         emptyLeftButtons.push(activeLeftButton);
         emptyRightButtons.push(activeRightButton);
-        activeLeftButton = undefined;
-        activeRightButton = undefined;
-
         score++;
         this.setScore();
         setTimeout(() => {
@@ -583,6 +607,8 @@ class WordGame {
           buttonRight.style.opacity = 0;
           buttonLeft.style.visibility = "hidden";
           buttonRight.style.visibility = "hidden";
+          activeLeftButton = undefined;
+          activeRightButton = undefined;
           if (rightMovingElement) {
             this.moveToInitPosition(rightMovingElement);
           }
@@ -598,14 +624,14 @@ class WordGame {
         vibrate("wrong");
         buttonLeft.classList.add("red");
         buttonRight.classList.add("red");
-        //activeLeftButton = undefined;
-       // activeRightButton = undefined;
         currentLife--;
         this.setLife();
         if (currentLife === 0) {
           this.stopGame();
         }
         setTimeout(() => {
+          activeLeftButton = undefined;
+          activeRightButton = undefined;
           buttonLeft.classList.remove("red");
           buttonRight.classList.remove("red");
           if (rightMovingElement) {
@@ -633,7 +659,6 @@ class WordGame {
   }
 }
 const game = new WordGame();
-//mainContainer.addEventListener("click", game.hideInfo);
 info.addEventListener("click", game.hideInfo);
 
 function levelChooseHandler() {
