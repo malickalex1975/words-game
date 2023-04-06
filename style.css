@@ -1,6 +1,6 @@
 * {
   user-select: none;
-  
+  touch-action:none;
 }
 
 .main-container {
@@ -214,7 +214,7 @@
   justify-content: center;
   transform: translateY(200%);
   transition: 1000ms;
-  font-size: 24px;
+  font-size: 20px;
   color: #555;
   background-image: linear-gradient(#fff, #eee);
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);

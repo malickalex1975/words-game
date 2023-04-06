@@ -267,6 +267,7 @@ class WordGame {
     this.playWords();
     this.showActiveButtons();
     this.listenButtons();
+    document.style.touchAction = "none";
   }
   stopGame() {
     gamepad.removeEventListener("pointerdown", this.listenHandler);
@@ -311,7 +312,7 @@ class WordGame {
       let card = document.createElement("div");
       card.className = "mistake-card";
       let img = document.createElement("div");
-      img.style.backgroundImage =`url(${mainUrl + wordsArray[item]?.image})` ;
+      img.style.backgroundImage = `url(${mainUrl + wordsArray[item]?.image})`;
       img.className = "mistake-image";
       card.appendChild(img);
       let p = document.createElement("p");
@@ -320,6 +321,7 @@ class WordGame {
       mistakesContainer.appendChild(card);
     }
     this.showMistakesPad();
+    document.style.touchAction = "auto";
   }
 
   setLife() {
