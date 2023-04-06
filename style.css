@@ -201,6 +201,56 @@
   font-size: 20px;
   color:orange;
 }
+.mistakes-pad {
+  position: fixed;
+  left: 10vw;
+  top: 10vh;
+  width: 80vw;
+  height: 70vh;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(200%);
+  transition: 1000ms;
+  font-size: 24px;
+  color: #555;
+  background-image: linear-gradient(#fff, #eee);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+ 
+}
+.mistakes-container{
+  width:80vw;
+  min-width: 250px;
+  height:60vh;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap:10px;
+  overflow: auto;
+
+}
+.mistake-card{
+  background-image: linear-gradient(#eef, #dde);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+  width:250px;
+  height:250px;
+  display: flex;
+ flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.mistake-image{
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 3px solid #eee;
+  background-size: cover;
+  
+}
 .info {
   position: fixed;
   left: 20vw;

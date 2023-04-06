@@ -2,14 +2,13 @@ const mainUrl = "https://learnlangapp1.herokuapp.com/";
 const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
+let mistakes = [];
 let isMoving = false;
 let currentLevel, maxLevel, lastLevel;
 let downX, downY;
 let rightMovingElement, leftMovingElement;
 let activeLeftButton = undefined;
 let activeRightButton = undefined;
-let lastActiveLeftButton = undefined;
-let lastActiveRightButton = undefined;
 let emptyLeftButtons = [];
 let emptyRightButtons = [];
 let wordsInColumn = 6;
@@ -55,11 +54,23 @@ const clock = document.querySelector(".clock");
 const gamepad = document.querySelector(".gamepad-container");
 const scorePlace = document.querySelector(".score-place");
 const info = document.querySelector(".info");
+const mistakesPad = document.querySelector(".mistakes-pad");
+const mistakesContainer = document.querySelector(".mistakes-container");
 const life = document.querySelector(".life");
 const heart = document.querySelector(".heart");
 let wordsArray = [];
 const audio = new Audio();
-
+const vibrate = {
+  right: function () {
+    navigator.vibrate(50, 10, 50);
+  },
+  wrong: function () {
+    navigator.vibrate(100, 50, 100, 50, 100);
+  },
+  ordinary: function () {
+    navigator.vibrate(50);
+  },
+};
 class WordGame {
   constructor() {}
   getLevel() {
@@ -149,11 +160,17 @@ class WordGame {
     info.style.transform = "translateY(0%)";
     info.innerHTML = html;
     setTimeout(() => {
-      info.style.transform = "translateY(-200%)";
+      this.hideInfo();
     }, 4000);
   }
   hideInfo() {
     info.style.transform = "translateY(-200%)";
+  }
+  showMistakesPad() {
+    mistakesPad.style.transform = "translateY(0%)";
+  }
+  hideMistakesPad() {
+    mistakesPad.style.transform = "translateY(200%)";
   }
 
   showGamepad() {
@@ -203,7 +220,7 @@ class WordGame {
   handleButtonStart() {
     buttonStart.addEventListener("pointerdown", (e) => {
       e.preventDefault();
-      vibrate("ordinary");
+      vibrate.ordinary();
       this.startGame();
     });
   }
@@ -211,7 +228,7 @@ class WordGame {
     buttonStop.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      vibrate("ordinary");
+      vibrate.ordinary();
       this.stopGame();
     });
   }
@@ -224,6 +241,7 @@ class WordGame {
     }
   }
   resetBeforeStart() {
+    mistakes = [];
     score = 0;
     this.setScore();
     this.showScore(true);
@@ -236,12 +254,14 @@ class WordGame {
     if (lastLevel !== currentLevel) {
       wordsArray = [];
     }
+    document.querySelectorAll(".mistake-card").forEach((el) => el.remove());
   }
 
   startGame() {
     this.resetBeforeStart();
     this.hideButtonStart();
     this.hideInfo();
+    this.hideMistakesPad();
     this.hideLevelsContainer();
     this.loadWords();
     this.playWords();
@@ -262,7 +282,6 @@ class WordGame {
     this.clockStyleReset();
     this.hideGamePad();
     this.hideButtonStop();
-    this.showButtonStart();
     this.showLevelsContainer();
     let lastRecord = this.getLastRecord();
     let addition = "";
@@ -276,6 +295,31 @@ class WordGame {
     if (score > lastRecord) {
       this.setRecord(score);
     }
+    if (mistakes.length > 0) {
+      setTimeout(() => {
+        this.processMistakes();
+      }, 4000);
+      setTimeout(() => {
+        this.showButtonStart();
+      }, 5000);
+    } else {
+      this.showButtonStart();
+    }
+  }
+  processMistakes() {
+    for (let item of mistakes) {
+      let card = document.createElement("div");
+      card.className = "mistake-card";
+      let img = document.createElement("div");
+      img.style.backgroundImage =`url(${mainUrl + wordsArray[item]?.image})` ;
+      img.className = "mistake-image";
+      card.appendChild(img);
+      let p = document.createElement("p");
+      p.textContent = `${wordsArray[item]?.word} - ${wordsArray[item]?.wordTranslate}`;
+      card.appendChild(p);
+      mistakesContainer.appendChild(card);
+    }
+    this.showMistakesPad();
   }
 
   setLife() {
@@ -620,7 +664,7 @@ class WordGame {
     if (buttonLeft.textContent !== "" && buttonRight.textContent !== "") {
       wordIndex = rightWords[`right${rightIndex}`];
       if (rightWords[`right${rightIndex}`] === leftWords[`left${leftIndex}`]) {
-        vibrate("right");
+        vibrate.right();
         wordsIndexes = [...wordsIndexes.filter((i) => i !== wordIndex)];
         buttonLeft.classList.add("green");
         buttonRight.classList.add("green");
@@ -651,7 +695,14 @@ class WordGame {
           this.showActiveButtons();
         }, 300);
       } else {
-        vibrate("wrong");
+        vibrate.wrong();
+        let mistake1 = rightWords[`right${rightIndex}`];
+        let mistake2 = leftWords[`left${leftIndex}`];
+        [mistake1, mistake2].forEach((item) => {
+          if (!mistakes.includes(item)) {
+            mistakes.push(item);
+          }
+        });
         buttonLeft.classList.add("red");
         buttonRight.classList.add("red");
         currentLife--;
@@ -678,7 +729,7 @@ class WordGame {
       document.querySelectorAll(".button").forEach((el) => {
         el.style.zIndex = 1;
       });
-    },300);
+    }, 300);
   }
   addNewWords() {
     this.setThreeWordsIndexes();
@@ -702,7 +753,7 @@ function levelChooseHandler() {
     if (el.className.includes("level-element")) {
       let level = game.getElementLevel(el);
       if (level <= maxLevel) {
-        vibrate("ordinary");
+        vibrate.ordinary();
         game.hideInfo();
         game.chooseLevel(level);
       }
@@ -725,15 +776,7 @@ function init() {
 function wakeLock() {
   navigator.wakeLock.request("screen").catch(console.log);
 }
-function vibrate(type) {
-  let pattern =
-    type === "right"
-      ? [50, 10, 50]
-      : type === "wrong"
-      ? [100, 50, 100, 50, 100]
-      : [50];
-  navigator.vibrate(pattern);
-}
+
 function playAudio(src) {
   // if(!audio.paused){audio.pause();}
   audio.src = src;
