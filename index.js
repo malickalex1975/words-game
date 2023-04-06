@@ -255,6 +255,8 @@ class WordGame {
       wordsArray = [];
     }
     document.querySelectorAll(".mistake-card").forEach((el) => el.remove());
+    document.body.style.touchAction='none'
+     
   }
 
   startGame() {
@@ -267,7 +269,6 @@ class WordGame {
     this.playWords();
     this.showActiveButtons();
     this.listenButtons();
-    document.style.touchAction = "none";
   }
   stopGame() {
     gamepad.removeEventListener("pointerdown", this.listenHandler);
@@ -321,7 +322,7 @@ class WordGame {
       mistakesContainer.appendChild(card);
     }
     this.showMistakesPad();
-    document.style.touchAction = "auto";
+    document.body.style.touchAction = "auto";
   }
 
   setLife() {
@@ -747,7 +748,10 @@ class WordGame {
   }
 }
 const game = new WordGame();
-info.addEventListener("click", game.hideInfo);
+info.addEventListener("click", () => {
+  game.hideInfo();
+  game.processMistakes();
+});
 
 function levelChooseHandler() {
   levelContainer.addEventListener("pointerdown", (e) => {
