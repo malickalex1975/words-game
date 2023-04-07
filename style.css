@@ -1,8 +1,10 @@
 * {
   user-select: none;
+  
+}
+body{
   touch-action:none;
 }
-
 .main-container {
   position: fixed;
   top: 0;
