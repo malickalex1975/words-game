@@ -62,10 +62,10 @@ let wordsArray = [];
 const audio = new Audio();
 const vibrate = {
   right: function () {
-    navigator.vibrate(50, 10, 50);
+    navigator.vibrate([50, 10, 50]);
   },
   wrong: function () {
-    navigator.vibrate(100, 50, 100, 50, 100);
+    navigator.vibrate([100, 50, 100, 50, 100]);
   },
   ordinary: function () {
     navigator.vibrate(50);
