@@ -4,7 +4,7 @@ const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 let mistakes = [];
 let isMoving = false;
-let currentLevel, maxLevel, lastLevel;
+let currentLevel, maxLevel, lastLevel, interval;
 let downX, downY;
 let rightMovingElement, leftMovingElement;
 let activeLeftButton = undefined;
@@ -255,8 +255,7 @@ class WordGame {
       wordsArray = [];
     }
     document.querySelectorAll(".mistake-card").forEach((el) => el.remove());
-    document.body.style.touchAction='none'
-     
+    document.body.style.touchAction = "none";
   }
 
   startGame() {
@@ -271,6 +270,7 @@ class WordGame {
     this.listenButtons();
   }
   stopGame() {
+    clearInterval(interval);
     gamepad.removeEventListener("pointerdown", this.listenHandler);
     document.querySelectorAll(".button").forEach((el) => {
       el.removeEventListener("pointermove", game.moveHandlerRight);
@@ -316,6 +316,19 @@ class WordGame {
       img.style.backgroundImage = `url(${mainUrl + wordsArray[item]?.image})`;
       img.className = "mistake-image";
       card.appendChild(img);
+      let speaker = document.createElement("div");
+      speaker.className = "speaker";
+      speaker.addEventListener("pointerdown", () => {
+        let endpoint = wordsArray?.[item]?.audio;
+        if (endpoint) {
+          playAudio(mainUrl + endpoint);
+        }
+      });
+      card.appendChild(speaker);
+      let transcript = document.createElement("p");
+      transcript.textContent = `${wordsArray[item]?.transcription}`;
+      transcript.classList.add(['transcript'])
+      card.appendChild(transcript);
       let p = document.createElement("p");
       p.textContent = `${wordsArray[item]?.word} - ${wordsArray[item]?.wordTranslate}`;
       card.appendChild(p);
@@ -363,7 +376,7 @@ class WordGame {
   operateClock() {
     timeStart = Date.now();
     this.operateEverySecond();
-    let interval = setInterval(() => {
+    interval = setInterval(() => {
       this.operateEverySecond();
       if (timeRemained <= 0) {
         clearInterval(interval);
