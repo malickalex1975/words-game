@@ -704,12 +704,16 @@ class WordGame {
           }
           if (leftMovingElement) {
             this.moveToInitPosition(leftMovingElement);
+            let endpoint = wordsArray?.[rightWords[`right${rightIndex}`]]?.audio;
+        if (endpoint) {
+          playAudio(mainUrl + endpoint);
+        }
           }
           if (emptyLeftButtons.length === 3) {
             this.addNewWords();
           }
           this.showActiveButtons();
-        }, 300);
+        }, 100);
       } else {
         vibrate.wrong();
         let mistake1 = rightWords[`right${rightIndex}`];
@@ -738,7 +742,7 @@ class WordGame {
             this.moveToInitPosition(leftMovingElement);
           }
           this.showActiveButtons();
-        }, 300);
+        }, 100);
       }
     }
     setTimeout(() => {

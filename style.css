@@ -222,6 +222,7 @@ body{
   color: #555;
   background-image: linear-gradient(#fff, #eee);
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
  
 }
 .mistakes-container{
@@ -234,6 +235,7 @@ body{
   justify-content: center;
   gap:20px;
   overflow: auto;
+  padding: 10px;
 
 }
 .mistake-card{
@@ -247,6 +249,7 @@ body{
   justify-content: space-around;
   gap:10px;
   text-align: center;
+  border-radius: 5px;
 }
 
 .mistake-image{
@@ -348,6 +351,7 @@ body{
   font-size: 30px;
   color:#ccc;
   visibility: hidden;
+  border-radius: 5px;
 }
 .speaker{
   width:25px;
