@@ -778,6 +778,7 @@ function levelChooseHandler() {
       if (level <= maxLevel) {
         vibrate.ordinary();
         game.hideInfo();
+        game.hideMistakesPad()
         game.chooseLevel(level);
       }
     }
