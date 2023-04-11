@@ -120,7 +120,6 @@ body{
   left: 3vw;
   width: 94vw;
   height: 72vh;
-  border: 2px dashed #fff;
   border-radius: 10px;
   opacity: 0;
   visibility: hidden;
@@ -128,6 +127,8 @@ body{
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background-image: linear-gradient(#ddffff, #eeffff,#ddffff);
+  
 }
 .right-column,
 .left-column {

@@ -178,7 +178,7 @@ class WordGame {
   }
 
   showGamepad() {
-    gamepad.style.display = "visible";
+    gamepad.style.visibility = "visible";
     gamepad.style.opacity = "1";
     wordButtons.forEach((wordButton) => {
       wordButton.style.visibility = "visible";
@@ -529,10 +529,15 @@ class WordGame {
   listenHandler(e) {
     let el = e.target;
     let index;
+    console.log(el.classList)
     if (
       !el?.className.includes("right-button") &&
       !el?.className.includes("left-button")
     ) {
+      console.log('down')
+      activeRightButton=undefined;
+      activeLeftButton=undefined;
+      game.showActiveButtons()
       return;
     }
     if (el?.className.includes("right-button")) {
