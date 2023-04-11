@@ -349,6 +349,7 @@ body{
   background-color: black;
   text-align: center;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: 30px;
@@ -371,4 +372,17 @@ body{
 }
 .transcript{
   color:#af3fcb;
+}
+.example-container{
+  position: fixed;
+  top: 14vh;
+  left: 3vw;
+  width: 94vw;
+  height: 72vh;
+  opacity: 0;
+  visibility: hidden;
+  transition: 100ms;
+ text-align: center;
+  overflow: auto;
+  font-size: 20px;
 }

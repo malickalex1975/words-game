@@ -44,6 +44,7 @@ let wordsIndexes = [];
 let threeWordsIndexes = [];
 const orientationWarning = document.querySelector(".warning-container");
 const mainContainer = document.querySelector(".main-container");
+const exampleContainer = document.querySelector(".example-container");
 const levelContainer = document.querySelector(".level-container");
 const buttonStart = document.querySelector(".button-start");
 const buttonStop = document.querySelector(".button-stop");
@@ -81,9 +82,13 @@ class WordGame {
       this.setLevel(initialLevel);
     }
   }
-  setLevel(level) {
+  async setLevel(level) {
     currentLevel = level;
     localStorage.setItem("currentLevel", level.toString());
+    let arr = await game.loadData();
+    wordsArray = [...arr];
+    game.hideExamples();
+    game.showExamples();
   }
   getMaxLevel() {
     let item = localStorage.getItem("maxLevel");
@@ -201,6 +206,28 @@ class WordGame {
     clockContainer.style.visibility = "hidden";
     clockContainer.style.opacity = "0";
   }
+  showExamples() {
+    exampleContainer.style.visibility = "visible";
+    exampleContainer.style.opacity = "1";
+    for (let i = 0; i < 600; i++) {
+      setTimeout(() => {
+        let p = document.createElement("span");
+        p.textContent = `${wordsArray[i].word} - ${wordsArray[i].wordTranslate}, `;
+        let r = this.getRandomNumber(0, 255);
+        let g = this.getRandomNumber(0, 255);
+        let b = this.getRandomNumber(0, 255);
+        p.style.color = `rgba(${r},${g},${b},1)`;
+        let size= this.getRandomNumber(20,32);
+        p.style.fontSize=size+'px';
+        exampleContainer.appendChild(p);
+      }, 300 * i);
+    }
+  }
+  hideExamples() {
+    exampleContainer.style.visibility = "hidden";
+    exampleContainer.style.opacity = "0";
+    exampleContainer.innerHTML = "";
+  }
   showButtonStart() {
     buttonStart.style.visibility = "visible";
   }
@@ -267,6 +294,7 @@ class WordGame {
     this.resetBeforeStart();
     this.hideButtonStart();
     this.hideInfo();
+    this.hideExamples();
     this.hideMistakesPad();
     this.hideLevelsContainer();
     this.loadWords();
@@ -276,6 +304,7 @@ class WordGame {
   }
   stopGame() {
     clearInterval(interval);
+
     gamepad.removeEventListener("pointerdown", this.listenHandler);
     document.querySelectorAll(".button").forEach((el) => {
       el.removeEventListener("pointermove", game.moveHandlerRight);
@@ -311,6 +340,9 @@ class WordGame {
       }, 5000);
     } else {
       this.showButtonStart();
+      setTimeout(() => {
+        this.showExamples();
+      }, 5000);
     }
   }
   processMistakes() {
@@ -347,13 +379,16 @@ class WordGame {
     life.textContent = currentLife;
     heart.style.opacity = `${1 * (currentLife / maxLife)}`;
   }
+  async loadData() {
+    let URL = url + `level-${currentLevel}.json`;
+    const response = await fetch(URL);
+    const item = await response.json();
+    return item.data;
+  }
   loadWords() {
     this.showLoading(true);
     if (lastLevel !== currentLevel) {
-      let URL = url + `level-${currentLevel}.json`;
-      fetch(URL)
-        .then((response) => response.json())
-        .then((item) => item.data)
+      this.loadData()
         .then((arr) => {
           wordsArray = [...arr];
           this.afterLoading();
@@ -499,7 +534,7 @@ class WordGame {
         enEl.style.visibility = "visible";
         enEl.textContent = wordsArray[rightWords[`right${i}`]].word;
         rusEl.textContent = wordsArray[leftWords[`left${i}`]].wordTranslate;
-      },i*100);
+      }, i * 100);
     }
   }
 
@@ -529,15 +564,14 @@ class WordGame {
   listenHandler(e) {
     let el = e.target;
     let index;
-    console.log(el.classList)
+    console.log(el.classList);
     if (
       !el?.className.includes("right-button") &&
       !el?.className.includes("left-button")
     ) {
-      console.log('down')
-      activeRightButton=undefined;
-      activeLeftButton=undefined;
-      game.showActiveButtons()
+      activeRightButton = undefined;
+      activeLeftButton = undefined;
+      game.showActiveButtons();
       return;
     }
     if (el?.className.includes("right-button")) {
@@ -690,7 +724,6 @@ class WordGame {
     }
   }
   proccessResult() {
-  
     let rightIndex = activeRightButton;
     let leftIndex = activeLeftButton;
     let buttonRight = gamepad.querySelector(`.right-button-${rightIndex}`);
@@ -708,9 +741,7 @@ class WordGame {
         score++;
         this.setScore();
         if (leftMovingElement) {
-         
-          let endpoint =
-            wordsArray?.[rightWords[`right${rightIndex}`]]?.audio;
+          let endpoint = wordsArray?.[rightWords[`right${rightIndex}`]]?.audio;
           if (endpoint) {
             playAudio(mainUrl + endpoint);
           }
@@ -731,7 +762,6 @@ class WordGame {
           }
           if (leftMovingElement) {
             this.moveToInitPosition(leftMovingElement);
-            
           }
           if (emptyLeftButtons.length === 3) {
             this.addNewWords();
@@ -791,7 +821,9 @@ class WordGame {
 const game = new WordGame();
 info.addEventListener("click", () => {
   game.hideInfo();
-  game.processMistakes();
+  if (mistakes.length > 0) {
+    game.processMistakes();
+  }
 });
 
 function levelChooseHandler() {
@@ -809,7 +841,7 @@ function levelChooseHandler() {
   });
 }
 
-function init() {
+async function init() {
   wakeLock();
   window.addEventListener("orientationchange", checkOrientation);
   game.getLevel();
@@ -820,6 +852,10 @@ function init() {
   game.showButtonStart();
   game.handleButtonStart();
   game.handleButtonStop();
+  let arr = await game.loadData();
+  wordsArray = [...arr];
+  game.hideExamples();
+  game.showExamples();
 }
 function wakeLock() {
   navigator.wakeLock.request("screen").catch(console.log);
