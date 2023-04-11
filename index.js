@@ -3,6 +3,7 @@ const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 let mistakes = [];
+let allUsedWords = [];
 let isMoving = false;
 let currentLevel, maxLevel, lastLevel, interval;
 let downX, downY;
@@ -128,14 +129,17 @@ class WordGame {
     el.style.backgroundImage = "url(./assets/images/lock.png)";
     el.style.color = "#999";
     el.style.cursor = "auto";
+    el.style.opacity = 0.3;
   }
   showCurrentLevel(el) {
     el.style.backgroundImage = "radial-gradient(#0f0, #0a0)";
     el.style.color = "white";
+    el.style.opacity = 1;
   }
   showInactiveLevel(el) {
     el.style.backgroundImage = "radial-gradient(#eee, #aaa)";
     el.style.color = "#999";
+    el.style.opacity = 1;
   }
   getLastRecord() {
     let value = localStorage.getItem(`level-${currentLevel}`);
@@ -242,6 +246,7 @@ class WordGame {
   }
   resetBeforeStart() {
     mistakes = [];
+    allUsedWords = [];
     score = 0;
     this.setScore();
     this.showScore(true);
@@ -327,7 +332,7 @@ class WordGame {
       card.appendChild(speaker);
       let transcript = document.createElement("p");
       transcript.textContent = `${wordsArray[item]?.transcription}`;
-      transcript.classList.add(['transcript'])
+      transcript.classList.add(["transcript"]);
       card.appendChild(transcript);
       let p = document.createElement("p");
       p.textContent = `${wordsArray[item]?.word} - ${wordsArray[item]?.wordTranslate}`;
@@ -433,17 +438,25 @@ class WordGame {
         wordsIndexes.push(num);
       }
     }
+    allUsedWords = [...wordsIndexes];
   }
   setThreeWordsIndexes() {
     threeWordsIndexes = [];
     while (threeWordsIndexes.length < 3) {
       let num = this.getRandomNumber(0, 599);
-      if (!wordsIndexes.includes(num) && !threeWordsIndexes.includes(num)) {
+      if (
+        !wordsIndexes.includes(num) &&
+        !threeWordsIndexes.includes(num) &&
+        !allUsedWords.includes(num)
+      ) {
         threeWordsIndexes.push(num);
+        allUsedWords.push(num);
       }
     }
     wordsIndexes = [...wordsIndexes, ...threeWordsIndexes];
-    console.log(wordsIndexes);
+    if (allUsedWords.length >= 600) {
+      allUsedWords = [];
+    }
   }
   defineLeftWords() {
     let arr = [...wordsIndexes];
@@ -486,7 +499,7 @@ class WordGame {
         enEl.style.visibility = "visible";
         enEl.textContent = wordsArray[rightWords[`right${i}`]].word;
         rusEl.textContent = wordsArray[leftWords[`left${i}`]].wordTranslate;
-      });
+      },i*100);
     }
   }
 
@@ -672,6 +685,7 @@ class WordGame {
     }
   }
   proccessResult() {
+  
     let rightIndex = activeRightButton;
     let leftIndex = activeLeftButton;
     let buttonRight = gamepad.querySelector(`.right-button-${rightIndex}`);
@@ -688,6 +702,14 @@ class WordGame {
         emptyRightButtons.push(activeRightButton);
         score++;
         this.setScore();
+        if (leftMovingElement) {
+         
+          let endpoint =
+            wordsArray?.[rightWords[`right${rightIndex}`]]?.audio;
+          if (endpoint) {
+            playAudio(mainUrl + endpoint);
+          }
+        }
         setTimeout(() => {
           buttonLeft.classList.remove("green");
           buttonRight.classList.remove("green");
@@ -704,10 +726,7 @@ class WordGame {
           }
           if (leftMovingElement) {
             this.moveToInitPosition(leftMovingElement);
-            let endpoint = wordsArray?.[rightWords[`right${rightIndex}`]]?.audio;
-        if (endpoint) {
-          playAudio(mainUrl + endpoint);
-        }
+            
           }
           if (emptyLeftButtons.length === 3) {
             this.addNewWords();
@@ -778,7 +797,7 @@ function levelChooseHandler() {
       if (level <= maxLevel) {
         vibrate.ordinary();
         game.hideInfo();
-        game.hideMistakesPad()
+        game.hideMistakesPad();
         game.chooseLevel(level);
       }
     }
