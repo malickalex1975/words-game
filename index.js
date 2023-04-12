@@ -218,12 +218,13 @@ class WordGame {
       let timeout = setTimeout(() => {
         let p = document.createElement("span");
         p.textContent = `${wordsArray[i].word} - ${wordsArray[i].wordTranslate}, `;
-        let r = this.getRandomNumber(0, 255);
-        let g = this.getRandomNumber(0, 255);
-        let b = this.getRandomNumber(0, 255);
+        let r = this.getRandomNumber(0, 220);
+        let g = this.getRandomNumber(0, 220);
+        let b = this.getRandomNumber(0, 220);
         p.style.color = `rgba(${r},${g},${b},1)`;
         let size = this.getRandomNumber(20, 32);
         p.style.fontSize = size + "px";
+        p.className = `example-${i}`;
         exampleContainer.appendChild(p);
         let childBottom = p.getBoundingClientRect().bottom;
         if (childBottom - containerBottom > 200) {
@@ -286,7 +287,7 @@ class WordGame {
     }
   }
   resetBeforeStart() {
-    clearTimeout(timeoutForStart)
+    clearTimeout(timeoutForStart);
     mistakes = [];
     allUsedWords = [];
     score = 0;
@@ -355,7 +356,7 @@ class WordGame {
       }, 5000);
     } else {
       this.showButtonStart();
-      timeoutForStart= setTimeout(() => {
+      timeoutForStart = setTimeout(() => {
         this.hideExamples();
         this.showExamples();
       }, 5000);
@@ -443,8 +444,10 @@ class WordGame {
   operateEverySecond() {
     timeCurrent = Date.now();
     timeRemained = timeAll - (timeCurrent - timeStart);
-   
-    if(timeRemained<15000){vibrate.timeIsOver()}
+
+    if (timeRemained < 15000) {
+      vibrate.timeIsOver();
+    }
     if (timeRemained <= 1000) {
       playAudio(failedSound);
     }
@@ -874,6 +877,7 @@ async function init() {
   wordsArray = [...arr];
   game.hideExamples();
   game.showExamples();
+  exampleContainer.addEventListener("pointerdown", listenExamples);
 }
 function wakeLock() {
   navigator.wakeLock.request("screen").catch(console.log);
@@ -891,6 +895,22 @@ function checkOrientation() {
   }
   if (orientation.includes("landscape")) {
     orientationWarning.style.visibility = "visible";
+  }
+}
+
+function listenExamples(e) {
+  let el = e.target;
+  let index;
+  if (el.className.includes("example")) {
+    index = +el.className.slice(8);
+    el.style.color = "black";
+    el.style.transition = "300ms";
+    setTimeout(()=>el.style.opacity=0,1000)
+    el.style.transform = "scale(1.1)";
+    let endpoint = wordsArray?.[index]?.audio;
+    if (endpoint) {
+      playAudio(mainUrl + endpoint);
+    }
   }
 }
 
