@@ -72,6 +72,9 @@ const vibrate = {
   ordinary: function () {
     navigator.vibrate(50);
   },
+  timeIsOver: function () {
+    navigator.vibrate(200);
+  },
 };
 class WordGame {
   constructor() {}
@@ -440,6 +443,8 @@ class WordGame {
   operateEverySecond() {
     timeCurrent = Date.now();
     timeRemained = timeAll - (timeCurrent - timeStart);
+   
+    if(timeRemained<15000){vibrate.timeIsOver()}
     if (timeRemained <= 1000) {
       playAudio(failedSound);
     }
