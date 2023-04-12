@@ -5,7 +5,7 @@ const successSound = "./assets/mp3/success.mp3";
 let mistakes = [];
 let allUsedWords = [];
 let isMoving = false;
-let currentLevel, maxLevel, lastLevel, interval;
+let currentLevel, maxLevel, lastLevel, interval, timeouts, timeoutForStart;
 let downX, downY;
 let rightMovingElement, leftMovingElement;
 let activeLeftButton = undefined;
@@ -209,21 +209,32 @@ class WordGame {
   showExamples() {
     exampleContainer.style.visibility = "visible";
     exampleContainer.style.opacity = "1";
+    let containerBottom = exampleContainer.getBoundingClientRect().bottom;
+    timeouts = [];
     for (let i = 0; i < 600; i++) {
-      setTimeout(() => {
+      let timeout = setTimeout(() => {
         let p = document.createElement("span");
         p.textContent = `${wordsArray[i].word} - ${wordsArray[i].wordTranslate}, `;
         let r = this.getRandomNumber(0, 255);
         let g = this.getRandomNumber(0, 255);
         let b = this.getRandomNumber(0, 255);
         p.style.color = `rgba(${r},${g},${b},1)`;
-        let size= this.getRandomNumber(20,32);
-        p.style.fontSize=size+'px';
+        let size = this.getRandomNumber(20, 32);
+        p.style.fontSize = size + "px";
         exampleContainer.appendChild(p);
+        let childBottom = p.getBoundingClientRect().bottom;
+        if (childBottom - containerBottom > 200) {
+          exampleContainer.scrollTo(0, exampleContainer.scrollHeight);
+        }
+        console.log(i, containerBottom, childBottom);
       }, 300 * i);
+      timeouts.push(timeout);
     }
   }
   hideExamples() {
+    if (timeouts) {
+      timeouts.forEach((timeout) => clearTimeout(timeout));
+    }
     exampleContainer.style.visibility = "hidden";
     exampleContainer.style.opacity = "0";
     exampleContainer.innerHTML = "";
@@ -272,6 +283,7 @@ class WordGame {
     }
   }
   resetBeforeStart() {
+    clearTimeout(timeoutForStart)
     mistakes = [];
     allUsedWords = [];
     score = 0;
@@ -340,7 +352,8 @@ class WordGame {
       }, 5000);
     } else {
       this.showButtonStart();
-      setTimeout(() => {
+      timeoutForStart= setTimeout(() => {
+        this.hideExamples();
         this.showExamples();
       }, 5000);
     }
@@ -534,7 +547,7 @@ class WordGame {
         enEl.style.visibility = "visible";
         enEl.textContent = wordsArray[rightWords[`right${i}`]].word;
         rusEl.textContent = wordsArray[leftWords[`left${i}`]].wordTranslate;
-      }, i * 100);
+      }, i * 200);
     }
   }
 
