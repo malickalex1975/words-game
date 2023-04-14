@@ -461,7 +461,7 @@ class WordGame {
     this.clockStyle(timeRemained);
   }
   clockStyle(time) {
-    clockStrip.style.width = `${(60 / timeAll) * time}vw`;
+    clockStrip.style.width = `${(50 / timeAll) * time}vw`;
 
     clockStrip.style.backgroundImage = `linear-gradient(rgba(${
       (255 / timeAll) * (timeAll - time / 6)
@@ -474,7 +474,7 @@ class WordGame {
     setTimeout(() => {
       clockStrip.style.backgroundImage =
         "linear-gradient(rgba(0,255,0,1), rgba(0,200,0,1))";
-      clockStrip.style.width = `60vw`;
+      clockStrip.style.width = `50vw`;
     }, 200);
   }
   convertTime(time) {
