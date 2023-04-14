@@ -73,7 +73,7 @@ const vibrate = {
     navigator.vibrate(50);
   },
   timeIsOver: function () {
-    navigator.vibrate(200);
+    navigator.vibrate([100,20,100]);
   },
 };
 class WordGame {
@@ -119,7 +119,7 @@ class WordGame {
         game.showCurrentLevel(el);
       }
       if (elementLevel !== currentLevel && elementLevel <= maxLevel) {
-        game.showInactiveLevel(el);
+        game.showInactiveLevel(el,elementLevel);
       }
     }
   }
@@ -143,11 +143,17 @@ class WordGame {
     el.style.backgroundImage = "radial-gradient(#0f0, #0a0)";
     el.style.color = "white";
     el.style.opacity = 1;
+    el.style.animation='';
   }
-  showInactiveLevel(el) {
+  showInactiveLevel(el, elementLevel) {
     el.style.backgroundImage = "radial-gradient(#eee, #aaa)";
     el.style.color = "#999";
     el.style.opacity = 1;
+    if(elementLevel===maxLevel){
+      el.style.animation='button-flow infinite';
+      el.style.animationDuration='2.2s';
+      el.style.animationDelay='.5s'
+    }else{ el.style.animation='';}
   }
   getLastRecord() {
     let value = localStorage.getItem(`level-${currentLevel}`);

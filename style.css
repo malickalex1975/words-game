@@ -20,15 +20,34 @@ body{
   position: fixed;
   top: 2vh;
   left: 5vw;
-  width: 90vw;
+  width: 80vw;
   height: 50px;
-  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: space-around;
   visibility: hidden;
   opacity: 0;
   transition: 1s;
+}
+.menu-button{
+  position: fixed;
+  top: 2vh;
+  left: 87vw;
+  right:2vw;
+  width:40px;
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap:5px;
+  transition: 1s;
+  cursor: pointer;
+}
+.menu-line{
+  width:25px;
+  height: 1px;
+  border: 2px solid #777;
 }
 .score-place {
   position: fixed;
@@ -51,10 +70,10 @@ body{
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 45px;
-  width: 45px;
+  height: 40px;
+  width: 40px;
   border-radius: 50%;
-  border: 3px solid #eee;
+  border: 2px solid #eee;
   background-image: radial-gradient(#eee, #aaa);
   background-size: cover;
   background-position-y: -5px;
@@ -63,12 +82,24 @@ body{
   cursor: pointer;
   transition: 200ms;
 }
+@keyframes button-flow {
+  0%{transform: translateY(0px);}
+  50%{transform: translateY(-10px);}
+  100%{transform: translateY(0px);}
+  
+  
+  
+}
 .button-start {
+  animation: button-flow infinite;
+  animation-duration: 2s;
+  animation-timing-function:cubic-bezier(0.68, -0.55, 0.265, 1.55);
   position: fixed;
   display: flex;
   align-items: center;
   justify-content: center;
-  top: 87vh;
+  top: 86vh;
+  z-index: 10;
   margin-bottom: 5px;
   left: 40vw;
   width: 20vw;
@@ -89,7 +120,8 @@ body{
   display: flex;
   align-items: center;
   justify-content: center;
-  top:87vh;
+  top:86vh;
+  z-index: 10;
   margin-bottom: 5px;
   left: 40vw;
   width: 20vw;
@@ -119,7 +151,7 @@ body{
   top: 14vh;
   left: 3vw;
   width: 94vw;
-  height: 72vh;
+  height: 70vh;
   border-radius: 10px;
   opacity: 0;
   visibility: hidden;
@@ -376,10 +408,11 @@ body{
 }
 .example-container{
   position: fixed;
+  z-index: 2;
   top: 14vh;
   left: 3vw;
   width: 94vw;
-  height: 72vh;
+  height: 70vh;
   opacity: 0;
   visibility: hidden;
   transition: 100ms;
@@ -387,4 +420,5 @@ body{
   overflow: auto;
   font-size: 20px;
   scroll-behavior: smooth;
+  padding: 0px 10px;
 }
