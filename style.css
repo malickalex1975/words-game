@@ -314,6 +314,7 @@ body{
   color: #555;
   background-image: linear-gradient(#fff, #eee);
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
 }
 .info p {
   font-size: 24px;
@@ -337,7 +338,7 @@ body{
 }
 @keyframes heart-animation {
   from {
-    transform: scale(1.1);
+    transform: scale(1.2);
   }
   to {
     transform: scale(0.95);
@@ -389,6 +390,7 @@ body{
   color:#ccc;
   visibility: hidden;
   border-radius: 5px;
+  z-index: 200;
 }
 .speaker{
   width:25px;
@@ -421,4 +423,17 @@ body{
   font-size: 20px;
   scroll-behavior: smooth;
   padding: 0px 10px;
+}
+.menu-panel{
+  position: fixed;
+  top:calc(2vh + 45px);
+  right:0px;
+  width:90vw;
+  max-width: 300px;
+  height:calc(96vh - 90px);
+  z-index:100;
+  background-image: linear-gradient(#fff,#eee);
+  border-radius: 5px;
+  transition: 500ms;
+  transform: translateX(300px);
 }

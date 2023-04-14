@@ -42,6 +42,7 @@ let score = 0;
 let currentLife = maxLife;
 let wordsIndexes = [];
 let threeWordsIndexes = [];
+let isMenu = false;
 const orientationWarning = document.querySelector(".warning-container");
 const mainContainer = document.querySelector(".main-container");
 const exampleContainer = document.querySelector(".example-container");
@@ -60,6 +61,8 @@ const mistakesPad = document.querySelector(".mistakes-pad");
 const mistakesContainer = document.querySelector(".mistakes-container");
 const life = document.querySelector(".life");
 const heart = document.querySelector(".heart");
+const menuButton = document.querySelector(".menu-button");
+const menuPanel = document.querySelector(".menu-panel");
 let wordsArray = [];
 const audio = new Audio();
 const vibrate = {
@@ -73,7 +76,7 @@ const vibrate = {
     navigator.vibrate(50);
   },
   timeIsOver: function () {
-    navigator.vibrate([100,20,100]);
+    navigator.vibrate([100, 20, 100]);
   },
 };
 class WordGame {
@@ -119,7 +122,7 @@ class WordGame {
         game.showCurrentLevel(el);
       }
       if (elementLevel !== currentLevel && elementLevel <= maxLevel) {
-        game.showInactiveLevel(el,elementLevel);
+        game.showInactiveLevel(el, elementLevel);
       }
     }
   }
@@ -143,17 +146,19 @@ class WordGame {
     el.style.backgroundImage = "radial-gradient(#0f0, #0a0)";
     el.style.color = "white";
     el.style.opacity = 1;
-    el.style.animation='';
+    el.style.animation = "";
   }
   showInactiveLevel(el, elementLevel) {
     el.style.backgroundImage = "radial-gradient(#eee, #aaa)";
     el.style.color = "#999";
     el.style.opacity = 1;
-    if(elementLevel===maxLevel){
-      el.style.animation='button-flow infinite';
-      el.style.animationDuration='2.2s';
-      el.style.animationDelay='.5s'
-    }else{ el.style.animation='';}
+    if (elementLevel === maxLevel) {
+      el.style.animation = "button-flow infinite";
+      el.style.animationDuration = "2.2s";
+      el.style.animationDelay = ".5s";
+    } else {
+      el.style.animation = "";
+    }
   }
   getLastRecord() {
     let value = localStorage.getItem(`level-${currentLevel}`);
@@ -189,6 +194,13 @@ class WordGame {
   }
   hideMistakesPad() {
     mistakesPad.style.transform = "translateY(200%)";
+  }
+  showMenu() {
+    menuPanel.style.transform = "translateX(0px)";
+  }
+  hideMenu() {
+    menuPanel.style.transform = "translateX(300px)";
+    isMenu=false;
   }
 
   showGamepad() {
@@ -884,6 +896,9 @@ async function init() {
   game.hideExamples();
   game.showExamples();
   exampleContainer.addEventListener("pointerdown", listenExamples);
+  menuButton.addEventListener('pointerdown', handleMenu)
+  menuPanel.addEventListener('pointerdown',()=> game.hideMenu())
+  mainContainer.addEventListener('pointerdown',()=> game.hideMenu())
 }
 function wakeLock() {
   navigator.wakeLock.request("screen").catch(console.log);
@@ -911,12 +926,20 @@ function listenExamples(e) {
     index = +el.className.slice(8);
     el.style.color = "black";
     el.style.transition = "300ms";
-    setTimeout(()=>el.style.opacity=0,1000)
+    setTimeout(() => (el.style.opacity = 0), 1000);
     el.style.transform = "scale(1.1)";
     let endpoint = wordsArray?.[index]?.audio;
     if (endpoint) {
       playAudio(mainUrl + endpoint);
     }
+  }
+}
+function handleMenu() {
+  isMenu = !isMenu;
+  if (isMenu) {
+    game.showMenu();
+  } else {
+    game.hideMenu();
   }
 }
 
