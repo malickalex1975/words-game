@@ -2,10 +2,9 @@
   user-select: none;
   padding: 0;
   margin: 0;
-  
 }
-body{
-  touch-action:none;
+body {
+  touch-action: none;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 .main-container {
@@ -29,23 +28,25 @@ body{
   opacity: 0;
   transition: 1s;
 }
-.menu-button{
+.menu-button {
   position: fixed;
   top: 2vh;
   left: 87vw;
-  right:2vw;
-  width:40px;
+  right: 2vw;
+  width: 40px;
   height: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap:5px;
+  gap: 5px;
   transition: 1s;
   cursor: pointer;
+  z-index: 200;
 }
-.menu-line{
-  width:25px;
+.menu-line {
+  transition: 500ms;
+  width: 25px;
   height: 1px;
   border: 2px solid #777;
 }
@@ -83,17 +84,20 @@ body{
   transition: 200ms;
 }
 @keyframes button-flow {
-  0%{transform: translateY(0px);}
-  50%{transform: translateY(-10px);}
-  100%{transform: translateY(0px);}
-  
-  
-  
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 .button-start {
   animation: button-flow infinite;
   animation-duration: 2s;
-  animation-timing-function:cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   position: fixed;
   display: flex;
   align-items: center;
@@ -120,7 +124,7 @@ body{
   display: flex;
   align-items: center;
   justify-content: center;
-  top:86vh;
+  top: 86vh;
   z-index: 10;
   margin-bottom: 5px;
   left: 40vw;
@@ -146,21 +150,68 @@ body{
   font-size: 30px;
   color: green;
 }
+.pronouncing-container {
+  position: fixed;
+  top: 14vh;
+  left: 3vw;
+  width: 94vw;
+  height: 70vh;
+  opacity: 0;
+  visibility: hidden;
+  transition: 1s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  background-image: linear-gradient(#ddffff, #eeffff, #ddffff);
+}
+.toggle-container{
+  display:flex;
+  align-items: center;
+  justify-content: space-around;
+  gap:10px;
+}
+.toggle{
+  width:40px;
+  height:15px;
+  border-radius: 7.5px;
+  background-image: radial-gradient(#0f0, #0a0);
+  cursor:pointer;
+}
+.toggle-element{
+  position: relative;
+  left:0px;
+  top:-5px;
+  width:25px;
+  height:25px;
+  border-radius: 50%;
+  background-image: radial-gradient(#aaa, #999);
+  cursor:pointer;
+  transition: 500ms;
+
+}
+.option-1, .option-2{
+  width:60px;
+  height: 20px;
+  font-size: 20px;
+  color:#000066;
+  text-align: center;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+
+}
 .gamepad-container {
   position: fixed;
   top: 14vh;
   left: 3vw;
   width: 94vw;
   height: 70vh;
-  border-radius: 10px;
   opacity: 0;
   visibility: hidden;
   transition: 1s;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-image: linear-gradient(#ddffff, #eeffff,#ddffff);
-  
+  background-image: linear-gradient(#ddffff, #eeffff, #ddffff);
 }
 .right-column,
 .left-column {
@@ -239,7 +290,7 @@ body{
   width: 13vw;
   height: 20px;
   font-size: 20px;
-  color:orange;
+  color: orange;
 }
 .mistakes-pad {
   position: fixed;
@@ -259,42 +310,39 @@ body{
   background-image: linear-gradient(#fff, #eee);
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
   border-radius: 5px;
- 
 }
-.mistakes-container{
-  width:80vw;
+.mistakes-container {
+  width: 80vw;
   min-width: 250px;
-  height:60vh;
+  height: 60vh;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap:20px;
+  gap: 20px;
   overflow: auto;
   padding: 10px;
-
 }
-.mistake-card{
+.mistake-card {
   background-image: linear-gradient(#eef, #dde);
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-  width:250px;
-  height:300px;
+  width: 250px;
+  height: 300px;
   display: flex;
- flex-direction: column;
+  flex-direction: column;
   align-items: center;
   justify-content: space-around;
-  gap:10px;
+  gap: 10px;
   text-align: center;
   border-radius: 5px;
 }
 
-.mistake-image{
+.mistake-image {
   width: 150px;
   height: 150px;
   border-radius: 10px;
   border: 3px solid #eee;
-  background-size:cover;
-  
+  background-size: cover;
 }
 .info {
   position: fixed;
@@ -374,7 +422,7 @@ body{
 .green {
   background-image: linear-gradient(#afa, #8f8) !important;
 }
-.warning-container{
+.warning-container {
   position: fixed;
   top: 0;
   left: 0;
@@ -387,28 +435,28 @@ body{
   align-items: center;
   justify-content: center;
   font-size: 30px;
-  color:#ccc;
+  color: #ccc;
   visibility: hidden;
   border-radius: 5px;
   z-index: 200;
 }
-.speaker{
-  width:25px;
-  height:25px;
+.speaker {
+  width: 25px;
+  height: 25px;
   background-image: url(./assets/images/speaker.png);
   background-size: cover;
   opacity: 0.7;
   transition: 500ms;
   cursor: pointer;
 }
-.speaker:hover{
-  opacity:1 ;
+.speaker:hover {
+  opacity: 1;
   transform: scale(1.1);
 }
-.transcript{
-  color:#af3fcb;
+.transcript {
+  color: #af3fcb;
 }
-.example-container{
+.example-container {
   position: fixed;
   z-index: 2;
   top: 14vh;
@@ -418,22 +466,63 @@ body{
   opacity: 0;
   visibility: hidden;
   transition: 100ms;
- text-align: center;
+  text-align: center;
   overflow: auto;
   font-size: 20px;
   scroll-behavior: smooth;
   padding: 0px 10px;
 }
-.menu-panel{
+.menu-panel {
   position: fixed;
-  top:calc(2vh + 45px);
-  right:0px;
-  width:90vw;
+  top: 0;
+  right: 0px;
+  width: 90vw;
   max-width: 300px;
-  height:calc(96vh - 90px);
-  z-index:100;
-  background-image: linear-gradient(#fff,#eee);
+  height: calc(96vh - 90px);
+  z-index: 100;
+  background-image: linear-gradient(#fff, #eee);
   border-radius: 5px;
   transition: 500ms;
   transform: translateX(300px);
+  transition-timing-function: ease-in-out;
+}
+.menu-container{
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap:1px;
+  top: 60px;
+  right: 0px;
+  width: 90vw;
+  max-width: 300px;
+  height: calc(96vh - 90px);
+}
+.menu-item:nth-child(odd){
+  background-color: #eee;
+}
+.menu-item{
+  padding: 10px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 20px;
+  color:#000066;
+  cursor: pointer;
+  border: 2px solid #ddd;
+  width: 90vw;
+  max-width: 300px;
+}
+@keyframes disappear {
+  0% {
+  }
+  25% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(5) !important;
+    opacity: 0;
+  }
 }

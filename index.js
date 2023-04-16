@@ -1,4 +1,5 @@
 const mainUrl = "https://learnlangapp1.herokuapp.com/";
+const ageByPhotoUrl = "https://malickalex1975.github.io/age-by-photo/";
 const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
@@ -59,10 +60,22 @@ const scorePlace = document.querySelector(".score-place");
 const info = document.querySelector(".info");
 const mistakesPad = document.querySelector(".mistakes-pad");
 const mistakesContainer = document.querySelector(".mistakes-container");
+const pronouncingContainer = document.querySelector(".pronouncing-container");
 const life = document.querySelector(".life");
 const heart = document.querySelector(".heart");
 const menuButton = document.querySelector(".menu-button");
 const menuPanel = document.querySelector(".menu-panel");
+const line1 = document.querySelector(".line-1");
+const line2 = document.querySelector(".line-2");
+const line3 = document.querySelector(".line-3");
+const menuItem1 = document.querySelector(".menu-item-1");
+const menuItem2 = document.querySelector(".menu-item-2");
+const menuItem3 = document.querySelector(".menu-item-3");
+const option1 = document.querySelector(".option-1");
+const option2 = document.querySelector(".option-2");
+const toggle = document.querySelector(".toggle");
+const toggleElement = document.querySelector(".toggle-element");
+let isPhrasePronouncing=false;
 let wordsArray = [];
 const audio = new Audio();
 const vibrate = {
@@ -79,8 +92,34 @@ const vibrate = {
     navigator.vibrate([100, 20, 100]);
   },
 };
+let menu = {
+  matching: true,
+  pronouncing: false,
+};
 class WordGame {
   constructor() {}
+  processMenu() {
+    this.setMenuStyle();
+    this.hideMenu();
+    if (menu.matching) {
+      initMatching();
+    } else {
+      if (menu.pronouncing) {
+        initPronouncing();
+      }
+    }
+  }
+  setMenuStyle() {
+    if (menu.matching) {
+      menuItem1.style.color = "#009900";
+      menuItem2.style.color = "#000066";
+    } else {
+      if (menu.pronouncing) {
+        menuItem2.style.color = "#009900";
+        menuItem1.style.color = "#000066";
+      }
+    }
+  }
   getLevel() {
     if (localStorage.getItem("currentLevel")) {
       currentLevel = +localStorage.getItem("currentLevel");
@@ -93,8 +132,10 @@ class WordGame {
     localStorage.setItem("currentLevel", level.toString());
     let arr = await game.loadData();
     wordsArray = [...arr];
-    game.hideExamples();
-    game.showExamples();
+    if (menu.matching) {
+      game.hideExamples();
+      game.showExamples();
+    }
   }
   getMaxLevel() {
     let item = localStorage.getItem("maxLevel");
@@ -197,10 +238,16 @@ class WordGame {
   }
   showMenu() {
     menuPanel.style.transform = "translateX(0px)";
+    line2.style.opacity = 0;
+    line1.style.transform = "rotate(45deg) translate(0px,13px)";
+    line3.style.transform = "rotate(-45deg) translate(0px,-13px)";
   }
   hideMenu() {
     menuPanel.style.transform = "translateX(300px)";
-    isMenu=false;
+    isMenu = false;
+    line2.style.opacity = 1;
+    line1.style.transform = "rotate(0deg)";
+    line3.style.transform = "rotate(0deg)";
   }
 
   showGamepad() {
@@ -219,6 +266,14 @@ class WordGame {
       wordButton.style.opacity = "0";
     });
   }
+  showPronouncing() {
+    pronouncingContainer.style.visibility = "visible";
+    pronouncingContainer.style.opacity = "1";
+  }
+  hidePronouncing() {
+    pronouncingContainer.style.visibility = "hidden";
+    pronouncingContainer.style.opacity = "0";
+  }
   showClock() {
     clockContainer.style.visibility = "visible";
     clockContainer.style.opacity = "1";
@@ -226,6 +281,18 @@ class WordGame {
   hideClock() {
     clockContainer.style.visibility = "hidden";
     clockContainer.style.opacity = "0";
+  }
+  setToggleStyle(){
+if(isPhrasePronouncing){
+  option2.style.color='#00aa00';
+  option1.style.color='#000066';
+  toggleElement.style.transform='translateX(15px)'
+
+}else{
+  option1.style.color='#00aa00';
+  option2.style.color='#000066';
+  toggleElement.style.transform='translateX(0px)'
+}
   }
   showExamples() {
     exampleContainer.style.visibility = "visible";
@@ -337,7 +404,7 @@ class WordGame {
     this.listenButtons();
   }
   stopGame() {
-    clearInterval(interval);
+   this.stopClock()
 
     gamepad.removeEventListener("pointerdown", this.listenHandler);
     document.querySelectorAll(".button").forEach((el) => {
@@ -503,6 +570,9 @@ class WordGame {
       sec = "0" + sec.toString();
     }
     return `${min}:${sec}`;
+  }
+  stopClock(){
+    clearInterval(interval);
   }
   setWordsIndexes() {
     wordsIndexes = [];
@@ -879,26 +949,67 @@ function levelChooseHandler() {
     }
   });
 }
-
-async function init() {
+function init() {
   wakeLock();
-  window.addEventListener("orientationchange", checkOrientation);
+  menuButton.addEventListener("pointerdown", handleMenu);
+  toggle.addEventListener('pointerdown', handleToggle)
+  menuPanel.addEventListener("pointerdown", () => game.hideMenu());
+  mainContainer.addEventListener("pointerdown", () => game.hideMenu());
+  menuItem1.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    if (!menu.matching) {
+      menu.matching = true;
+      menu.pronouncing = false;
+      game.processMenu();
+    } else {
+      game.hideMenu();
+    }
+  });
+  menuItem2.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    if (!menu.pronouncing) {
+      menu.matching = false;
+      menu.pronouncing = true;
+      game.processMenu();
+    } else {
+      game.hideMenu();
+    }
+  });
+  menuItem3.addEventListener("pointerdown", (e) => {
+    window.location.assign(ageByPhotoUrl);
+  });
   game.getLevel();
   game.getMaxLevel();
   game.showLevelsContainer();
   game.showLevels();
   levelChooseHandler();
-  game.showButtonStart();
+  window.addEventListener("orientationchange", checkOrientation);
   game.handleButtonStart();
   game.handleButtonStop();
+  game.processMenu();
+}
+
+async function initMatching() {
+  game.showButtonStart();
   let arr = await game.loadData();
   wordsArray = [...arr];
   game.hideExamples();
   game.showExamples();
+  game.hidePronouncing();
   exampleContainer.addEventListener("pointerdown", listenExamples);
-  menuButton.addEventListener('pointerdown', handleMenu)
-  menuPanel.addEventListener('pointerdown',()=> game.hideMenu())
-  mainContainer.addEventListener('pointerdown',()=> game.hideMenu())
+}
+function initPronouncing() {
+  game.hideClock();
+  game.stopClock()
+  game.hideExamples();
+  game.hideButtonStart();
+  game.hideButtonStop();
+  game.hideGamePad();
+  game.showScore(false)
+  game.showPronouncing();
+  game.showLevelsContainer();
+  game.setToggleStyle()
+  exampleContainer.removeEventListener("pointerdown", listenExamples);
 }
 function wakeLock() {
   navigator.wakeLock.request("screen").catch(console.log);
@@ -924,10 +1035,13 @@ function listenExamples(e) {
   let index;
   if (el.className.includes("example")) {
     index = +el.className.slice(8);
-    el.style.color = "black";
+    el.style.color = "red";
     el.style.transition = "300ms";
-    setTimeout(() => (el.style.opacity = 0), 1000);
-    el.style.transform = "scale(1.1)";
+    setTimeout(() => {
+      el.style.animation = "disappear";
+      el.style.animationDuration = "1s";
+    }, 100);
+
     let endpoint = wordsArray?.[index]?.audio;
     if (endpoint) {
       playAudio(mainUrl + endpoint);
@@ -941,6 +1055,10 @@ function handleMenu() {
   } else {
     game.hideMenu();
   }
+}
+function handleToggle(){
+  isPhrasePronouncing=!isPhrasePronouncing;
+  game.setToggleStyle()
 }
 
 document.addEventListener("DOMContentLoaded", init);
