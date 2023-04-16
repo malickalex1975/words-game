@@ -141,14 +141,53 @@ body {
   background-image: linear-gradient(#fff, #eee);
   color: red;
 }
+@keyframes rotate1 {
+  0%{transform: rotate(0deg);}
+  50%{transform: rotate(360deg);}
+  100%{transform: rotate(0deg);}
+}
+@keyframes rotate2 {
+  from{transform: rotate(0deg);}
+  to{transform: rotate(360deg);}
+}
 .loading {
   position: fixed;
   visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: 30px;
   color: green;
+  z-index: 300;
+  width:50px;
+  height:50px;
+  border-radius: 50%;
+  border-bottom:3px solid green  ;
+  animation: rotate2 infinite;
+  animation-duration: 1s;
+}
+.inner-circle-1{
+  width:40px;
+  height:40px;
+  border-radius: 50%;
+  border-top:4px solid green  ;
+  opacity: 0.3;
+  animation: rotate2 infinite;
+  animation-duration: 500ms;
+  animation-delay: 500ms;
+}
+.inner-circle-2{
+  width:30px;
+  height:30px;
+  border-radius: 50%;
+  border-top:3px solid green  ;
+  opacity: 0.7;
+  animation: rotate1 infinite;
+  animation-duration: 2000ms;
+  animation-delay: 1000ms;
 }
 .pronouncing-container {
   position: fixed;

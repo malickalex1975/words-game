@@ -239,8 +239,8 @@ class WordGame {
   showMenu() {
     menuPanel.style.transform = "translateX(0px)";
     line2.style.opacity = 0;
-    line1.style.transform = "rotate(45deg) translate(0px,13px)";
-    line3.style.transform = "rotate(-45deg) translate(0px,-13px)";
+    line1.style.transform = "rotate(45deg) translate(0px,13.5px)";
+    line3.style.transform = "rotate(-45deg) translate(0px,-13.5px)";
   }
   hideMenu() {
     menuPanel.style.transform = "translateX(300px)";
@@ -501,7 +501,7 @@ if(isPhrasePronouncing){
     }
   }
   afterLoading() {
-    this.showLoading(false);
+    setTimeout(()=>this.showLoading(false),500);
     this.showButtonStop();
     this.showGamepad();
     this.showClock();
@@ -673,7 +673,6 @@ if(isPhrasePronouncing){
   listenHandler(e) {
     let el = e.target;
     let index;
-    console.log(el.classList);
     if (
       !el?.className.includes("right-button") &&
       !el?.className.includes("left-button")
