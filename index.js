@@ -3,6 +3,7 @@ const ageByPhotoUrl = "https://malickalex1975.github.io/age-by-photo/";
 const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
+let audioPromise;
 let mistakes = [];
 let allUsedWords = [];
 let isMoving = false;
@@ -75,7 +76,9 @@ const option1 = document.querySelector(".option-1");
 const option2 = document.querySelector(".option-2");
 const toggle = document.querySelector(".toggle");
 const toggleElement = document.querySelector(".toggle-element");
-let isPhrasePronouncing=false;
+const digit1 = document.querySelector(".digit-1");
+const digit2 = document.querySelector(".digit-2");
+let isPhrasePronouncing = false;
 let wordsArray = [];
 const audio = new Audio();
 const vibrate = {
@@ -253,10 +256,6 @@ class WordGame {
   showGamepad() {
     gamepad.style.visibility = "visible";
     gamepad.style.opacity = "1";
-    wordButtons.forEach((wordButton) => {
-      wordButton.style.visibility = "visible";
-      wordButton.style.opacity = "1";
-    });
   }
   hideGamePad() {
     gamepad.style.visibility = "hidden";
@@ -282,17 +281,16 @@ class WordGame {
     clockContainer.style.visibility = "hidden";
     clockContainer.style.opacity = "0";
   }
-  setToggleStyle(){
-if(isPhrasePronouncing){
-  option2.style.color='#00aa00';
-  option1.style.color='#000066';
-  toggleElement.style.transform='translateX(15px)'
-
-}else{
-  option1.style.color='#00aa00';
-  option2.style.color='#000066';
-  toggleElement.style.transform='translateX(0px)'
-}
+  setToggleStyle() {
+    if (isPhrasePronouncing) {
+      option2.style.color = "#00aa00";
+      option1.style.color = "#000066";
+      toggleElement.style.transform = "translateX(15px)";
+    } else {
+      option1.style.color = "#00aa00";
+      option2.style.color = "#000066";
+      toggleElement.style.transform = "translateX(0px)";
+    }
   }
   showExamples() {
     exampleContainer.style.visibility = "visible";
@@ -315,7 +313,6 @@ if(isPhrasePronouncing){
         if (childBottom - containerBottom > 200) {
           exampleContainer.scrollTo(0, exampleContainer.scrollHeight);
         }
-        console.log(i, containerBottom, childBottom);
       }, 300 * i);
       timeouts.push(timeout);
     }
@@ -364,9 +361,40 @@ if(isPhrasePronouncing){
     });
   }
   setScore() {
-    scorePlace.textContent = score.toString();
-    scorePlace.style.transform = "scale(1.2)";
-    setTimeout(() => (scorePlace.style.transform = "scale(1)"), 500);
+    const digitElement1 = document.querySelectorAll(".digit-element-1")[0];
+    const digitElement2 = document.querySelectorAll(".digit-element-2")[0];
+   let dig2=Math.floor(score/10);
+   let dig1=score%10;
+   if(digitElement1.textContent!==dig1.toString()){
+   let el= document.createElement('div');
+   el.textContent=dig1;
+   el.className='digit-element-1';
+   digit1.appendChild(el);
+   digit1.style.transition='1s'
+   digit1.style.transform='translateY(-40px)';
+   setTimeout(()=>{ let elToRemove= document.querySelectorAll('.digit-element-1')[0];
+   elToRemove.remove();
+   digit1.style.transition='0ms'
+   digit1.style.transform='translateY(0px)'
+  },1000)
+  
+   }
+   if(digitElement2.textContent!==dig2.toString()){
+   let el= document.createElement('div');
+   el.textContent=dig2;
+   el.className='digit-element-2';
+   digit2.appendChild(el);
+   digit2.style.transition='1s'
+   digit2.style.transform='translateY(-40px)';
+   setTimeout(()=>{ let elToRemove= document.querySelectorAll('.digit-element-2')[0];
+   elToRemove.remove();
+   digit2.style.transition='0ms'
+   digit2.style.transform='translateY(0px)'
+  },1000)
+  
+   }
+
+   
     if (score >= scoreToNextLevel && currentLevel === maxLevel) {
       this.increaseLevel();
     }
@@ -404,8 +432,8 @@ if(isPhrasePronouncing){
     this.listenButtons();
   }
   stopGame() {
-   this.stopClock()
-
+    this.stopClock();
+    gamepad.removeEventListener("pointerdown", this.playHandler);
     gamepad.removeEventListener("pointerdown", this.listenHandler);
     document.querySelectorAll(".button").forEach((el) => {
       el.removeEventListener("pointermove", game.moveHandlerRight);
@@ -501,7 +529,7 @@ if(isPhrasePronouncing){
     }
   }
   afterLoading() {
-    setTimeout(()=>this.showLoading(false),500);
+    setTimeout(() => this.showLoading(false), 1000);
     this.showButtonStop();
     this.showGamepad();
     this.showClock();
@@ -571,7 +599,7 @@ if(isPhrasePronouncing){
     }
     return `${min}:${sec}`;
   }
-  stopClock(){
+  stopClock() {
     clearInterval(interval);
   }
   setWordsIndexes() {
@@ -633,6 +661,7 @@ if(isPhrasePronouncing){
     emptyRightButtons = [];
   }
   firstTimeShowWords() {
+    this.showLoading(true);
     for (let i = 0; i < wordsQuantity; i++) {
       let rusEl = document.querySelector(`.left-button-${i}`);
       let enEl = document.querySelector(`.right-button-${i}`);
@@ -643,6 +672,9 @@ if(isPhrasePronouncing){
         enEl.style.visibility = "visible";
         enEl.textContent = wordsArray[rightWords[`right${i}`]].word;
         rusEl.textContent = wordsArray[leftWords[`left${i}`]].wordTranslate;
+        if (i === wordsQuantity - 1) {
+          this.showLoading(false);
+        }
       }, i * 200);
     }
   }
@@ -654,19 +686,19 @@ if(isPhrasePronouncing){
     return 0.5 - Math.random() > 0;
   }
   playWords() {
-    gamepad.addEventListener("pointerdown", (e) => {
-      let el = e.target;
-      let index;
-      if (el.className.includes("right-button")) {
-        index = el.className.at(-1);
-        let endpoint = wordsArray?.[rightWords?.[`right${index}`]]?.audio;
-        if (endpoint) {
-          playAudio(mainUrl + endpoint);
-        }
-      }
-    });
+    gamepad.addEventListener("pointerdown", this.playHandler);
   }
-
+  playHandler(e) {
+    let el = e.target;
+    let index;
+    if (el.className.includes("right-button")) {
+      index = el.className.at(-1);
+      let endpoint = wordsArray?.[rightWords?.[`right${index}`]]?.audio;
+      if (endpoint) {
+        playAudio(mainUrl + endpoint);
+      }
+    }
+  }
   listenButtons() {
     gamepad.addEventListener("pointerdown", this.listenHandler);
   }
@@ -951,7 +983,7 @@ function levelChooseHandler() {
 function init() {
   wakeLock();
   menuButton.addEventListener("pointerdown", handleMenu);
-  toggle.addEventListener('pointerdown', handleToggle)
+  toggle.addEventListener("pointerdown", handleToggle);
   menuPanel.addEventListener("pointerdown", () => game.hideMenu());
   mainContainer.addEventListener("pointerdown", () => game.hideMenu());
   menuItem1.addEventListener("pointerdown", (e) => {
@@ -999,15 +1031,15 @@ async function initMatching() {
 }
 function initPronouncing() {
   game.hideClock();
-  game.stopClock()
+  game.stopClock();
   game.hideExamples();
   game.hideButtonStart();
   game.hideButtonStop();
   game.hideGamePad();
-  game.showScore(false)
+  game.showScore(false);
   game.showPronouncing();
   game.showLevelsContainer();
-  game.setToggleStyle()
+  game.setToggleStyle();
   exampleContainer.removeEventListener("pointerdown", listenExamples);
 }
 function wakeLock() {
@@ -1015,9 +1047,11 @@ function wakeLock() {
 }
 
 function playAudio(src) {
-  // if(!audio.paused){audio.pause();}
+  if (audioPromise !== undefined) {
+    audio.pause();
+  }
   audio.src = src;
-  audio.play().catch(console.log);
+  audioPromise = audio.play().catch(console.log);
 }
 function checkOrientation() {
   let orientation = screen.orientation.type;
@@ -1055,9 +1089,9 @@ function handleMenu() {
     game.hideMenu();
   }
 }
-function handleToggle(){
-  isPhrasePronouncing=!isPhrasePronouncing;
-  game.setToggleStyle()
+function handleToggle() {
+  isPhrasePronouncing = !isPhrasePronouncing;
+  game.setToggleStyle();
 }
 
 document.addEventListener("DOMContentLoaded", init);

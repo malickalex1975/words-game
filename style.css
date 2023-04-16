@@ -52,19 +52,38 @@ body {
 }
 .score-place {
   position: fixed;
-  top: calc(5vh + 10px);
-  left: 45vw;
-  width: 10vw;
+  top: calc(5vh + 20px);
+  left:calc(50vw - 45px);
+  width: 90px;
   height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 40px;
-  color: orange;
-  text-shadow: 2px 2px 6px orangered;
   transition: 500ms;
   visibility: hidden;
   opacity: 0;
+  overflow: hidden;
+}
+.digit-1,.digit-2{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content:flex-start;
+  width: 30px;
+  height: 50px;
+  transition: 1s;
+}
+.digit-element-1, .digit-element-2{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 40px;
+  color: orange;
+  text-shadow: 2px 2px 6px orangered;
+  
+  
 }
 
 .level-element {
@@ -246,7 +265,7 @@ body {
   height: 70vh;
   opacity: 0;
   visibility: hidden;
-  transition: 1s;
+  transition: 10ms;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -477,7 +496,7 @@ body {
   color: #ccc;
   visibility: hidden;
   border-radius: 5px;
-  z-index: 200;
+  z-index: 300;
 }
 .speaker {
   width: 25px;
