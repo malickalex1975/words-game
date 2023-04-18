@@ -5,7 +5,7 @@ const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 import Speech from "./speech.js";
 let mySpeech = new Speech("en");
-let audioPromise;
+let audioPromise, request, transcriptForPronouncing;
 let isMicrophoneAvailable = false;
 let wordForPronouncing = "";
 let usedWordsForPronouncing = [];
@@ -15,6 +15,7 @@ let isMoving = false;
 let isLoading = false;
 let currentLevel, maxLevel, lastLevel, interval, timeouts, timeoutForStart;
 let downX, downY;
+let stripsArray = [];
 let rightMovingElement, leftMovingElement;
 let activeLeftButton = undefined;
 let activeRightButton = undefined;
@@ -51,6 +52,13 @@ let currentLife = maxLife;
 let wordsIndexes = [];
 let threeWordsIndexes = [];
 let isMenu = false;
+let visualisationStrips, audioCtx, analizer;
+const stripNumber = 32;
+let freqArray = new Uint8Array(stripNumber * 2);
+const visualisation = document.querySelector(".visualisation");
+const rightArrow = document.querySelector(".right-arrow");
+const leftArrow = document.querySelector(".left-arrow");
+const pronouncingTranscript = document.querySelector(".pronouncing-transcript");
 const orientationWarning = document.querySelector(".warning-container");
 const mainContainer = document.querySelector(".main-container");
 const exampleContainer = document.querySelector(".example-container");
@@ -565,7 +573,7 @@ class WordGame {
     this.firstTimeShowWords();
   }
   showLoading(visibility) {
-    isLoading=visibility;
+    isLoading = visibility;
     let v = visibility ? "visible" : "hidden";
     loadingElement.style.visibility = v;
   }
@@ -990,18 +998,53 @@ class WordGame {
       usedWordsForPronouncing.push(index);
       if (!isPhrasePronouncing) {
         word = wordsArray[index].word;
+        transcriptForPronouncing = wordsArray[index].transcription;
       } else {
-        word = wordsArray[index].textExample
-          .replace("<b>", "")
-          .replace("</b>", "");
+        word = wordsArray[index].textExample;
+        // .replace("<b>", "")
+        // .replace("</b>", "");
+        transcriptForPronouncing = "";
       }
-      return word;
+      return { word, index };
     } else return this.getWordForPronouncing();
   }
   defineWordForPronouncing() {
-    wordForPronouncing = this.getWordForPronouncing();
-    pronouncingWord.textContent = wordForPronouncing;
+    let item = this.getWordForPronouncing();
+    wordForPronouncing = item.word;
+    let index = item.index;
+    this.writeWord(wordForPronouncing, index);
   }
+  writeWord(word, index) {
+    let symbolNumber = word.length;
+    let timeInterval = 500 / symbolNumber;
+    let n = 0;
+    let interval;
+
+    interval = setInterval(() => {
+      n++;
+      pronouncingWord.innerHTML = `<p>${
+        word.slice(0, n) + " ".repeat(symbolNumber - n)
+      }</p><span class='transcript'></span><div class="speaker-next" style="opacity:0"></div>`;
+      if (n >= symbolNumber) {
+        clearInterval(interval);
+        pronouncingWord.innerHTML = `<p>${word}</p><span class='transcript'>${transcriptForPronouncing}</span><div class="speaker-next" style="opacity:1"></div>`;
+        this.speakerHandler(index);
+      }
+    }, timeInterval);
+  }
+  speakerHandler(index) {
+    let endpoint;
+    let speaker = document.querySelector(".speaker-next");
+    speaker.addEventListener("pointerdown", () => {
+      endpoint = isPhrasePronouncing
+        ? wordsArray?.[index]?.audioExample
+        : wordsArray?.[index]?.audio;
+      if (endpoint) {
+        playAudio(mainUrl + endpoint);
+      }
+    });
+  }
+
   microphoneHandler() {
     if (!isMicrophoneAvailable) {
       return;
@@ -1012,7 +1055,7 @@ class WordGame {
         .speechRecognition()
         .then((result) => {
           console.log(result.phrase, result.confidence);
-          game.processPronouncingResult(result)
+          game.processPronouncingResult(result);
         })
         .catch(() => {
           game.setMicrophoneActive(true);
@@ -1024,21 +1067,92 @@ class WordGame {
         });
     }
   }
-  processPronouncingResult(result){
-    if(true){
-      if(wordForPronouncing===result.phrase.toLowerCase() && result.confidence>=0.7){
-        pronouncingWord.style.color='green'
-        pronouncingResult.textContent=`${((result.confidence)*100).toFixed(1)}%`
+  processPronouncingResult(result) {
+    if (true) {
+      if (
+        wordForPronouncing === result.phrase.toLowerCase() &&
+        result.confidence >= 0.7
+      ) {
+        pronouncingWord.style.color = "green";
+        pronouncingResult.textContent = `${(result.confidence * 100).toFixed(
+          1
+        )}%`;
       }
-      setTimeout(()=>{pronouncingWord.style.transform="translate(-100vw)";
-      pronouncingWord.style.color=''
-    },500)
-      
-      setTimeout(()=>this.defineWordForPronouncing(),500)
-      setTimeout(()=>pronouncingWord.style.transform="translate(0vw)",800)
+      setTimeout(() => {
+        pronouncingWord.style.transform = "translate(-100vw)";
+        pronouncingWord.style.color = "";
+      }, 500);
+
+      setTimeout(() => this.defineWordForPronouncing(), 500);
+      setTimeout(
+        () => (pronouncingWord.style.transform = "translate(0vw)"),
+        800
+      );
     }
   }
+  createVisualisation() {
+    for (let i = 0; i < stripNumber; i++) {
+      let strip = document.createElement("div");
+      strip.className = "strip";
+      visualisation.appendChild(strip);
+    }
+    stripsArray = document.querySelectorAll(".strip");
+  }
+
+  resetVisualisation() {
+    document.querySelectorAll(".strip").forEach((el) => el.remove());
+  }
+
+  listenMicrophone() {
+    if (audioCtx) {
+      return;
+    }
+    let src;
+    audioCtx = new AudioContext();
+    analizer = audioCtx.createAnalyser();
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        src = audioCtx.createMediaStreamSource(stream);
+        src.connect(analizer);
+        game.loop();
+      })
+      .catch((err) => {
+        alert(err + "\r\n The page will be reloaded!");
+        location.reload();
+      });
+  }
+  loop() {
+    if (menu.pronouncing) {
+      request = window.requestAnimationFrame(game.loop);
+      if (!isMicrophoneAvailable) {
+        analizer.getByteFrequencyData(freqArray);
+        for (let i = 0; i < stripNumber; i++) {
+          let height = freqArray[stripNumber + i];
+          let el = stripsArray[i];
+          el.style.height = (100 / 256) * height + "px";
+          el.style.opacity = 0.008 * height;
+        }
+      } else {
+        document
+          .querySelectorAll(".strip")
+          .forEach((el) => (el.style.height = 0 + "px"));
+      }
+    }
+  }
+
+  rightArrowHandler() {
+    pronouncingWord.style.animationName = "go-forward";
+    setTimeout(() => {
+      game.defineWordForPronouncing()
+      
+    }, 100);
+    setTimeout(()=>pronouncingWord.style.animationName = "",600)
+  }
+
+  leftArrowHandler() {}
 }
+
 const game = new WordGame();
 info.addEventListener("click", () => {
   game.hideInfo();
@@ -1102,6 +1216,10 @@ function init() {
 }
 
 async function initMatching() {
+  if (request) {
+    cancelAnimationFrame(request);
+  }
+  game.resetVisualisation();
   game.showButtonStart();
   let arr = await game.loadData();
   wordsArray = [...arr];
@@ -1110,11 +1228,14 @@ async function initMatching() {
   game.hidePronouncing();
   exampleContainer.addEventListener("pointerdown", listenExamples);
   microphone.removeEventListener("pointerdown", game.microphoneHandler);
+  rightArrow.removeEventListener("pointerdown", game.rightArrowHandler);
+  leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
 }
 function initPronouncing() {
   game.hideClock();
   game.stopClock();
   game.hideExamples();
+  game.hideMistakesPad();
   game.hideButtonStart();
   game.hideButtonStop();
   game.hideGamePad();
@@ -1122,12 +1243,15 @@ function initPronouncing() {
   game.showPronouncing();
   game.showLevelsContainer();
   game.setToggleStyle();
-  game.hideExamples();
   exampleContainer.removeEventListener("pointerdown", listenExamples);
   microphone.addEventListener("pointerdown", game.microphoneHandler);
+  rightArrow.addEventListener("pointerdown", game.rightArrowHandler);
+  leftArrow.addEventListener("pointerdown", game.leftArrowHandler);
   usedWordsForPronouncing = [];
   game.defineWordForPronouncing();
   game.setMicrophoneActive(true);
+  game.createVisualisation();
+  game.listenMicrophone();
 }
 function wakeLock() {
   navigator.wakeLock.request("screen").catch(console.log);
