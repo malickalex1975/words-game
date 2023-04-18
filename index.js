@@ -1140,7 +1140,6 @@ class WordGame {
       }
     }
   }
-
   rightArrowHandler() {
     pronouncingWord.style.animationName = "go-forward";
     setTimeout(() => {
@@ -1149,7 +1148,6 @@ class WordGame {
     }, 100);
     setTimeout(()=>pronouncingWord.style.animationName = "",600)
   }
-
   leftArrowHandler() {}
 }
 
