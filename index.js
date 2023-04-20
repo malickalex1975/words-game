@@ -9,6 +9,9 @@ let audioPromise, request, transcriptForPronouncing;
 let isMicrophoneAvailable = false;
 let wordForPronouncing = "";
 let usedWordsForPronouncing = [];
+let usedPhrasesForPronouncing = [];
+let indexOfWords = undefined;
+let indexOfPhrases = undefined;
 let mistakes = [];
 let allUsedWords = [];
 let isMoving = false;
@@ -299,6 +302,15 @@ class WordGame {
     pronouncingContainer.style.visibility = "hidden";
     pronouncingContainer.style.opacity = "0";
   }
+  showLeftArrow() {
+    leftArrow.style.visibility = "visible";
+    leftArrow.style.opacity = ".7";
+  }
+  hideLeftArrow() {
+    leftArrow.style.visibility = "hidden";
+    leftArrow.style.opacity = "0";
+  }
+
   showClock() {
     clockContainer.style.visibility = "visible";
     clockContainer.style.opacity = "1";
@@ -991,15 +1003,21 @@ class WordGame {
       this.showLevels();
     }
   }
-  getWordForPronouncing() {
-    let index = this.getRandomNumber(0, 599);
+  getWordForPronouncing(value, ignore) {
+    let index = !!value ? value : this.getRandomNumber(0, 599);
     let word;
-    if (!usedWordsForPronouncing.includes(index)) {
-      usedWordsForPronouncing.push(index);
+    if (!usedWordsForPronouncing.includes(index) || ignore) {
       if (!isPhrasePronouncing) {
+        if (!ignore) {
+          usedWordsForPronouncing.push(index);
+        }
         word = wordsArray[index].word;
+
         transcriptForPronouncing = wordsArray[index].transcription;
       } else {
+        if (!ignore) {
+          usedPhrasesForPronouncing.push(index);
+        }
         word = wordsArray[index].textExample;
         // .replace("<b>", "")
         // .replace("</b>", "");
@@ -1008,8 +1026,12 @@ class WordGame {
       return { word, index };
     } else return this.getWordForPronouncing();
   }
-  defineWordForPronouncing() {
-    let item = this.getWordForPronouncing();
+  defineWordForPronouncing(ind = undefined) {
+    console.log('word index:',indexOfWords);
+    console.log('phrase index:',indexOfPhrases);
+
+    let ignore = !!ind ? true : false;
+    let item = this.getWordForPronouncing(ind, ignore);
     wordForPronouncing = item.word;
     let index = item.index;
     this.writeWord(wordForPronouncing, index);
@@ -1129,26 +1151,69 @@ class WordGame {
         analizer.getByteFrequencyData(freqArray);
         for (let i = 0; i < stripNumber; i++) {
           let height = freqArray[stripNumber + i];
+          if (height < 5) {
+            height = 5;
+          }
           let el = stripsArray[i];
           el.style.height = (100 / 256) * height + "px";
-          el.style.opacity = 0.008 * height;
+          el.style.opacity = 0.01 * height;
         }
       } else {
-        document
-          .querySelectorAll(".strip")
-          .forEach((el) => (el.style.height = 0 + "px"));
+        document.querySelectorAll(".strip").forEach((el) => {
+          el.style.height = 10 + "px";
+          el.style.opacity = 0.1;
+        });
       }
     }
   }
   rightArrowHandler() {
     pronouncingWord.style.animationName = "go-forward";
     setTimeout(() => {
-      game.defineWordForPronouncing()
       
+      if (isPhrasePronouncing) {
+        if (indexOfPhrases === undefined) {
+          indexOfPhrases = 0;
+        } else {
+          indexOfPhrases += 1;
+          game.showLeftArrow();
+        }
+      } else if (!isPhrasePronouncing) {
+        if (indexOfWords === undefined) {
+          indexOfWords = 0;
+        } else {
+          indexOfWords += 1;
+          game.showLeftArrow();
+        }
+      }
+      game.defineWordForPronouncing();
     }, 100);
-    setTimeout(()=>pronouncingWord.style.animationName = "",600)
+    setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
   }
-  leftArrowHandler() {}
+  leftArrowHandler() {
+    pronouncingWord.style.animationName = "go-back";
+    setTimeout(() => {
+      if (isPhrasePronouncing) {
+        if (indexOfPhrases <= 1) {
+          indexOfPhrases = 0;
+          game.hideLeftArrow();
+        } else {
+          indexOfPhrases -= 1;
+        }
+        game.defineWordForPronouncing(
+          usedPhrasesForPronouncing[indexOfPhrases]
+        );
+      } else if (!isPhrasePronouncing) {
+        if (indexOfWords <= 1) {
+          indexOfWords = 0;
+          game.hideLeftArrow();
+        } else {
+          indexOfWords -= 1;
+        }
+        game.defineWordForPronouncing(usedWordsForPronouncing[indexOfWords]);
+      }
+    }, 100);
+    setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
+  }
 }
 
 const game = new WordGame();
@@ -1230,6 +1295,7 @@ async function initMatching() {
   leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
 }
 function initPronouncing() {
+  audioCtx = undefined;
   game.hideClock();
   game.stopClock();
   game.hideExamples();
@@ -1246,6 +1312,9 @@ function initPronouncing() {
   rightArrow.addEventListener("pointerdown", game.rightArrowHandler);
   leftArrow.addEventListener("pointerdown", game.leftArrowHandler);
   usedWordsForPronouncing = [];
+  usedPhrasesForPronouncing = [];
+  indexOfWords = undefined;
+  indexOfPhrases = undefined;
   game.defineWordForPronouncing();
   game.setMicrophoneActive(true);
   game.createVisualisation();
