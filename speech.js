@@ -19,10 +19,11 @@ export default class Speech {
         isStarted=true;
         interval= setInterval(()=>{
           if(isStarted){
+            clearInterval(interval)
             return reject("It took too long time!Try again!")
           }
 
-        },5000)
+        },15000)
 
         let listener = (event) => {
           isStarted= false;

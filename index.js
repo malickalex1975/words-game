@@ -10,8 +10,8 @@ let isMicrophoneAvailable = false;
 let wordForPronouncing = "";
 let usedWordsForPronouncing = [];
 let usedPhrasesForPronouncing = [];
-let indexOfWords = undefined;
-let indexOfPhrases = undefined;
+let indexOfWords = 0;
+let indexOfPhrases = 0;
 let mistakes = [];
 let allUsedWords = [];
 let isMoving = false;
@@ -1027,8 +1027,8 @@ class WordGame {
     } else return this.getWordForPronouncing();
   }
   defineWordForPronouncing(ind = undefined) {
-    console.log('word index:',indexOfWords);
-    console.log('phrase index:',indexOfPhrases);
+    console.log("word index:", indexOfWords);
+    console.log("phrase index:", indexOfPhrases);
 
     let ignore = !!ind ? true : false;
     let item = this.getWordForPronouncing(ind, ignore);
@@ -1055,16 +1055,21 @@ class WordGame {
     }, timeInterval);
   }
   speakerHandler(index) {
-    let endpoint;
-    let speaker = document.querySelector(".speaker-next");
-    speaker.addEventListener("pointerdown", () => {
-      endpoint = isPhrasePronouncing
-        ? wordsArray?.[index]?.audioExample
-        : wordsArray?.[index]?.audio;
-      if (endpoint) {
-        playAudio(mainUrl + endpoint);
-      }
-    });
+    let speakerNext = document.querySelector(".speaker-next");
+    speakerNext.removeEventListener("pointerdown", () =>
+      game.speakerListener(index)
+    );
+    speakerNext.addEventListener("pointerdown", () =>
+      game.speakerListener(index)
+    );
+  }
+  speakerListener(index) {
+    let endpoint = isPhrasePronouncing
+      ? wordsArray?.[index]?.audioExample
+      : wordsArray?.[index]?.audio;
+    if (endpoint) {
+      playAudio(mainUrl + endpoint);
+    }
   }
 
   microphoneHandler() {
@@ -1080,7 +1085,7 @@ class WordGame {
           game.processPronouncingResult(result);
         })
         .catch((error) => {
-          game.showInfo(`<p>Error happened: \r\n<span>${error}</span><p>`)
+          game.showInfo(`<p>Error happened: \r\n<span>${error}</span><p>`);
           game.setMicrophoneActive(true);
           game.showLoading(false);
         })
@@ -1170,7 +1175,6 @@ class WordGame {
   rightArrowHandler() {
     pronouncingWord.style.animationName = "go-forward";
     setTimeout(() => {
-      
       if (isPhrasePronouncing) {
         if (indexOfPhrases === undefined) {
           indexOfPhrases = 0;
@@ -1314,8 +1318,8 @@ function initPronouncing() {
   leftArrow.addEventListener("pointerdown", game.leftArrowHandler);
   usedWordsForPronouncing = [];
   usedPhrasesForPronouncing = [];
-  indexOfWords = undefined;
-  indexOfPhrases = undefined;
+  indexOfWords = 0;
+  indexOfPhrases = 0;
   game.defineWordForPronouncing();
   game.setMicrophoneActive(true);
   game.createVisualisation();
