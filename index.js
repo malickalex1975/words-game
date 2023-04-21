@@ -5,6 +5,7 @@ const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 import Speech from "./speech.js";
 let mySpeech = new Speech("en");
+let stream;
 let audioPromise, request, transcriptForPronouncing;
 let isMicrophoneAvailable = false;
 let wordForPronouncing = "";
@@ -1086,8 +1087,6 @@ class WordGame {
         })
         .catch((error) => {
           game.showInfo(`<p>Error happened: \r\n<span>${error}</span><p>`);
-          game.setMicrophoneActive(true);
-          game.showLoading(false);
         })
         .finally(() => {
           game.setMicrophoneActive(true);
@@ -1140,7 +1139,8 @@ class WordGame {
     analizer = audioCtx.createAnalyser();
     navigator.mediaDevices
       .getUserMedia({ audio: true })
-      .then((stream) => {
+      .then((strm) => {
+        stream = strm;
         src = audioCtx.createMediaStreamSource(stream);
         src.connect(analizer);
         game.loop();
@@ -1219,8 +1219,13 @@ class WordGame {
     }, 100);
     setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
   }
-}
 
+  cancelMediaStream() {
+    if(stream){
+    stream.getTracks().forEach((track)=>track.stop())
+    }
+  }
+}
 const game = new WordGame();
 info.addEventListener("click", () => {
   game.hideInfo();
@@ -1287,6 +1292,7 @@ async function initMatching() {
   if (request) {
     cancelAnimationFrame(request);
   }
+  game.cancelMediaStream();
   game.resetVisualisation();
   game.showButtonStart();
   let arr = await game.loadData();
@@ -1320,7 +1326,7 @@ function initPronouncing() {
   usedPhrasesForPronouncing = [];
   indexOfWords = 0;
   indexOfPhrases = 0;
-  game.defineWordForPronouncing();
+  game.leftArrowHandler();
   game.setMicrophoneActive(true);
   game.createVisualisation();
   game.listenMicrophone();
@@ -1376,7 +1382,7 @@ function handleToggle() {
   if (isMicrophoneAvailable) {
     isPhrasePronouncing = !isPhrasePronouncing;
     game.setToggleStyle();
-    game.defineWordForPronouncing();
+    game.leftArrowHandler();
   }
 }
 
