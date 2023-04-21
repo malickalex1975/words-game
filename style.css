@@ -279,7 +279,7 @@ body {
   font-size: 20px;
   color: #000066;
   text-align: center;
-  font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+  font-family:monospace;
 }
 .word-container {
   display: flex;
@@ -325,7 +325,7 @@ body {
   color: #000066;
   text-align:center;
   word-wrap: normal;
-  font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+  font-family:  monospace;
   transition: 100ms;
 }
 
@@ -634,7 +634,7 @@ body {
 }
 .menu-item {
   padding: 10px;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   font-size: 20px;
   color: #000066;
   cursor: pointer;

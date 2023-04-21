@@ -1079,7 +1079,8 @@ class WordGame {
           console.log(result.phrase, result.confidence);
           game.processPronouncingResult(result);
         })
-        .catch(() => {
+        .catch((error) => {
+          game.showInfo(`<p>Error happened: \r\n<span>${error}</span><p>`)
           game.setMicrophoneActive(true);
           game.showLoading(false);
         })
