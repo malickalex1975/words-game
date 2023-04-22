@@ -1182,6 +1182,12 @@ class WordGame {
           indexOfPhrases += 1;
           game.showLeftArrow();
         }
+
+        if (indexOfPhrases <= usedPhrasesForPronouncing.length - 1) {
+          game.defineWordForPronouncing(usedWordsForPronouncing[indexOfPhrases] );
+        } else {
+          game.defineWordForPronouncing();
+        }
       } else if (!isPhrasePronouncing) {
         if (indexOfWords === undefined) {
           indexOfWords = 0;
@@ -1189,7 +1195,13 @@ class WordGame {
           indexOfWords += 1;
           game.showLeftArrow();
         }
+        if (indexOfWords <= usedWordsForPronouncing.length - 1) {
+          game.defineWordForPronouncing(usedWordsForPronouncing[indexOfWords] );
+        } else {
+          game.defineWordForPronouncing();
+        }
       }
+
       game.defineWordForPronouncing();
     }, 100);
     setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
@@ -1221,8 +1233,8 @@ class WordGame {
   }
 
   cancelMediaStream() {
-    if(stream){
-    stream.getTracks().forEach((track)=>track.stop())
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
     }
   }
 }
