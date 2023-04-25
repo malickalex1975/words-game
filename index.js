@@ -81,6 +81,7 @@ const mistakesPad = document.querySelector(".mistakes-pad");
 const mistakesContainer = document.querySelector(".mistakes-container");
 const pronouncingContainer = document.querySelector(".pronouncing-container");
 const pronouncingWord = document.querySelector(".pronouncing-word");
+let speakerNext= undefined
 const pronouncingResult = document.querySelector(".pronouncing-result");
 const microphone = document.querySelector(".microphone");
 const life = document.querySelector(".life");
@@ -413,6 +414,14 @@ class WordGame {
     let cursor = value ? "pointer" : "auto";
     microphone.style.opacity = opacity;
     microphone.style.cursor = cursor;
+    if(speakerNext){
+      speakerNext.style.opacity=opacity;
+      speakerNext.style.cursor=cursor
+    }
+    rightArrow.style.opacity=opacity;
+    rightArrow.style.cursor=cursor;
+    leftArrow.style.opacity=opacity;
+    leftArrow.style.cursor=cursor;
     toggleContainer.style.opacity = opacity;
     isMicrophoneAvailable = value;
   }
@@ -1065,7 +1074,7 @@ class WordGame {
     }, timeInterval);
   }
   speakerHandler(index) {
-    let speakerNext = document.querySelector(".speaker-next");
+    speakerNext = document.querySelector(".speaker-next");
     speakerNext.removeEventListener("pointerdown", () =>
       game.speakerListener(index)
     );
@@ -1074,6 +1083,7 @@ class WordGame {
     );
   }
   speakerListener(index) {
+    if(isMicrophoneAvailable){
     let endpoint = isPhrasePronouncing
       ? wordsArray?.[index]?.audioExample
       : wordsArray?.[index]?.audio;
@@ -1081,6 +1091,7 @@ class WordGame {
       playAudio(mainUrl + endpoint);
     }
   }
+}
 
   microphoneHandler() {
     if (!isMicrophoneAvailable) {

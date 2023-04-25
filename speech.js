@@ -5,6 +5,7 @@ export default class Speech {
   }
 
   speechRecognition() {
+    try{
     let isStarted;
     let interval;
     return new Promise((resolve, reject) => {
@@ -28,30 +29,34 @@ export default class Speech {
         let listener = (event) => {
           isStarted = false;
           clearInterval(interval);
+          const results= event.results
           const phrase = event.results[0][0].transcript;
           const confidence = event.results[0][0].confidence;
-          Array.from(event.results).forEach((element) => {
+          Array.from(results).forEach((element) => {
             Array.from(element).forEach((el) => console.log(el));
           });
           console.dir(`Results: ${event.results}`);
           console.log(`Result received: ${phrase}`);
           this.recognition.stop();
           this.recognition.removeEventListener("result", listener);
-          return resolve({ phrase, confidence });
+          return resolve({ phrase, confidence, results });
         };
+        
+         const nomatchListener=()=>{return reject('speech not recognized! Try again!')}
 
         this.recognition.addEventListener("result", listener);
+        this.recognition.addEventListener("nomatch",nomatchListener);
 
         this.onerror = (event) => {
           console.log("error:", event.error);
           this.recognition.stop();
-
           return reject(event.error);
         };
       } else {
         return reject("SpeechRecognition doesn't support");
       }
     });
+  }catch(err){alert(err)}
   }
   stopRecognition() {
     if (this.recognition) {
