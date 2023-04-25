@@ -1091,6 +1091,7 @@ class WordGame {
       mySpeech
         .speechRecognition()
         .then((result) => {
+          alert(result.phrase, result.confidence)
           console.log(result.phrase, result.confidence);
           game.processPronouncingResult(result);
         })

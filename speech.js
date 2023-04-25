@@ -20,9 +20,10 @@ export default class Speech {
         interval = setInterval(() => {
           if (isStarted) {
             clearInterval(interval);
+            this.stopRecognition();
             return reject("It took too long time!Try again!");
           }
-        }, 15000);
+        }, 5000);
 
         let listener = (event) => {
           isStarted = false;
@@ -53,8 +54,9 @@ export default class Speech {
     });
   }
   stopRecognition() {
-    if (this.recognition) {this.recognition.stop();
-    console.log("Recognition stopped!")
-    };
+    if (this.recognition) {
+      this.recognition.stop();
+      console.log("Recognition stopped!");
+    }
   }
 }
