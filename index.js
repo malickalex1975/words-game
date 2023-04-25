@@ -7,7 +7,7 @@ import Speech from "./speech.js";
 let mySpeech = new Speech("en");
 let stream;
 let audioPromise, request, transcriptForPronouncing;
-let isMicrophoneAvailable = false;
+let isMicrophoneAvailable = true;
 let wordForPronouncing = "";
 let usedWordsForPronouncing = [];
 let usedPhrasesForPronouncing = [];
@@ -254,6 +254,7 @@ class WordGame {
     scorePlace.style.opacity = opacity;
   }
   showInfo(html) {
+    this.showLoading(false);
     info.style.transform = "translateY(0%)";
     info.innerHTML = html;
     setTimeout(() => {
@@ -307,9 +308,17 @@ class WordGame {
     leftArrow.style.visibility = "visible";
     leftArrow.style.opacity = ".7";
   }
+  showRightArrow() {
+    rightArrow.style.visibility = "visible";
+    rightArrow.style.opacity = ".7";
+  }
   hideLeftArrow() {
     leftArrow.style.visibility = "hidden";
     leftArrow.style.opacity = "0";
+  }
+  hideRightArrow() {
+    rightArrow.style.visibility = "hidden";
+    rightArrow.style.opacity = "0";
   }
 
   showClock() {
@@ -1086,7 +1095,9 @@ class WordGame {
           game.processPronouncingResult(result);
         })
         .catch((error) => {
-          game.showInfo(`<p>Error happened: \r\n<span>${error}</span><p>`);
+          if (menu.pronouncing) {
+            game.showInfo(`<p>Error happened: \r\n<span>${error}</span><p>`);
+          }
         })
         .finally(() => {
           game.setMicrophoneActive(true);
@@ -1173,63 +1184,71 @@ class WordGame {
     }
   }
   rightArrowHandler() {
-    pronouncingWord.style.animationName = "go-forward";
-    setTimeout(() => {
-      if (isPhrasePronouncing) {
-        if (indexOfPhrases === undefined) {
-          indexOfPhrases = 0;
-        } else {
-          indexOfPhrases += 1;
-          game.showLeftArrow();
+    if (isMicrophoneAvailable) {
+      pronouncingWord.style.animationName = "go-forward";
+      setTimeout(() => {
+        if (isPhrasePronouncing) {
+          if (indexOfPhrases === undefined) {
+            indexOfPhrases = 0;
+          } else {
+            indexOfPhrases += 1;
+            game.showLeftArrow();
+          }
+
+          if (indexOfPhrases <= usedPhrasesForPronouncing.length - 1) {
+            game.defineWordForPronouncing(
+              usedWordsForPronouncing[indexOfPhrases]
+            );
+          } else {
+            game.defineWordForPronouncing();
+          }
+        } else if (!isPhrasePronouncing) {
+          if (indexOfWords === undefined) {
+            indexOfWords = 0;
+          } else {
+            indexOfWords += 1;
+            game.showLeftArrow();
+          }
+          if (indexOfWords <= usedWordsForPronouncing.length - 1) {
+            game.defineWordForPronouncing(
+              usedWordsForPronouncing[indexOfWords]
+            );
+          } else {
+            game.defineWordForPronouncing();
+          }
         }
 
-        if (indexOfPhrases <= usedPhrasesForPronouncing.length - 1) {
-          game.defineWordForPronouncing(usedWordsForPronouncing[indexOfPhrases] );
-        } else {
-          game.defineWordForPronouncing();
-        }
-      } else if (!isPhrasePronouncing) {
-        if (indexOfWords === undefined) {
-          indexOfWords = 0;
-        } else {
-          indexOfWords += 1;
-          game.showLeftArrow();
-        }
-        if (indexOfWords <= usedWordsForPronouncing.length - 1) {
-          game.defineWordForPronouncing(usedWordsForPronouncing[indexOfWords] );
-        } else {
-          game.defineWordForPronouncing();
-        }
-      }
-
-      game.defineWordForPronouncing();
-    }, 100);
-    setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
+        game.defineWordForPronouncing();
+      }, 100);
+      setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
+    }
   }
   leftArrowHandler() {
-    pronouncingWord.style.animationName = "go-back";
-    setTimeout(() => {
-      if (isPhrasePronouncing) {
-        if (indexOfPhrases <= 1) {
-          indexOfPhrases = 0;
-          game.hideLeftArrow();
-        } else {
-          indexOfPhrases -= 1;
+    if (isMicrophoneAvailable) {
+      pronouncingWord.style.animationName = "go-back";
+      setTimeout(() => {
+        if (isPhrasePronouncing) {
+          if (indexOfPhrases <= 1) {
+            indexOfPhrases = 0;
+            game.hideLeftArrow();
+          } else {
+            indexOfPhrases -= 1;
+          }
+          game.defineWordForPronouncing(
+            usedPhrasesForPronouncing[indexOfPhrases]
+          );
+        } else if (!isPhrasePronouncing) {
+          if (indexOfWords <= 1) {
+            indexOfWords = 0;
+            game.hideLeftArrow();
+          } else {
+            indexOfWords -= 1;
+          }
+          game.defineWordForPronouncing(usedWordsForPronouncing[indexOfWords]);
         }
-        game.defineWordForPronouncing(
-          usedPhrasesForPronouncing[indexOfPhrases]
-        );
-      } else if (!isPhrasePronouncing) {
-        if (indexOfWords <= 1) {
-          indexOfWords = 0;
-          game.hideLeftArrow();
-        } else {
-          indexOfWords -= 1;
-        }
-        game.defineWordForPronouncing(usedWordsForPronouncing[indexOfWords]);
-      }
-    }, 100);
-    setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
+      }, 100);
+      setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
+    }
   }
 
   cancelMediaStream() {
@@ -1304,6 +1323,8 @@ async function initMatching() {
   if (request) {
     cancelAnimationFrame(request);
   }
+  mySpeech.stopRecognition()
+  game.showLoading(false);
   game.cancelMediaStream();
   game.resetVisualisation();
   game.showButtonStart();
@@ -1318,7 +1339,10 @@ async function initMatching() {
   leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
 }
 function initPronouncing() {
+  mySpeech.stopRecognition()
   audioCtx = undefined;
+  mistakes = [];
+  game.showLoading(false);
   game.hideClock();
   game.stopClock();
   game.hideExamples();
@@ -1341,7 +1365,7 @@ function initPronouncing() {
   game.leftArrowHandler();
   game.setMicrophoneActive(true);
   game.createVisualisation();
-  game.listenMicrophone();
+  //game.listenMicrophone();
 }
 function wakeLock() {
   navigator.wakeLock.request("screen").catch(console.log);

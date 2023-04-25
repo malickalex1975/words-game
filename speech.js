@@ -5,8 +5,8 @@ export default class Speech {
   }
 
   speechRecognition() {
-    let isStarted
-    let interval
+    let isStarted;
+    let interval;
     return new Promise((resolve, reject) => {
       if ("webkitSpeechRecognition" in window) {
         this.recognition = new webkitSpeechRecognition();
@@ -16,18 +16,17 @@ export default class Speech {
         this.recognition.maxAlternatives = 10;
         this.recognition.start();
         console.log("Ready to receive a command.");
-        isStarted=true;
-        interval= setInterval(()=>{
-          if(isStarted){
-            clearInterval(interval)
-            return reject("It took too long time!Try again!")
+        isStarted = true;
+        interval = setInterval(() => {
+          if (isStarted) {
+            clearInterval(interval);
+            return reject("It took too long time!Try again!");
           }
-
-        },15000)
+        }, 15000);
 
         let listener = (event) => {
-          isStarted= false;
-          clearInterval(interval)
+          isStarted = false;
+          clearInterval(interval);
           const phrase = event.results[0][0].transcript;
           const confidence = event.results[0][0].confidence;
           Array.from(event.results).forEach((element) => {
@@ -54,6 +53,8 @@ export default class Speech {
     });
   }
   stopRecognition() {
-    this.recognition.stop();
+    if (this.recognition) {this.recognition.stop();
+    console.log("Recognition stopped!")
+    };
   }
 }
