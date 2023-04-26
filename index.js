@@ -81,7 +81,7 @@ const mistakesPad = document.querySelector(".mistakes-pad");
 const mistakesContainer = document.querySelector(".mistakes-container");
 const pronouncingContainer = document.querySelector(".pronouncing-container");
 const pronouncingWord = document.querySelector(".pronouncing-word");
-let speakerNext= undefined
+let speakerNext = undefined;
 const pronouncingResult = document.querySelector(".pronouncing-result");
 const microphone = document.querySelector(".microphone");
 const life = document.querySelector(".life");
@@ -264,7 +264,7 @@ class WordGame {
   }
   hideInfo() {
     info.style.transform = "translateY(-200%)";
-    info.innerHTML=''
+    info.innerHTML = "";
   }
   showMistakesPad() {
     mistakesPad.style.transform = "translateY(0%)";
@@ -342,13 +342,13 @@ class WordGame {
       toggleElement.style.transform = "translateX(0px)";
     }
   }
-  showExamples(index=0) {
+  showExamples(index = 0) {
     exampleContainer.style.visibility = "visible";
     exampleContainer.style.opacity = "1";
     let containerBottom = exampleContainer.getBoundingClientRect().bottom;
     timeouts = [];
-    let i=index
-    if(i<=598) {
+    let i = index;
+    if (i <= 598) {
       let timeout = setTimeout(() => {
         let p = document.createElement("span");
         p.textContent = `${wordsArray[i].word} - ${wordsArray[i].wordTranslate}, `;
@@ -365,10 +365,10 @@ class WordGame {
           exampleContainer.scrollTo(0, exampleContainer.scrollHeight);
         }
         i++;
-        this.showExamples(i)
-      }, 300 );
+        this.showExamples(i);
+      }, 300);
       timeouts.push(timeout);
-    }else this.showExamples()
+    } else this.showExamples();
   }
   hideExamples() {
     if (timeouts) {
@@ -418,14 +418,14 @@ class WordGame {
     let cursor = value ? "pointer" : "auto";
     microphone.style.opacity = opacity;
     microphone.style.cursor = cursor;
-    if(speakerNext){
-      speakerNext.style.opacity=opacity;
-      speakerNext.style.cursor=cursor
+    if (speakerNext) {
+      speakerNext.style.opacity = opacity;
+      speakerNext.style.cursor = cursor;
     }
-    rightArrow.style.opacity=opacity;
-    rightArrow.style.cursor=cursor;
-    leftArrow.style.opacity=opacity;
-    leftArrow.style.cursor=cursor;
+    rightArrow.style.opacity = opacity;
+    rightArrow.style.cursor = cursor;
+    leftArrow.style.opacity = opacity;
+    leftArrow.style.cursor = cursor;
     toggleContainer.style.opacity = opacity;
     isMicrophoneAvailable = value;
   }
@@ -610,7 +610,9 @@ class WordGame {
   showLoading(visibility) {
     isLoading = visibility;
     let v = visibility ? "visible" : "hidden";
+    let opacity = visibility ? 0.3 : 1;
     loadingElement.style.visibility = v;
+    mainContainer.style.opacity=opacity
   }
   operateClock() {
     timeStart = Date.now();
@@ -1087,26 +1089,27 @@ class WordGame {
     );
   }
   speakerListener(index) {
-    if(isMicrophoneAvailable){
-    let endpoint = isPhrasePronouncing
-      ? wordsArray?.[index]?.audioExample
-      : wordsArray?.[index]?.audio;
-    if (endpoint) {
-      playAudio(mainUrl + endpoint);
+    if (isMicrophoneAvailable) {
+      let endpoint = isPhrasePronouncing
+        ? wordsArray?.[index]?.audioExample
+        : wordsArray?.[index]?.audio;
+      if (endpoint) {
+        playAudio(mainUrl + endpoint);
+      }
     }
   }
-}
 
   microphoneHandler() {
     if (!isMicrophoneAvailable) {
       return;
     } else {
+      game.hideInfo();
       game.setMicrophoneActive(false);
       game.showLoading(true);
       mySpeech
         .speechRecognition()
         .then((result) => {
-          alert(result.phrase, result.confidence)
+         // alert(`${result.phrase}, ${result.confidence}`);
           console.log(result.phrase, result.confidence);
           game.processPronouncingResult(result);
         })
@@ -1339,7 +1342,8 @@ async function initMatching() {
   if (request) {
     cancelAnimationFrame(request);
   }
-  mySpeech.stopRecognition()
+  game.hideInfo();
+  mySpeech.stopRecognition();
   game.showLoading(false);
   game.cancelMediaStream();
   game.resetVisualisation();
@@ -1355,10 +1359,11 @@ async function initMatching() {
   leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
 }
 function initPronouncing() {
-  mySpeech.stopRecognition()
+  mySpeech.stopRecognition();
   audioCtx = undefined;
   mistakes = [];
   game.showLoading(false);
+  game.hideInfo();
   game.hideClock();
   game.stopClock();
   game.hideExamples();
@@ -1381,7 +1386,7 @@ function initPronouncing() {
   game.leftArrowHandler();
   game.setMicrophoneActive(true);
   game.createVisualisation();
-  //game.listenMicrophone();
+  game.listenMicrophone();
 }
 function wakeLock() {
   navigator.wakeLock.request("screen").catch(console.log);

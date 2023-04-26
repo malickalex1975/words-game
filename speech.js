@@ -1,5 +1,5 @@
 export default class Speech {
-  constructor(lang) {
+  constructor(lang='en') {
     this.lang = lang;
     this.recognition = undefined;
   }
@@ -24,7 +24,7 @@ export default class Speech {
             this.stopRecognition();
             return reject("It took too long time!Try again!");
           }
-        }, 5000);
+        }, 7000);
 
         let listener = (event) => {
           isStarted = false;
@@ -43,9 +43,10 @@ export default class Speech {
         };
         
          const nomatchListener=()=>{return reject('speech not recognized! Try again!')}
-
+        const audioendListener=()=>{console.log('audioend')}
         this.recognition.addEventListener("result", listener);
         this.recognition.addEventListener("nomatch",nomatchListener);
+        this.recognition.addEventListener("audioend",audioendListener);
 
         this.onerror = (event) => {
           console.log("error:", event.error);
@@ -56,7 +57,7 @@ export default class Speech {
         return reject("SpeechRecognition doesn't support");
       }
     });
-  }catch(err){alert(err)}
+  }catch(err){alert(`from speech.js:  ${err}`)}
   }
   stopRecognition() {
     if (this.recognition) {
