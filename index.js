@@ -264,6 +264,7 @@ class WordGame {
   }
   hideInfo() {
     info.style.transform = "translateY(-200%)";
+    info.innerHTML=''
   }
   showMistakesPad() {
     mistakesPad.style.transform = "translateY(0%)";
@@ -341,12 +342,13 @@ class WordGame {
       toggleElement.style.transform = "translateX(0px)";
     }
   }
-  showExamples() {
+  showExamples(index=0) {
     exampleContainer.style.visibility = "visible";
     exampleContainer.style.opacity = "1";
     let containerBottom = exampleContainer.getBoundingClientRect().bottom;
     timeouts = [];
-    for (let i = 0; i < 600; i++) {
+    let i=index
+    if(i<=598) {
       let timeout = setTimeout(() => {
         let p = document.createElement("span");
         p.textContent = `${wordsArray[i].word} - ${wordsArray[i].wordTranslate}, `;
@@ -362,9 +364,11 @@ class WordGame {
         if (childBottom - containerBottom > 200) {
           exampleContainer.scrollTo(0, exampleContainer.scrollHeight);
         }
-      }, 300 * i);
+        i++;
+        this.showExamples(i)
+      }, 300 );
       timeouts.push(timeout);
-    }
+    }else this.showExamples()
   }
   hideExamples() {
     if (timeouts) {
