@@ -374,6 +374,7 @@ class WordGame {
     if (timeouts) {
       timeouts.forEach((timeout) => clearTimeout(timeout));
     }
+    timeouts=[]
     exampleContainer.style.visibility = "hidden";
     exampleContainer.style.opacity = "0";
     exampleContainer.innerHTML = "";
@@ -610,9 +611,9 @@ class WordGame {
   showLoading(visibility) {
     isLoading = visibility;
     let v = visibility ? "visible" : "hidden";
-    let opacity = visibility ? 0.3 : 1;
+    let opacity = visibility ? 0.6 : 1;
     loadingElement.style.visibility = v;
-    mainContainer.style.opacity=opacity
+    pronouncingContainer.style.opacity=opacity
   }
   operateClock() {
     timeStart = Date.now();
@@ -1043,13 +1044,13 @@ class WordGame {
         if (!ignore) {
           usedPhrasesForPronouncing.push(index);
         }
-        word = wordsArray[index].textExample;
-        // .replace("<b>", "")
-        // .replace("</b>", "");
+        word = wordsArray[index].textExample
+         .replace("<b>", "")
+         .replace("</b>", "");
         transcriptForPronouncing = "";
       }
       return { word, index };
-    } else return this.getWordForPronouncing();
+    } else return this.getWordForPronouncing(undefined,false);
   }
   defineWordForPronouncing(ind = undefined) {
     console.log("word index:", indexOfWords);
@@ -1064,6 +1065,7 @@ class WordGame {
   writeWord(word, index) {
     let symbolNumber = word.length;
     let timeInterval = 500 / symbolNumber;
+    timeInterval=50;
     let n = 0;
     let interval;
 
@@ -1106,6 +1108,8 @@ class WordGame {
       game.hideInfo();
       game.setMicrophoneActive(false);
       game.showLoading(true);
+      setTimeout(()=> game.listenMicrophone(),100)
+     
       mySpeech
         .speechRecognition()
         .then((result) => {
@@ -1121,6 +1125,7 @@ class WordGame {
         .finally(() => {
           game.setMicrophoneActive(true);
           game.showLoading(false);
+          game.cancelMediaStream()
         });
     }
   }
@@ -1136,8 +1141,9 @@ class WordGame {
         )}%`;
       }
       setTimeout(() => {
-        pronouncingWord.style.transform = "translate(-100vw)";
-        pronouncingWord.style.color = "";
+       // pronouncingWord.style.transform = "translate(-100vw)";
+       // pronouncingWord.style.color = "";
+        this.rightArrowHandler()
       }, 500);
 
       setTimeout(() => this.defineWordForPronouncing(), 500);
@@ -1187,8 +1193,8 @@ class WordGame {
         analizer.getByteFrequencyData(freqArray);
         for (let i = 0; i < stripNumber; i++) {
           let height = freqArray[stripNumber + i];
-          if (height < 5) {
-            height = 5;
+          if (height < 10) {
+            height = 10;
           }
           let el = stripsArray[i];
           el.style.height = (100 / 256) * height + "px";
@@ -1204,6 +1210,8 @@ class WordGame {
   }
   rightArrowHandler() {
     if (isMicrophoneAvailable) {
+      stopAudio();
+      game.hideInfo()
       pronouncingWord.style.animationName = "go-forward";
       setTimeout(() => {
         if (isPhrasePronouncing) {
@@ -1244,6 +1252,8 @@ class WordGame {
   }
   leftArrowHandler() {
     if (isMicrophoneAvailable) {
+      stopAudio()
+      game.hideInfo()
       pronouncingWord.style.animationName = "go-back";
       setTimeout(() => {
         if (isPhrasePronouncing) {
@@ -1273,6 +1283,8 @@ class WordGame {
   cancelMediaStream() {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
+      stream=undefined;
+      audioCtx=undefined;
     }
   }
 }
@@ -1386,18 +1398,22 @@ function initPronouncing() {
   game.leftArrowHandler();
   game.setMicrophoneActive(true);
   game.createVisualisation();
-  game.listenMicrophone();
+ // game.listenMicrophone();
 }
 function wakeLock() {
   navigator.wakeLock.request("screen").catch(console.log);
 }
 
 function playAudio(src) {
-  if (audioPromise !== undefined) {
-    audio.pause();
-  }
+ stopAudio()
   audio.src = src;
   audioPromise = audio.play().catch(console.log);
+}
+
+function stopAudio(){
+  if (audioPromise !== undefined) {
+    audio.pause();
+}
 }
 function checkOrientation() {
   let orientation = screen.orientation.type;
