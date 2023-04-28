@@ -13,6 +13,7 @@ export default class Speech {
         console.log("error:", event.error);
         this.recognition.stop();
         return reject(event.error);
+        
       };
     });
   }
