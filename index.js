@@ -4,7 +4,7 @@ const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 import Speech from "./speech.js";
-let mySpeech = new Speech("en");
+let mySpeech;
 let stream;
 let audioPromise, request, transcriptForPronouncing;
 let isMicrophoneAvailable = true;
@@ -60,6 +60,7 @@ let visualisationStrips, audioCtx, analizer;
 const stripNumber = 32;
 let freqArray = new Uint8Array(stripNumber * 2);
 const visualisation = document.querySelector(".visualisation");
+const youSay = document.querySelector(".you-say");
 const rightArrow = document.querySelector(".right-arrow");
 const leftArrow = document.querySelector(".left-arrow");
 const pronouncingTranscript = document.querySelector(".pronouncing-transcript");
@@ -101,6 +102,7 @@ const toggleContainer = document.querySelector(".toggle-container");
 const toggleElement = document.querySelector(".toggle-element");
 const digit1 = document.querySelector(".digit-1");
 const digit2 = document.querySelector(".digit-2");
+const ear = document.querySelector(".ear");
 let isPhrasePronouncing = false;
 let wordsArray = [];
 const audio = new Audio();
@@ -374,7 +376,7 @@ class WordGame {
     if (timeouts) {
       timeouts.forEach((timeout) => clearTimeout(timeout));
     }
-    timeouts=[]
+    timeouts = [];
     exampleContainer.style.visibility = "hidden";
     exampleContainer.style.opacity = "0";
     exampleContainer.innerHTML = "";
@@ -416,6 +418,7 @@ class WordGame {
   }
   setMicrophoneActive(value) {
     let opacity = value ? 0.7 : 0.1;
+    let earOpacity=!value ? 0.7 : 0.1;
     let cursor = value ? "pointer" : "auto";
     microphone.style.opacity = opacity;
     microphone.style.cursor = cursor;
@@ -429,6 +432,7 @@ class WordGame {
     leftArrow.style.cursor = cursor;
     toggleContainer.style.opacity = opacity;
     isMicrophoneAvailable = value;
+    ear.style.opacity=earOpacity;
   }
   setScore() {
     const digitElement1 = document.querySelectorAll(".digit-element-1")[0];
@@ -613,7 +617,7 @@ class WordGame {
     let v = visibility ? "visible" : "hidden";
     let opacity = visibility ? 0.6 : 1;
     loadingElement.style.visibility = v;
-    pronouncingContainer.style.opacity=opacity
+    pronouncingContainer.style.opacity = opacity;
   }
   operateClock() {
     timeStart = Date.now();
@@ -1045,12 +1049,12 @@ class WordGame {
           usedPhrasesForPronouncing.push(index);
         }
         word = wordsArray[index].textExample
-         .replace("<b>", "")
-         .replace("</b>", "");
+          .replace("<b>", "")
+          .replace("</b>", "");
         transcriptForPronouncing = "";
       }
       return { word, index };
-    } else return this.getWordForPronouncing(undefined,false);
+    } else return this.getWordForPronouncing(undefined, false);
   }
   defineWordForPronouncing(ind = undefined) {
     console.log("word index:", indexOfWords);
@@ -1065,7 +1069,7 @@ class WordGame {
   writeWord(word, index) {
     let symbolNumber = word.length;
     let timeInterval = 500 / symbolNumber;
-    timeInterval=50;
+    timeInterval = 50;
     let n = 0;
     let interval;
 
@@ -1105,15 +1109,14 @@ class WordGame {
     if (!isMicrophoneAvailable) {
       return;
     } else {
+      mySpeech = new Speech("en");
       game.hideInfo();
-      game.setMicrophoneActive(false);
-      game.showLoading(true);
-      setTimeout(()=> game.listenMicrophone(),100)
-     
+
+     // setTimeout(() => game.listenMicrophone(), 100);
+
       mySpeech
         .speechRecognition()
         .then((result) => {
-         // alert(`${result.phrase}, ${result.confidence}`);
           console.log(result.phrase, result.confidence);
           game.processPronouncingResult(result);
         })
@@ -1125,32 +1128,54 @@ class WordGame {
         .finally(() => {
           game.setMicrophoneActive(true);
           game.showLoading(false);
-          game.cancelMediaStream()
+          game.cancelMediaStream();
+        });
+      mySpeech
+        .lookForSoundStart()
+        .then((message) => {
+          console.log(message);
+          game.showLoading(true);
+        })
+        .catch((error) => {
+          if (menu.pronouncing) {
+            game.showInfo(`<p>Error happened: \r\n<span>${error}</span><p>`);
+          }
+        });
+      mySpeech
+        .lookForAudioStart()
+        .then((message) => {
+          console.log(message);
+          game.setMicrophoneActive(false);
+        })
+        .catch((error) => {
+          if (menu.pronouncing) {
+            game.showInfo(`<p>Error happened: \r\n<span>${error}</span><p>`);
+          }
         });
     }
   }
   processPronouncingResult(result) {
-    if (true) {
+    if (!isPhrasePronouncing) {
+      ear.style.opacity = 0.8;
       if (
         wordForPronouncing === result.phrase.toLowerCase() &&
-        result.confidence >= 0.7
+        result.confidence > 0
       ) {
         pronouncingWord.style.color = "green";
         pronouncingResult.textContent = `${(result.confidence * 100).toFixed(
           1
         )}%`;
+        youSay.textContent = result.phrase;
+        youSay.style.color = "green";
+      } else {
+        pronouncingResult.textContent = `${(0).toFixed(1)}%`;
+        youSay.textContent = result.phrase;
+        youSay.style.color = "red";
       }
       setTimeout(() => {
-       // pronouncingWord.style.transform = "translate(-100vw)";
-       // pronouncingWord.style.color = "";
-        this.rightArrowHandler()
+        pronouncingWord.style.color = "";
+        this.rightArrowHandler();
       }, 500);
-
-      setTimeout(() => this.defineWordForPronouncing(), 500);
-      setTimeout(
-        () => (pronouncingWord.style.transform = "translate(0vw)"),
-        800
-      );
     }
   }
   createVisualisation() {
@@ -1210,8 +1235,13 @@ class WordGame {
   }
   rightArrowHandler() {
     if (isMicrophoneAvailable) {
+      setTimeout(() => {
+        youSay.textContent = "";
+        youSay.style.color = "";
+       
+      }, 1000);
       stopAudio();
-      game.hideInfo()
+      game.hideInfo();
       pronouncingWord.style.animationName = "go-forward";
       setTimeout(() => {
         if (isPhrasePronouncing) {
@@ -1244,16 +1274,20 @@ class WordGame {
             game.defineWordForPronouncing();
           }
         }
-
-        game.defineWordForPronouncing();
-      }, 100);
+      });
       setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
     }
   }
   leftArrowHandler() {
     if (isMicrophoneAvailable) {
-      stopAudio()
-      game.hideInfo()
+      setTimeout(() => {
+        youSay.textContent = "";
+        youSay.style.color = "";
+       
+      }, 1000);
+
+      stopAudio();
+      game.hideInfo();
       pronouncingWord.style.animationName = "go-back";
       setTimeout(() => {
         if (isPhrasePronouncing) {
@@ -1283,8 +1317,8 @@ class WordGame {
   cancelMediaStream() {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
-      stream=undefined;
-      audioCtx=undefined;
+      stream = undefined;
+      audioCtx = undefined;
     }
   }
 }
@@ -1355,7 +1389,10 @@ async function initMatching() {
     cancelAnimationFrame(request);
   }
   game.hideInfo();
-  mySpeech.stopRecognition();
+  if (mySpeech) {
+    mySpeech.stopRecognition();
+  }
+
   game.showLoading(false);
   game.cancelMediaStream();
   game.resetVisualisation();
@@ -1371,7 +1408,9 @@ async function initMatching() {
   leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
 }
 function initPronouncing() {
-  mySpeech.stopRecognition();
+  if (mySpeech) {
+    mySpeech.stopRecognition();
+  }
   audioCtx = undefined;
   mistakes = [];
   game.showLoading(false);
@@ -1398,22 +1437,22 @@ function initPronouncing() {
   game.leftArrowHandler();
   game.setMicrophoneActive(true);
   game.createVisualisation();
- // game.listenMicrophone();
+  // game.listenMicrophone();
 }
 function wakeLock() {
   navigator.wakeLock.request("screen").catch(console.log);
 }
 
 function playAudio(src) {
- stopAudio()
+  stopAudio();
   audio.src = src;
   audioPromise = audio.play().catch(console.log);
 }
 
-function stopAudio(){
+function stopAudio() {
   if (audioPromise !== undefined) {
     audio.pause();
-}
+  }
 }
 function checkOrientation() {
   let orientation = screen.orientation.type;
