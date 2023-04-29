@@ -345,32 +345,34 @@ class WordGame {
     }
   }
   showExamples(index = 0) {
-    exampleContainer.style.visibility = "visible";
-    exampleContainer.style.opacity = "1";
-    let containerBottom = exampleContainer.getBoundingClientRect().bottom;
-    timeouts = [];
-    let i = index;
-    if (i <= 598) {
-      let timeout = setTimeout(() => {
-        let p = document.createElement("span");
-        p.textContent = `${wordsArray[i].word} - ${wordsArray[i].wordTranslate}, `;
-        let r = this.getRandomNumber(0, 220);
-        let g = this.getRandomNumber(0, 220);
-        let b = this.getRandomNumber(0, 220);
-        p.style.color = `rgba(${r},${g},${b},1)`;
-        let size = this.getRandomNumber(20, 32);
-        p.style.fontSize = size + "px";
-        p.className = `example-${i}`;
-        exampleContainer.appendChild(p);
-        let childBottom = p.getBoundingClientRect().bottom;
-        if (childBottom - containerBottom > 200) {
-          exampleContainer.scrollTo(0, exampleContainer.scrollHeight);
-        }
-        i++;
-        this.showExamples(i);
-      }, 300);
-      timeouts.push(timeout);
-    } else this.showExamples();
+    if (menu.matching) {
+      exampleContainer.style.visibility = "visible";
+      exampleContainer.style.opacity = "1";
+      let containerBottom = exampleContainer.getBoundingClientRect().bottom;
+      timeouts = [];
+      let i = index;
+      if (i <= 598) {
+        let timeout = setTimeout(() => {
+          let p = document.createElement("span");
+          p.textContent = `${wordsArray[i].word} - ${wordsArray[i].wordTranslate}, `;
+          let r = this.getRandomNumber(0, 220);
+          let g = this.getRandomNumber(0, 220);
+          let b = this.getRandomNumber(0, 220);
+          p.style.color = `rgba(${r},${g},${b},1)`;
+          let size = this.getRandomNumber(20, 32);
+          p.style.fontSize = size + "px";
+          p.className = `example-${i}`;
+          exampleContainer.appendChild(p);
+          let childBottom = p.getBoundingClientRect().bottom;
+          if (childBottom - containerBottom > 200) {
+            exampleContainer.scrollTo(0, exampleContainer.scrollHeight);
+          }
+          i++;
+          this.showExamples(i);
+        }, 300);
+        timeouts.push(timeout);
+      } else this.showExamples();
+    }
   }
   hideExamples() {
     if (timeouts) {
@@ -418,7 +420,7 @@ class WordGame {
   }
   setMicrophoneActive(value) {
     let opacity = value ? 0.7 : 0.1;
-    let earOpacity=!value ? 0.7 : 0.1;
+    let earOpacity = !value ? 0.7 : 0.1;
     let cursor = value ? "pointer" : "auto";
     microphone.style.opacity = opacity;
     microphone.style.cursor = cursor;
@@ -432,7 +434,7 @@ class WordGame {
     leftArrow.style.cursor = cursor;
     toggleContainer.style.opacity = opacity;
     isMicrophoneAvailable = value;
-    ear.style.opacity=earOpacity;
+    ear.style.opacity = earOpacity;
   }
   setScore() {
     const digitElement1 = document.querySelectorAll(".digit-element-1")[0];
@@ -1072,7 +1074,7 @@ class WordGame {
     timeInterval = 50;
     let n = 0;
     let interval;
-
+    this.speakerListener(index)
     interval = setInterval(() => {
       n++;
       pronouncingWord.innerHTML = `<p>${
@@ -1112,7 +1114,7 @@ class WordGame {
       mySpeech = new Speech("en");
       game.hideInfo();
 
-     // setTimeout(() => game.listenMicrophone(), 100);
+      // setTimeout(() => game.listenMicrophone(), 100);
 
       mySpeech
         .speechRecognition()
@@ -1166,10 +1168,12 @@ class WordGame {
           1
         )}%`;
         youSay.textContent = result.phrase;
+        youSay.style.opacity = "1";
         youSay.style.color = "green";
       } else {
         pronouncingResult.textContent = `${(0).toFixed(1)}%`;
         youSay.textContent = result.phrase;
+        youSay.style.opacity = "1";
         youSay.style.color = "red";
       }
       setTimeout(() => {
@@ -1236,9 +1240,8 @@ class WordGame {
   rightArrowHandler() {
     if (isMicrophoneAvailable) {
       setTimeout(() => {
-        youSay.textContent = "";
+        youSay.style.opacity = "0";
         youSay.style.color = "";
-       
       }, 1000);
       stopAudio();
       game.hideInfo();
@@ -1281,9 +1284,8 @@ class WordGame {
   leftArrowHandler() {
     if (isMicrophoneAvailable) {
       setTimeout(() => {
-        youSay.textContent = "";
+        youSay.style.opacity = "0";
         youSay.style.color = "";
-       
       }, 1000);
 
       stopAudio();
@@ -1402,6 +1404,8 @@ async function initMatching() {
   game.hideExamples();
   game.showExamples();
   game.hidePronouncing();
+  game.hideLeftArrow();
+  game.hideRightArrow();
   exampleContainer.addEventListener("pointerdown", listenExamples);
   microphone.removeEventListener("pointerdown", game.microphoneHandler);
   rightArrow.removeEventListener("pointerdown", game.rightArrowHandler);
@@ -1424,6 +1428,8 @@ function initPronouncing() {
   game.hideGamePad();
   game.showScore(false);
   game.showPronouncing();
+  game.showLeftArrow();
+  game.showRightArrow();
   game.showLevelsContainer();
   game.setToggleStyle();
   exampleContainer.removeEventListener("pointerdown", listenExamples);
