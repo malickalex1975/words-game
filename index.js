@@ -6,6 +6,7 @@ const successSound = "./assets/mp3/success.mp3";
 import Speech from "./speech.js";
 let mySpeech;
 let stream;
+let currentIndexOfWord;
 let audioPromise, request, transcriptForPronouncing;
 let isMicrophoneAvailable = true;
 let wordForPronouncing = "";
@@ -17,6 +18,8 @@ let mistakes = [];
 let allUsedWords = [];
 let isMoving = false;
 let isLoading = false;
+let isTranslateUp = false;
+let isTranslateDown = false;
 let currentLevel, maxLevel, lastLevel, interval, timeouts, timeoutForStart;
 let downX, downY;
 let stripsArray = [];
@@ -26,6 +29,7 @@ let activeRightButton = undefined;
 let emptyLeftButtons = [];
 let emptyRightButtons = [];
 let wordsInColumn = 6;
+let isTranslated = false;
 const initialMaxLevel = 1;
 const initialLevel = 1;
 const timeAll = 120000;
@@ -103,6 +107,7 @@ const toggleElement = document.querySelector(".toggle-element");
 const digit1 = document.querySelector(".digit-1");
 const digit2 = document.querySelector(".digit-2");
 const ear = document.querySelector(".ear");
+const translateButton = document.querySelector(".translate-button");
 let isPhrasePronouncing = false;
 let wordsArray = [];
 const audio = new Audio();
@@ -1037,6 +1042,7 @@ class WordGame {
   }
   getWordForPronouncing(value, ignore) {
     let index = !!value ? value : this.getRandomNumber(0, 599);
+    currentIndexOfWord = index;
     let word;
     if (!usedWordsForPronouncing.includes(index) || ignore) {
       if (!isPhrasePronouncing) {
@@ -1074,7 +1080,7 @@ class WordGame {
     timeInterval = 50;
     let n = 0;
     let interval;
-    this.speakerListener(index)
+    this.speakerListener(index);
     interval = setInterval(() => {
       n++;
       pronouncingWord.innerHTML = `<p>${
@@ -1084,6 +1090,11 @@ class WordGame {
         clearInterval(interval);
         pronouncingWord.innerHTML = `<p>${word}</p><span class='transcript'>${transcriptForPronouncing}</span><div class="speaker-next" style="opacity:1"></div>`;
         this.speakerHandler(index);
+      }
+      if (isTranslated) {
+        clearInterval(interval);
+        pronouncingWord.innerHTML = "";
+        return;
       }
     }, timeInterval);
   }
@@ -1410,6 +1421,11 @@ async function initMatching() {
   microphone.removeEventListener("pointerdown", game.microphoneHandler);
   rightArrow.removeEventListener("pointerdown", game.rightArrowHandler);
   leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
+  translateButton.removeEventListener(
+    "pointerdown",
+    translateButtonDownListener
+  );
+  translateButton.removeEventListener("pointerup", translateButtonUpListener);
 }
 function initPronouncing() {
   if (mySpeech) {
@@ -1436,6 +1452,8 @@ function initPronouncing() {
   microphone.addEventListener("pointerdown", game.microphoneHandler);
   rightArrow.addEventListener("pointerdown", game.rightArrowHandler);
   leftArrow.addEventListener("pointerdown", game.leftArrowHandler);
+  translateButton.addEventListener("pointerdown", translateButtonDownListener);
+  translateButton.addEventListener("pointerup", translateButtonUpListener);
   usedWordsForPronouncing = [];
   usedPhrasesForPronouncing = [];
   indexOfWords = 0;
@@ -1445,6 +1463,38 @@ function initPronouncing() {
   game.createVisualisation();
   // game.listenMicrophone();
 }
+
+function translateButtonUpListener() {
+  if (!isTranslateUp ) {
+    isTranslated = false;
+    isTranslateUp = true;
+    setTimeout(() => {
+      game.defineWordForPronouncing(currentIndexOfWord);
+      translateButton.style.backgroundColor = "";
+      translateButton.style.color = "";
+      translateButton.innerHTML = "Translate";
+      isTranslateUp = false;
+      isTranslateDown = false;
+    }, 3000);
+  }
+}
+
+function translateButtonDownListener() {
+  if (!isTranslateUp && !isTranslateDown) {
+    isTranslateDown = true;
+    isTranslated = true;
+    setTimeout(() => {
+      let translation = isPhrasePronouncing
+        ? wordsArray[currentIndexOfWord].textExampleTranslate
+        : wordsArray[currentIndexOfWord].wordTranslate;
+      pronouncingWord.innerHTML = translation;
+      translateButton.style.backgroundColor = "#eee";
+      translateButton.style.color = "green";
+      translateButton.innerHTML = "Translated";
+    }, 100);
+  }
+}
+
 function wakeLock() {
   navigator.wakeLock.request("screen").catch(console.log);
 }
@@ -1503,5 +1553,12 @@ function handleToggle() {
     game.leftArrowHandler();
   }
 }
+function beforeUnloadListener(event) {
+  event.preventDefault();
+  alert("see you later");
+  console.log("see you later!");
+  game.showInfo("see you later!");
+}
 
 document.addEventListener("DOMContentLoaded", init);
+addEventListener("beforeunload", beforeUnloadListener, { capture: true });
