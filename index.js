@@ -1081,6 +1081,7 @@ class WordGame {
     let n = 0;
     let interval;
     this.speakerListener(index);
+    
     interval = setInterval(() => {
       n++;
       pronouncingWord.innerHTML = `<p>${
@@ -1250,6 +1251,10 @@ class WordGame {
   }
   rightArrowHandler() {
     if (isMicrophoneAvailable) {
+      pronouncingWord.innerHTML='';
+      pronouncingWord.style.animation=''
+    clearInterval(interval);
+
       setTimeout(() => {
         youSay.style.opacity = "0";
         youSay.style.color = "";
@@ -1268,7 +1273,7 @@ class WordGame {
 
           if (indexOfPhrases <= usedPhrasesForPronouncing.length - 1) {
             game.defineWordForPronouncing(
-              usedWordsForPronouncing[indexOfPhrases]
+              usedPhrasesForPronouncing[indexOfPhrases]
             );
           } else {
             game.defineWordForPronouncing();
@@ -1294,6 +1299,9 @@ class WordGame {
   }
   leftArrowHandler() {
     if (isMicrophoneAvailable) {
+      pronouncingWord.innerHTML='';
+      pronouncingWord.style.animation=''
+    clearInterval(interval);
       setTimeout(() => {
         youSay.style.opacity = "0";
         youSay.style.color = "";
