@@ -4,8 +4,11 @@ const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 import Speech from "./speech.js";
+let isTranslateShown = false;
+let globalWordIndex;
 let mySpeech;
 let stream;
+let isPrinting = false;
 let currentIndexOfWord;
 let audioPromise, request, transcriptForPronouncing;
 let isMicrophoneAvailable = true;
@@ -16,10 +19,7 @@ let indexOfWords = 0;
 let indexOfPhrases = 0;
 let mistakes = [];
 let allUsedWords = [];
-let isMoving = false;
 let isLoading = false;
-let isTranslateUp = false;
-let isTranslateDown = false;
 let currentLevel, maxLevel, lastLevel, interval, timeouts, timeoutForStart;
 let downX, downY;
 let stripsArray = [];
@@ -60,14 +60,15 @@ let currentLife = maxLife;
 let wordsIndexes = [];
 let threeWordsIndexes = [];
 let isMenu = false;
-let visualisationStrips, audioCtx, analizer;
+let audioCtx, analizer;
 const stripNumber = 32;
 let freqArray = new Uint8Array(stripNumber * 2);
+const theWord = document.querySelector(".the-word");
+const transcript = document.querySelector(".transcript");
 const visualisation = document.querySelector(".visualisation");
 const youSay = document.querySelector(".you-say");
 const rightArrow = document.querySelector(".right-arrow");
 const leftArrow = document.querySelector(".left-arrow");
-const pronouncingTranscript = document.querySelector(".pronouncing-transcript");
 const orientationWarning = document.querySelector(".warning-container");
 const mainContainer = document.querySelector(".main-container");
 const exampleContainer = document.querySelector(".example-container");
@@ -86,7 +87,7 @@ const mistakesPad = document.querySelector(".mistakes-pad");
 const mistakesContainer = document.querySelector(".mistakes-container");
 const pronouncingContainer = document.querySelector(".pronouncing-container");
 const pronouncingWord = document.querySelector(".pronouncing-word");
-let speakerNext = undefined;
+const speakerNext = document.querySelector(".speaker-next");
 const pronouncingResult = document.querySelector(".pronouncing-result");
 const microphone = document.querySelector(".microphone");
 const life = document.querySelector(".life");
@@ -107,6 +108,7 @@ const toggleElement = document.querySelector(".toggle-element");
 const digit1 = document.querySelector(".digit-1");
 const digit2 = document.querySelector(".digit-2");
 const ear = document.querySelector(".ear");
+const translatePanel = document.querySelector(".translate-panel");
 const translateButton = document.querySelector(".translate-button");
 let isPhrasePronouncing = false;
 let wordsArray = [];
@@ -304,6 +306,21 @@ class WordGame {
       wordButton.style.visibility = "hidden";
       wordButton.style.opacity = "0";
     });
+  }
+  showTranslatePanel(left = 0, top = 0) {
+    translatePanel.style.visibility = "visible";
+    translatePanel.style.opacity = "1";
+    if (document.documentElement.clientWidth - left < 200) {
+      left = document.documentElement.clientWidth - 200;
+    }
+
+    translatePanel.style.top = (top - 100).toString() + "px";
+    translatePanel.style.left = left.toString() + "px";
+  }
+  hideTranslatePanel() {
+    isTranslateShown = false;
+    translatePanel.style.visibility = "hidden";
+    translatePanel.style.opacity = "0";
   }
   showPronouncing() {
     pronouncingContainer.style.visibility = "visible";
@@ -1065,58 +1082,65 @@ class WordGame {
     } else return this.getWordForPronouncing(undefined, false);
   }
   defineWordForPronouncing(ind = undefined) {
-    console.log("word index:", indexOfWords);
-    console.log("phrase index:", indexOfPhrases);
-
     let ignore = !!ind ? true : false;
     let item = this.getWordForPronouncing(ind, ignore);
     wordForPronouncing = item.word;
     let index = item.index;
     this.writeWord(wordForPronouncing, index);
   }
+
   writeWord(word, index) {
+    globalWordIndex = index;
     let symbolNumber = word.length;
-    let timeInterval = 500 / symbolNumber;
-    timeInterval = 50;
+    let timeInterval = 75;
     let n = 0;
     let interval;
-    this.speakerListener(index);
-    
-    interval = setInterval(() => {
-      n++;
-      pronouncingWord.innerHTML = `<p>${
-        word.slice(0, n) + " ".repeat(symbolNumber - n)
-      }</p><span class='transcript'></span><div class="speaker-next" style="opacity:0"></div>`;
-      if (n >= symbolNumber) {
-        clearInterval(interval);
-        pronouncingWord.innerHTML = `<p>${word}</p><span class='transcript'>${transcriptForPronouncing}</span><div class="speaker-next" style="opacity:1"></div>`;
-        this.speakerHandler(index);
-      }
-      if (isTranslated) {
-        clearInterval(interval);
-        pronouncingWord.innerHTML = "";
-        return;
-      }
-    }, timeInterval);
+    this.showLoading(true);
+
+    theWord.removeEventListener("pointerdown", translateButtonListener);
+    transcript.textContent = "";
+    speakerNext.style.opacity = 0;
+    theWord.style.textAlign = isPhrasePronouncing ? "left" : "center";
+    isPrinting = true;
+    this.hideLeftArrow();
+    this.hideRightArrow();
+    this.speakerListener().then(() => {
+      this.showLoading(false)
+      interval = setInterval(() => {
+        n++;
+        theWord.textContent = word.slice(0, n) + "|";
+
+        if (n >= symbolNumber) {
+          clearInterval(interval);
+          isPrinting = false;
+          this.showLeftArrow();
+          this.showRightArrow();
+          theWord.textContent = word;
+          transcript.textContent = transcriptForPronouncing;
+          speakerNext.style.opacity = 0.7;
+          theWord.addEventListener("pointerdown", translateButtonListener);
+        }
+      }, timeInterval);
+    });
   }
-  speakerHandler(index) {
-    speakerNext = document.querySelector(".speaker-next");
-    speakerNext.removeEventListener("pointerdown", () =>
-      game.speakerListener(index)
-    );
-    speakerNext.addEventListener("pointerdown", () =>
-      game.speakerListener(index)
-    );
-  }
-  speakerListener(index) {
-    if (isMicrophoneAvailable) {
-      let endpoint = isPhrasePronouncing
-        ? wordsArray?.[index]?.audioExample
-        : wordsArray?.[index]?.audio;
-      if (endpoint) {
-        playAudio(mainUrl + endpoint);
+
+  speakerListener() {
+    return new Promise((resolve, reject) => {
+      if (isMicrophoneAvailable) {
+        let index = globalWordIndex;
+        let endpoint = isPhrasePronouncing
+          ? wordsArray?.[index]?.audioExample
+          : wordsArray?.[index]?.audio;
+        if (endpoint) {
+          playAudio(mainUrl + endpoint)
+            .then(() => {
+              console.log("audio played");
+              return resolve();
+            })
+            .catch((err) => reject(err));
+        }
       }
-    }
+    });
   }
 
   microphoneHandler() {
@@ -1182,11 +1206,13 @@ class WordGame {
         youSay.textContent = result.phrase;
         youSay.style.opacity = "1";
         youSay.style.color = "green";
+        youSay.style.transform = "translateX(0px)";
       } else {
         pronouncingResult.textContent = `${(0).toFixed(1)}%`;
         youSay.textContent = result.phrase;
         youSay.style.opacity = "1";
         youSay.style.color = "red";
+        youSay.style.transform = "translateX(0px)";
       }
       setTimeout(() => {
         pronouncingWord.style.color = "";
@@ -1250,14 +1276,13 @@ class WordGame {
     }
   }
   rightArrowHandler() {
-    if (isMicrophoneAvailable) {
-      pronouncingWord.innerHTML='';
-      pronouncingWord.style.animation=''
-    clearInterval(interval);
+    if (isMicrophoneAvailable && !isPrinting) {
+      clearInterval(interval);
 
       setTimeout(() => {
         youSay.style.opacity = "0";
         youSay.style.color = "";
+        youSay.style.transform = "translateX(-100px)";
       }, 1000);
       stopAudio();
       game.hideInfo();
@@ -1293,18 +1318,20 @@ class WordGame {
             game.defineWordForPronouncing();
           }
         }
+        if (isTranslateShown) {
+          fillTranslatePanel();
+        }
       });
       setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
     }
   }
   leftArrowHandler() {
-    if (isMicrophoneAvailable) {
-      pronouncingWord.innerHTML='';
-      pronouncingWord.style.animation=''
-    clearInterval(interval);
+    if (isMicrophoneAvailable && !isPrinting) {
+      clearInterval(interval);
       setTimeout(() => {
         youSay.style.opacity = "0";
         youSay.style.color = "";
+        youSay.style.transform = "translateX(-100px)";
       }, 1000);
 
       stopAudio();
@@ -1329,6 +1356,9 @@ class WordGame {
             indexOfWords -= 1;
           }
           game.defineWordForPronouncing(usedWordsForPronouncing[indexOfWords]);
+        }
+        if (isTranslateShown) {
+          fillTranslatePanel();
         }
       }, 100);
       setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
@@ -1361,6 +1391,7 @@ function levelChooseHandler() {
         game.hideInfo();
         game.hideMistakesPad();
         game.chooseLevel(level);
+        game.hideTranslatePanel();
       }
     }
   });
@@ -1370,7 +1401,10 @@ function init() {
   menuButton.addEventListener("pointerdown", handleMenu);
   toggle.addEventListener("pointerdown", handleToggle);
   menuPanel.addEventListener("pointerdown", () => game.hideMenu());
-  mainContainer.addEventListener("pointerdown", () => game.hideMenu());
+  mainContainer.addEventListener("pointerdown", () => {
+    game.hideMenu();
+    game.hideTranslatePanel();
+  });
   menuItem1.addEventListener("pointerdown", (e) => {
     e.stopPropagation();
     if (!menu.matching) {
@@ -1429,11 +1463,11 @@ async function initMatching() {
   microphone.removeEventListener("pointerdown", game.microphoneHandler);
   rightArrow.removeEventListener("pointerdown", game.rightArrowHandler);
   leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
-  translateButton.removeEventListener(
-    "pointerdown",
-    translateButtonDownListener
-  );
-  translateButton.removeEventListener("pointerup", translateButtonUpListener);
+  translatePanel.removeEventListener("pointerdown", game.hideTranslatePanel);
+  speakerNext.removeEventListener("pointerdown", game.speakerListener);
+  if (theWord) {
+    theWord.removeEventListener("pointerdown", translateButtonListener);
+  }
 }
 function initPronouncing() {
   if (mySpeech) {
@@ -1460,8 +1494,8 @@ function initPronouncing() {
   microphone.addEventListener("pointerdown", game.microphoneHandler);
   rightArrow.addEventListener("pointerdown", game.rightArrowHandler);
   leftArrow.addEventListener("pointerdown", game.leftArrowHandler);
-  translateButton.addEventListener("pointerdown", translateButtonDownListener);
-  translateButton.addEventListener("pointerup", translateButtonUpListener);
+  translatePanel.addEventListener("pointerdown", game.hideTranslatePanel);
+  speakerNext.addEventListener("pointerdown", game.speakerListener);
   usedWordsForPronouncing = [];
   usedPhrasesForPronouncing = [];
   indexOfWords = 0;
@@ -1472,35 +1506,22 @@ function initPronouncing() {
   // game.listenMicrophone();
 }
 
-function translateButtonUpListener() {
-  if (!isTranslateUp ) {
-    isTranslated = false;
-    isTranslateUp = true;
-    setTimeout(() => {
-      game.defineWordForPronouncing(currentIndexOfWord);
-      translateButton.style.backgroundColor = "";
-      translateButton.style.color = "";
-      translateButton.innerHTML = "Translate";
-      isTranslateUp = false;
-      isTranslateDown = false;
-    }, 3000);
-  }
-}
+function translateButtonListener(event) {
+  event.stopPropagation();
+  let left = event.clientX;
+  let top = event.clientY;
 
-function translateButtonDownListener() {
-  if (!isTranslateUp && !isTranslateDown) {
-    isTranslateDown = true;
-    isTranslated = true;
-    setTimeout(() => {
-      let translation = isPhrasePronouncing
-        ? wordsArray[currentIndexOfWord].textExampleTranslate
-        : wordsArray[currentIndexOfWord].wordTranslate;
-      pronouncingWord.innerHTML = translation;
-      translateButton.style.backgroundColor = "#eee";
-      translateButton.style.color = "green";
-      translateButton.innerHTML = "Translated";
-    }, 100);
-  }
+  isTranslateShown = !isTranslateShown;
+  if (isTranslateShown) {
+    fillTranslatePanel(left, top);
+  } else game.hideTranslatePanel();
+}
+function fillTranslatePanel(left, top) {
+  let translation = isPhrasePronouncing
+    ? wordsArray[currentIndexOfWord].textExampleTranslate
+    : wordsArray[currentIndexOfWord].wordTranslate;
+  translatePanel.innerHTML = translation;
+  game.showTranslatePanel(left, top);
 }
 
 function wakeLock() {
@@ -1511,6 +1532,7 @@ function playAudio(src) {
   stopAudio();
   audio.src = src;
   audioPromise = audio.play().catch(console.log);
+  return audioPromise;
 }
 
 function stopAudio() {
