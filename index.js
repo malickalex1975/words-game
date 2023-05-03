@@ -7,7 +7,7 @@ import Speech from "./speech.js";
 let isTranslateShown = false;
 let isLeftArrowHidden = true;
 let globalWordIndex;
-let isMoving
+let isMoving;
 let mySpeech;
 let stream;
 let isPrinting = false;
@@ -218,9 +218,9 @@ class WordGame {
   }
 
   chooseLevel(level) {
-    if(!isPrinting && isMicrophoneAvailable){
-    this.setLevel(level);
-    this.showLevels();
+    if (!isPrinting && isMicrophoneAvailable) {
+      this.setLevel(level);
+      this.showLevels();
     }
   }
 
@@ -449,25 +449,33 @@ class WordGame {
     });
   }
   setMicrophoneActive(value) {
-    let opacity = value ? 0.7 : 0.1;
-    let earOpacity = !value ? 0.7 : 0.1;
+    let opacity = value ? 0.7 : 0;
+    let earOpacity = !value ? 0.7 : 0;
+    let earVisibility=!value? 'visible':'hidden'
     let cursor = value ? "pointer" : "auto";
     levelContainer.style.opacity = opacity;
-    microphone.style.opacity = opacity;
-    microphone.style.cursor = cursor;
+   
     if (speakerNext) {
       speakerNext.style.opacity = opacity;
       speakerNext.style.cursor = cursor;
     }
     rightArrow.style.opacity = opacity;
     rightArrow.style.cursor = cursor;
-    if(!isLeftArrowHidden){
-    leftArrow.style.opacity = opacity;
-    leftArrow.style.cursor = cursor;
+    if (!isLeftArrowHidden) {
+      leftArrow.style.opacity = opacity;
+      leftArrow.style.cursor = cursor;
     }
     toggleContainer.style.opacity = opacity;
     isMicrophoneAvailable = value;
-    ear.style.opacity = earOpacity;
+    setTimeout(()=>{ ear.style.opacity = earOpacity;
+    ear.style.visibility = earVisibility;
+    let earTop= microphone.getBoundingClientRect().top;
+    let earLeft= microphone.getBoundingClientRect().left;
+    ear.style.top=earTop+'px';
+    ear.style.left=earLeft+'px';
+    microphone.style.opacity = opacity;
+    microphone.style.cursor = cursor;},300)
+   
   }
   showInstruments(value) {
     let opacity = value ? 0.7 : 0.1;
@@ -481,12 +489,11 @@ class WordGame {
     }
     rightArrow.style.opacity = opacity;
     rightArrow.style.cursor = cursor;
-    if(!isLeftArrowHidden){
+    if (!isLeftArrowHidden) {
       leftArrow.style.opacity = opacity;
       leftArrow.style.cursor = cursor;
-      }
+    }
     toggleContainer.style.opacity = opacity;
-  
   }
   setScore() {
     const digitElement1 = document.querySelectorAll(".digit-element-1")[0];
@@ -1126,7 +1133,7 @@ class WordGame {
     let n = 0;
     let interval;
     this.showLoading(true);
-    this.showInstruments(false)
+    this.showInstruments(false);
     theWord.removeEventListener("pointerdown", translateButtonListener);
     transcript.textContent = "";
     speakerNext.style.opacity = 0;
@@ -1142,7 +1149,7 @@ class WordGame {
         )}<span><span class='cursor-line'>|<span>`;
 
         if (n >= symbolNumber) {
-          this.showInstruments(true)
+          this.showInstruments(true);
           clearInterval(interval);
           isPrinting = false;
           console.log(isLeftArrowHidden);
@@ -1156,8 +1163,8 @@ class WordGame {
   rewriteWord() {
     let index = globalWordIndex;
     if (isPhrasePronouncing) {
-      game.showInstruments(false)
-     let word = wordsArray[index].textExample
+      game.showInstruments(false);
+      let word = wordsArray[index].textExample
         .replace("<b>", "")
         .replace("</b>", "");
       let symbolNumber = word.length;
@@ -1180,14 +1187,16 @@ class WordGame {
           )}</span>`;
 
           if (n >= symbolNumber) {
-            game.showInstruments(true)
+            game.showInstruments(true);
             clearInterval(interval);
             isPrinting = false;
             theWord.textContent = word;
           }
         }, timeInterval);
       });
-    }else{ game.speakerListener()}
+    } else {
+      game.speakerListener();
+    }
   }
 
   speakerListener() {
@@ -1215,6 +1224,13 @@ class WordGame {
     } else {
       mySpeech = new Speech("en");
       game.hideInfo();
+      if (youSay.textContent !== "") {
+        setTimeout(() => {
+          youSay.style.opacity = "0";
+          youSay.style.color = "";
+          youSay.style.transform = "translateX(-100px)";
+        }, 1000);
+      }
 
       // setTimeout(() => game.listenMicrophone(), 100);
 
@@ -1261,7 +1277,6 @@ class WordGame {
   processPronouncingResult(result) {
     ear.style.opacity = 0.8;
     if (!isPhrasePronouncing) {
-      
       if (
         wordForPronouncing === result.phrase.toLowerCase() &&
         result.confidence > 0
@@ -1285,24 +1300,40 @@ class WordGame {
         pronouncingWord.style.color = "";
         this.rightArrowHandler();
       }, 500);
-    }else if(isPhrasePronouncing){
-      
-    
-        
-        pronouncingResult.textContent = `${(result.confidence * 100).toFixed(
-          1
-        )}%`;
-        youSay.textContent = result.phrase;
-        youSay.style.opacity = "1";
-        youSay.style.color = "green";
-        youSay.style.transform = "translateX(0px)";
-      }
+    } else if (isPhrasePronouncing) {
+      let phraseArray = wordForPronouncing
+        .toLowerCase()
+        .replace(".", "")
+        .replace(",", "")
+        .replace("?", "")
+        .replace("!", "")
+        .split(" ");
+      console.log(phraseArray);
+      let pronouncingPhraseArray = result.phrase.toLowerCase().split(" ");
+      console.log(pronouncingPhraseArray);
+      let innerhtml = "";
+      pronouncingPhraseArray.forEach((item) => {
+        if (phraseArray.includes(item)) {
+          innerhtml += `<span class='phrase-span' style='color:green'>${item} </span>`;
+        } else {
+          innerhtml += `<span class='phrase-span' style='color:red'>${item} </span>`;
+        }
+      });
+
+      pronouncingResult.textContent = `${(result.confidence * 100).toFixed(
+        1
+      )}%`;
+      youSay.innerHTML = innerhtml;
+      youSay.style.opacity = "1";
+      youSay.style.color = "green";
+      youSay.style.transform = "translateX(0px)";
+
       setTimeout(() => {
-       
         this.rightArrowHandler();
       }, 3000);
     }
-  
+  }
+
   createVisualisation() {
     for (let i = 0; i < stripNumber; i++) {
       let strip = document.createElement("div");
@@ -1360,7 +1391,6 @@ class WordGame {
     }
   }
   rightArrowHandler() {
-   
     if (isMicrophoneAvailable && !isPrinting) {
       clearInterval(interval);
       if (youSay.textContent !== "") {
@@ -1372,6 +1402,10 @@ class WordGame {
       }
       stopAudio();
       game.hideInfo();
+      setTimeout(() => {
+        pronouncingResult.textContent = `${(0).toFixed(1)}%`;
+      }, 1000);
+
       pronouncingWord.style.animationName = "go-forward";
       setTimeout(() => {
         if (isPhrasePronouncing) {
@@ -1439,7 +1473,7 @@ class WordGame {
             isLeftArrowHidden = true;
             return;
           }
-          if ((indexOfPhrases <= 1)) {
+          if (indexOfPhrases <= 1) {
             indexOfPhrases = 0;
             game.hideLeftArrow();
             isLeftArrowHidden = true;
@@ -1456,7 +1490,7 @@ class WordGame {
             isLeftArrowHidden = true;
             return;
           }
-          if (indexOfWords <= 1 ) {
+          if (indexOfWords <= 1) {
             indexOfWords = 0;
             game.hideLeftArrow();
             isLeftArrowHidden = true;
@@ -1566,7 +1600,7 @@ async function initMatching() {
   game.hidePronouncing();
   game.hideLeftArrow();
   game.hideRightArrow();
-  stopAudio()
+  stopAudio();
   exampleContainer.addEventListener("pointerdown", listenExamples);
   microphone.removeEventListener("pointerdown", game.microphoneHandler);
   rightArrow.removeEventListener("pointerdown", game.rightArrowHandler);
