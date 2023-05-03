@@ -451,10 +451,15 @@ class WordGame {
   setMicrophoneActive(value) {
     let opacity = value ? 0.7 : 0;
     let earOpacity = !value ? 0.7 : 0;
-    let earVisibility=!value? 'visible':'hidden'
+    let earVisibility = !value ? "visible" : "hidden";
     let cursor = value ? "pointer" : "auto";
     levelContainer.style.opacity = opacity;
-   
+    let timeout = value ? 600 : 0;
+    setTimeout(() => {
+      microphone.style.opacity = opacity;
+      microphone.style.cursor = cursor;
+    }, timeout);
+
     if (speakerNext) {
       speakerNext.style.opacity = opacity;
       speakerNext.style.cursor = cursor;
@@ -467,15 +472,14 @@ class WordGame {
     }
     toggleContainer.style.opacity = opacity;
     isMicrophoneAvailable = value;
-    setTimeout(()=>{ ear.style.opacity = earOpacity;
-    ear.style.visibility = earVisibility;
-    let earTop= microphone.getBoundingClientRect().top;
-    let earLeft= microphone.getBoundingClientRect().left;
-    ear.style.top=earTop+'px';
-    ear.style.left=earLeft+'px';
-    microphone.style.opacity = opacity;
-    microphone.style.cursor = cursor;},300)
-   
+    setTimeout(() => {
+      ear.style.opacity = earOpacity;
+      ear.style.visibility = earVisibility;
+      let earTop = microphone.getBoundingClientRect().top;
+      let earLeft = microphone.getBoundingClientRect().left;
+      ear.style.top = earTop + "px";
+      ear.style.left = earLeft + "px";
+    }, 500);
   }
   showInstruments(value) {
     let opacity = value ? 0.7 : 0.1;
