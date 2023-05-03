@@ -5,6 +5,7 @@ const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 import Speech from "./speech.js";
 let isTranslateShown = false;
+let isLeftArrowHidden = true;
 let globalWordIndex;
 let mySpeech;
 let stream;
@@ -216,8 +217,10 @@ class WordGame {
   }
 
   chooseLevel(level) {
+    if(!isPrinting && isMicrophoneAvailable){
     this.setLevel(level);
     this.showLevels();
+    }
   }
 
   showDisabledLevel(el) {
@@ -333,18 +336,22 @@ class WordGame {
   showLeftArrow() {
     leftArrow.style.visibility = "visible";
     leftArrow.style.opacity = ".7";
+    leftArrow.style.cursor = "pointer";
   }
   showRightArrow() {
     rightArrow.style.visibility = "visible";
     rightArrow.style.opacity = ".7";
+    rightArrow.style.cursor = "pointer";
   }
   hideLeftArrow() {
-    leftArrow.style.visibility = "hidden";
-    leftArrow.style.opacity = "0";
+    leftArrow.style.visibility = "visible";
+    leftArrow.style.opacity = "0.2";
+    leftArrow.style.cursor = "auto";
   }
   hideRightArrow() {
-    rightArrow.style.visibility = "hidden";
-    rightArrow.style.opacity = "0";
+    rightArrow.style.visibility = "visible";
+    rightArrow.style.opacity = "0.2";
+    rightArrow.style.cursor = "auto";
   }
 
   showClock() {
@@ -444,6 +451,7 @@ class WordGame {
     let opacity = value ? 0.7 : 0.1;
     let earOpacity = !value ? 0.7 : 0.1;
     let cursor = value ? "pointer" : "auto";
+    levelContainer.style.opacity = opacity;
     microphone.style.opacity = opacity;
     microphone.style.cursor = cursor;
     if (speakerNext) {
@@ -452,11 +460,32 @@ class WordGame {
     }
     rightArrow.style.opacity = opacity;
     rightArrow.style.cursor = cursor;
+    if(!isLeftArrowHidden){
     leftArrow.style.opacity = opacity;
     leftArrow.style.cursor = cursor;
+    }
     toggleContainer.style.opacity = opacity;
     isMicrophoneAvailable = value;
     ear.style.opacity = earOpacity;
+  }
+  showInstruments(value) {
+    let opacity = value ? 0.7 : 0.1;
+    let cursor = value ? "pointer" : "auto";
+    levelContainer.style.opacity = opacity;
+    microphone.style.opacity = opacity;
+    microphone.style.cursor = cursor;
+    if (speakerNext) {
+      speakerNext.style.opacity = opacity;
+      speakerNext.style.cursor = cursor;
+    }
+    rightArrow.style.opacity = opacity;
+    rightArrow.style.cursor = cursor;
+    if(!isLeftArrowHidden){
+      leftArrow.style.opacity = opacity;
+      leftArrow.style.cursor = cursor;
+      }
+    toggleContainer.style.opacity = opacity;
+  
   }
   setScore() {
     const digitElement1 = document.querySelectorAll(".digit-element-1")[0];
@@ -1096,32 +1125,68 @@ class WordGame {
     let n = 0;
     let interval;
     this.showLoading(true);
-
+    this.showInstruments(false)
     theWord.removeEventListener("pointerdown", translateButtonListener);
     transcript.textContent = "";
     speakerNext.style.opacity = 0;
     theWord.style.textAlign = isPhrasePronouncing ? "left" : "center";
     isPrinting = true;
-    this.hideLeftArrow();
-    this.hideRightArrow();
     this.speakerListener().then(() => {
-      this.showLoading(false)
+      this.showLoading(false);
       interval = setInterval(() => {
         n++;
-        theWord.textContent = word.slice(0, n) + "|";
+        theWord.innerHTML = `<span>${word.slice(
+          0,
+          n
+        )}<span><span class='cursor-line'>|<span>`;
 
         if (n >= symbolNumber) {
+          this.showInstruments(true)
           clearInterval(interval);
           isPrinting = false;
-          this.showLeftArrow();
-          this.showRightArrow();
+          console.log(isLeftArrowHidden);
           theWord.textContent = word;
           transcript.textContent = transcriptForPronouncing;
-          speakerNext.style.opacity = 0.7;
           theWord.addEventListener("pointerdown", translateButtonListener);
         }
       }, timeInterval);
     });
+  }
+  rewriteWord() {
+    let index = globalWordIndex;
+    if (isPhrasePronouncing) {
+      game.showInstruments(false)
+     let word = wordsArray[index].textExample
+        .replace("<b>", "")
+        .replace("</b>", "");
+      let symbolNumber = word.length;
+      let timeInterval = 75;
+      let n = 0;
+      let interval;
+      game.showLoading(true);
+      transcript.textContent = "";
+
+      isPrinting = true;
+      game.speakerListener().then(() => {
+        game.showLoading(false);
+        interval = setInterval(() => {
+          n++;
+          theWord.innerHTML = `<span>${word.slice(
+            0,
+            n
+          )}</span><span class='cursor-line'>|</span><span>${word.slice(
+            n
+          )}</span>`;
+
+          if (n >= symbolNumber) {
+            game.showInstruments(true)
+            clearInterval(interval);
+            isPrinting = false;
+            theWord.textContent = word;
+          }
+        }, timeInterval);
+      });
+    }else{ game.speakerListener()}
   }
 
   speakerListener() {
@@ -1144,7 +1209,7 @@ class WordGame {
   }
 
   microphoneHandler() {
-    if (!isMicrophoneAvailable) {
+    if (!isMicrophoneAvailable || isPrinting) {
       return;
     } else {
       mySpeech = new Speech("en");
@@ -1276,14 +1341,16 @@ class WordGame {
     }
   }
   rightArrowHandler() {
+   
     if (isMicrophoneAvailable && !isPrinting) {
       clearInterval(interval);
-
-      setTimeout(() => {
-        youSay.style.opacity = "0";
-        youSay.style.color = "";
-        youSay.style.transform = "translateX(-100px)";
-      }, 1000);
+      if (youSay.textContent !== "") {
+        setTimeout(() => {
+          youSay.style.opacity = "0";
+          youSay.style.color = "";
+          youSay.style.transform = "translateX(-100px)";
+        }, 1000);
+      }
       stopAudio();
       game.hideInfo();
       pronouncingWord.style.animationName = "go-forward";
@@ -1291,9 +1358,12 @@ class WordGame {
         if (isPhrasePronouncing) {
           if (indexOfPhrases === undefined) {
             indexOfPhrases = 0;
+            game.hideLeftArrow();
+            isLeftArrowHidden = true;
           } else {
             indexOfPhrases += 1;
             game.showLeftArrow();
+            isLeftArrowHidden = false;
           }
 
           if (indexOfPhrases <= usedPhrasesForPronouncing.length - 1) {
@@ -1306,9 +1376,12 @@ class WordGame {
         } else if (!isPhrasePronouncing) {
           if (indexOfWords === undefined) {
             indexOfWords = 0;
+            game.hideLeftArrow();
+            isLeftArrowHidden = true;
           } else {
             indexOfWords += 1;
             game.showLeftArrow();
+            isLeftArrowHidden = false;
           }
           if (indexOfWords <= usedWordsForPronouncing.length - 1) {
             game.defineWordForPronouncing(
@@ -1321,6 +1394,8 @@ class WordGame {
         if (isTranslateShown) {
           fillTranslatePanel();
         }
+        console.log(indexOfPhrases);
+        console.log(indexOfWords);
       });
       setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
     }
@@ -1328,43 +1403,56 @@ class WordGame {
   leftArrowHandler() {
     if (isMicrophoneAvailable && !isPrinting) {
       clearInterval(interval);
-      setTimeout(() => {
-        youSay.style.opacity = "0";
-        youSay.style.color = "";
-        youSay.style.transform = "translateX(-100px)";
-      }, 1000);
-
+      if (youSay.textContent !== "") {
+        setTimeout(() => {
+          youSay.style.opacity = "0";
+          youSay.style.color = "";
+          youSay.style.transform = "translateX(-100px)";
+        }, 1000);
+      }
       stopAudio();
       game.hideInfo();
-      pronouncingWord.style.animationName = "go-back";
+
       setTimeout(() => {
         if (isPhrasePronouncing) {
-          if (indexOfPhrases <= 1) {
+          if (indexOfPhrases === 0) {
+            game.hideLeftArrow();
+            isLeftArrowHidden = true;
+            return;
+          }
+          if ((indexOfPhrases <= 1)) {
             indexOfPhrases = 0;
             game.hideLeftArrow();
+            isLeftArrowHidden = true;
           } else {
             indexOfPhrases -= 1;
+            isLeftArrowHidden = false;
           }
           game.defineWordForPronouncing(
             usedPhrasesForPronouncing[indexOfPhrases]
           );
         } else if (!isPhrasePronouncing) {
-          if (indexOfWords <= 1) {
+          if (indexOfWords === 0) {
+            game.hideLeftArrow();
+            isLeftArrowHidden = true;
+            return;
+          }
+          if (indexOfWords <= 1 ) {
             indexOfWords = 0;
             game.hideLeftArrow();
+            isLeftArrowHidden = true;
           } else {
             indexOfWords -= 1;
+            isLeftArrowHidden = false;
           }
           game.defineWordForPronouncing(usedWordsForPronouncing[indexOfWords]);
         }
-        if (isTranslateShown) {
-          fillTranslatePanel();
-        }
-      }, 100);
-      setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
+        pronouncingWord.style.animationName = "go-back";
+
+        setTimeout(() => (pronouncingWord.style.animationName = ""), 600);
+      });
     }
   }
-
   cancelMediaStream() {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
@@ -1459,15 +1547,18 @@ async function initMatching() {
   game.hidePronouncing();
   game.hideLeftArrow();
   game.hideRightArrow();
+  stopAudio()
   exampleContainer.addEventListener("pointerdown", listenExamples);
   microphone.removeEventListener("pointerdown", game.microphoneHandler);
   rightArrow.removeEventListener("pointerdown", game.rightArrowHandler);
   leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
   translatePanel.removeEventListener("pointerdown", game.hideTranslatePanel);
-  speakerNext.removeEventListener("pointerdown", game.speakerListener);
+  speakerNext.removeEventListener("pointerdown", game.rewriteWord);
   if (theWord) {
     theWord.removeEventListener("pointerdown", translateButtonListener);
   }
+  leftArrow.style.visibility = "hidden";
+  rightArrow.style.visibility = "hidden";
 }
 function initPronouncing() {
   if (mySpeech) {
@@ -1495,12 +1586,12 @@ function initPronouncing() {
   rightArrow.addEventListener("pointerdown", game.rightArrowHandler);
   leftArrow.addEventListener("pointerdown", game.leftArrowHandler);
   translatePanel.addEventListener("pointerdown", game.hideTranslatePanel);
-  speakerNext.addEventListener("pointerdown", game.speakerListener);
+  speakerNext.addEventListener("pointerdown", game.rewriteWord);
   usedWordsForPronouncing = [];
   usedPhrasesForPronouncing = [];
-  indexOfWords = 0;
-  indexOfPhrases = 0;
-  game.leftArrowHandler();
+  indexOfWords = undefined;
+  indexOfPhrases = undefined;
+  game.rightArrowHandler();
   game.setMicrophoneActive(true);
   game.createVisualisation();
   // game.listenMicrophone();
@@ -1577,10 +1668,12 @@ function handleMenu() {
   }
 }
 function handleToggle() {
-  if (isMicrophoneAvailable) {
+  if (isMicrophoneAvailable && !isPrinting) {
     isPhrasePronouncing = !isPhrasePronouncing;
     game.setToggleStyle();
-    game.leftArrowHandler();
+    indexOfPhrases = undefined;
+    indexOfWords = undefined;
+    game.rightArrowHandler();
   }
 }
 function beforeUnloadListener(event) {
