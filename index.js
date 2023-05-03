@@ -7,6 +7,7 @@ import Speech from "./speech.js";
 let isTranslateShown = false;
 let isLeftArrowHidden = true;
 let globalWordIndex;
+let isMoving
 let mySpeech;
 let stream;
 let isPrinting = false;
@@ -1258,8 +1259,9 @@ class WordGame {
     }
   }
   processPronouncingResult(result) {
+    ear.style.opacity = 0.8;
     if (!isPhrasePronouncing) {
-      ear.style.opacity = 0.8;
+      
       if (
         wordForPronouncing === result.phrase.toLowerCase() &&
         result.confidence > 0
@@ -1283,8 +1285,24 @@ class WordGame {
         pronouncingWord.style.color = "";
         this.rightArrowHandler();
       }, 500);
+    }else if(isPhrasePronouncing){
+      
+    
+        
+        pronouncingResult.textContent = `${(result.confidence * 100).toFixed(
+          1
+        )}%`;
+        youSay.textContent = result.phrase;
+        youSay.style.opacity = "1";
+        youSay.style.color = "green";
+        youSay.style.transform = "translateX(0px)";
+      }
+      setTimeout(() => {
+       
+        this.rightArrowHandler();
+      }, 3000);
     }
-  }
+  
   createVisualisation() {
     for (let i = 0; i < stripNumber; i++) {
       let strip = document.createElement("div");
@@ -1318,6 +1336,7 @@ class WordGame {
         location.reload();
       });
   }
+
   loop() {
     if (menu.pronouncing) {
       request = window.requestAnimationFrame(game.loop);
