@@ -6,11 +6,12 @@ const successSound = "./assets/mp3/success.mp3";
 import Speech from "./speech.js";
 let isTranslateShown = false;
 let isLeftArrowHidden = true;
+let isMyVoicePlaying=false;
 let globalWordIndex;
 let isMoving;
 let mediaRecorder;
-let audioPlace= document.querySelector('.audio-place')
-let voice=[]
+let audioPlace = document.querySelector(".audio-place");
+let voice = [];
 let mySpeech;
 let stream;
 let isPrinting = false;
@@ -1208,6 +1209,14 @@ class WordGame {
 
   speakerListener() {
     return new Promise((resolve, reject) => {
+      let timeStart = Date.now();
+      let interval;
+      interval = setInterval(() => {
+        if (Date.now() - timeStart >= 2000) {
+          clearInterval(interval);
+          return resolve();
+        }
+      },200);
       if (isMicrophoneAvailable) {
         let index = globalWordIndex;
         let endpoint = isPhrasePronouncing
@@ -1239,13 +1248,17 @@ class WordGame {
         }, 1000);
       }
 
-       setTimeout(() => game.listenMicrophone(), 100);
+      setTimeout(() => game.listenMicrophone(), 100);
 
       mySpeech
         .speechRecognition()
         .then((result) => {
-          setTimeout(()=>{if(mediaRecorder){ mediaRecorder.stop()}},300)
-         
+          setTimeout(() => {
+            if (mediaRecorder) {
+              mediaRecorder.stop();
+            }
+          }, 300);
+
           console.log(result.phrase, result.confidence);
           game.processPronouncingResult(result);
         })
@@ -1258,8 +1271,9 @@ class WordGame {
           game.setMicrophoneActive(true);
           game.showLoading(false);
           game.cancelMediaStream();
-          if(mediaRecorder){ mediaRecorder.stop()}
-         
+          if (mediaRecorder) {
+            mediaRecorder.stop();
+          }
         });
       mySpeech
         .lookForSoundStart()
@@ -1362,7 +1376,7 @@ class WordGame {
     if (audioCtx) {
       return;
     }
-    game.deleteAudio()
+    game.deleteAudio();
     let src;
     audioCtx = new AudioContext();
     analizer = audioCtx.createAnalyser();
@@ -1373,20 +1387,15 @@ class WordGame {
         src = audioCtx.createMediaStreamSource(stream);
         src.connect(analizer);
         game.loop();
-         mediaRecorder = new MediaRecorder(stream, {audiBitsPerSecond: 44000});
-         voice = [];
-         setTimeout(()=> mediaRecorder.start())
-        
-       
+        mediaRecorder = new MediaRecorder(stream, { audiBitsPerSecond: 44000 });
+        voice = [];
+        setTimeout(() => mediaRecorder.start());
 
-        mediaRecorder.addEventListener("dataavailable",function(event) {
-            voice.push(event.data);
-        
+        mediaRecorder.addEventListener("dataavailable", function (event) {
+          voice.push(event.data);
         });
 
-       
-
-        mediaRecorder.addEventListener('stop',game.saveAudio )
+        mediaRecorder.addEventListener("stop", game.saveAudio);
       })
       .catch((err) => {
         alert(err + "\r\n The page will be reloaded!");
@@ -1394,20 +1403,23 @@ class WordGame {
       });
   }
 
-  saveAudio(){
-    game.deleteAudio()
-  const audio = document.createElement('audio');
-  audio.setAttribute('controls', '');
-  audioPlace.appendChild(audio);
-  const blob = new Blob(voice, { 'type' : 'audio/ogg; codecs=opus' });
-  voice = [];
-  const audioURL = window.URL.createObjectURL(blob);
-  audio.src = audioURL;
+  saveAudio() {
+    game.deleteAudio();
+    const audio = document.createElement("audio");
+    audio.setAttribute("controls", "");
+    audio.addEventListener('play',()=>{stopAudio();isMyVoicePlaying=true})
+    audio.addEventListener('ended',()=>{isMyVoicePlaying=false})
+    audio.addEventListener('pause',()=>{isMyVoicePlaying=false})
+    audioPlace.appendChild(audio);
+    const blob = new Blob(voice, { type: "audio/ogg; codecs=opus" });
+    voice = [];
+    const audioURL = window.URL.createObjectURL(blob);
+    audio.src = audioURL;
   }
 
-deleteAudio(){
-  document.querySelectorAll('audio').forEach(el=>el.remove())
-}
+  deleteAudio() {
+    document.querySelectorAll("audio").forEach((el) => el.remove());
+  }
   loop() {
     if (menu.pronouncing) {
       request = window.requestAnimationFrame(game.loop);
@@ -1551,8 +1563,7 @@ deleteAudio(){
       stream.getTracks().forEach((track) => track.stop());
       stream = undefined;
       audioCtx = undefined;
-      mediaRecorder=undefined
-
+      mediaRecorder = undefined;
     }
   }
 }
@@ -1570,11 +1581,13 @@ function levelChooseHandler() {
     if (el.className.includes("level-element")) {
       let level = game.getElementLevel(el);
       if (level <= maxLevel) {
-        vibrate.ordinary();
-        game.hideInfo();
-        game.hideMistakesPad();
-        game.chooseLevel(level);
-        game.hideTranslatePanel();
+        if (isMicrophoneAvailable && !isPrinting) {
+          vibrate.ordinary();
+          game.hideInfo();
+          game.hideMistakesPad();
+          game.chooseLevel(level);
+          game.hideTranslatePanel();
+        }
       }
     }
   });
@@ -1715,6 +1728,7 @@ function wakeLock() {
 }
 
 function playAudio(src) {
+  if(isMyVoicePlaying){return Promise.resolve()}
   stopAudio();
   audio.src = src;
   audioPromise = audio.play().catch(console.log);
