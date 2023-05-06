@@ -279,7 +279,7 @@ body {
   top: 14vh;
   left: 3vw;
   width: 94vw;
-  height: 70vh;
+  height: 86vh;
   opacity: 0;
   visibility: hidden;
   transition: 1s;
@@ -788,4 +788,11 @@ body {
 color:rgb(99, 236, 26);
 font-size: 25px;
 font-weight: bold;
+}
+.audio-place{
+  width:100%;
+  height:80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

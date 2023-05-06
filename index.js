@@ -8,6 +8,9 @@ let isTranslateShown = false;
 let isLeftArrowHidden = true;
 let globalWordIndex;
 let isMoving;
+let mediaRecorder;
+let audioPlace= document.querySelector('.audio-place')
+let voice=[]
 let mySpeech;
 let stream;
 let isPrinting = false;
@@ -1236,11 +1239,13 @@ class WordGame {
         }, 1000);
       }
 
-      // setTimeout(() => game.listenMicrophone(), 100);
+       setTimeout(() => game.listenMicrophone(), 100);
 
       mySpeech
         .speechRecognition()
         .then((result) => {
+          setTimeout(()=>{if(mediaRecorder){ mediaRecorder.stop()}},300)
+         
           console.log(result.phrase, result.confidence);
           game.processPronouncingResult(result);
         })
@@ -1253,6 +1258,8 @@ class WordGame {
           game.setMicrophoneActive(true);
           game.showLoading(false);
           game.cancelMediaStream();
+          if(mediaRecorder){ mediaRecorder.stop()}
+         
         });
       mySpeech
         .lookForSoundStart()
@@ -1355,6 +1362,7 @@ class WordGame {
     if (audioCtx) {
       return;
     }
+    game.deleteAudio()
     let src;
     audioCtx = new AudioContext();
     analizer = audioCtx.createAnalyser();
@@ -1365,6 +1373,20 @@ class WordGame {
         src = audioCtx.createMediaStreamSource(stream);
         src.connect(analizer);
         game.loop();
+         mediaRecorder = new MediaRecorder(stream, {audiBitsPerSecond: 44000});
+         voice = [];
+         setTimeout(()=> mediaRecorder.start())
+        
+       
+
+        mediaRecorder.addEventListener("dataavailable",function(event) {
+            voice.push(event.data);
+        
+        });
+
+       
+
+        mediaRecorder.addEventListener('stop',game.saveAudio )
       })
       .catch((err) => {
         alert(err + "\r\n The page will be reloaded!");
@@ -1372,6 +1394,20 @@ class WordGame {
       });
   }
 
+  saveAudio(){
+    game.deleteAudio()
+  const audio = document.createElement('audio');
+  audio.setAttribute('controls', '');
+  audioPlace.appendChild(audio);
+  const blob = new Blob(voice, { 'type' : 'audio/ogg; codecs=opus' });
+  voice = [];
+  const audioURL = window.URL.createObjectURL(blob);
+  audio.src = audioURL;
+  }
+
+deleteAudio(){
+  document.querySelectorAll('audio').forEach(el=>el.remove())
+}
   loop() {
     if (menu.pronouncing) {
       request = window.requestAnimationFrame(game.loop);
@@ -1515,6 +1551,8 @@ class WordGame {
       stream.getTracks().forEach((track) => track.stop());
       stream = undefined;
       audioCtx = undefined;
+      mediaRecorder=undefined
+
     }
   }
 }
