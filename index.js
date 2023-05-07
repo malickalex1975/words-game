@@ -4,13 +4,13 @@ const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 import Speech from "./speech.js";
+let audioErrors = 0;
 let isTranslateShown = false;
 let isLeftArrowHidden = true;
-let isMyVoicePlaying=false;
+let isMyVoicePlaying = false;
 let globalWordIndex;
 let isMoving;
 let mediaRecorder;
-let audioPlace = document.querySelector(".audio-place");
 let voice = [];
 let mySpeech;
 let stream;
@@ -65,10 +65,13 @@ let score = 0;
 let currentLife = maxLife;
 let wordsIndexes = [];
 let threeWordsIndexes = [];
+let wordYouSaid = "";
 let isMenu = false;
 let audioCtx, analizer;
 const stripNumber = 32;
 let freqArray = new Uint8Array(stripNumber * 2);
+const audioPlace = document.querySelector(".audio-place");
+const audioInfo = document.querySelector(".audio-info");
 const theWord = document.querySelector(".the-word");
 const transcript = document.querySelector(".transcript");
 const visualisation = document.querySelector(".visualisation");
@@ -83,6 +86,8 @@ const buttonStart = document.querySelector(".button-start");
 const buttonStop = document.querySelector(".button-stop");
 const wordButtons = document.querySelectorAll(".button");
 const loadingElement = document.querySelector(".loading");
+const innerCircle1 = document.querySelector(".inner-circle-1");
+const innerCircle2 = document.querySelector(".inner-circle-2");
 const clockContainer = document.querySelector(".clock-container");
 const clockStrip = document.querySelector(".clock-strip");
 const clock = document.querySelector(".clock");
@@ -115,7 +120,6 @@ const digit1 = document.querySelector(".digit-1");
 const digit2 = document.querySelector(".digit-2");
 const ear = document.querySelector(".ear");
 const translatePanel = document.querySelector(".translate-panel");
-const translateButton = document.querySelector(".translate-button");
 let isPhrasePronouncing = false;
 let wordsArray = [];
 const audio = new Audio();
@@ -362,10 +366,12 @@ class WordGame {
   showClock() {
     clockContainer.style.visibility = "visible";
     clockContainer.style.opacity = "1";
+    heart.style.animation = "1s heart-animation infinite";
   }
   hideClock() {
     clockContainer.style.visibility = "hidden";
     clockContainer.style.opacity = "0";
+    heart.style.animation = "";
   }
   setToggleStyle() {
     if (isPhrasePronouncing) {
@@ -684,8 +690,12 @@ class WordGame {
   showLoading(visibility) {
     isLoading = visibility;
     let v = visibility ? "visible" : "hidden";
+    let anim = visibility ? " 1s linear rotate2 infinite" : "";
     let opacity = visibility ? 0.6 : 1;
     loadingElement.style.visibility = v;
+    loadingElement.style.animation = anim;
+    innerCircle1.style.animation = anim;
+    innerCircle2.style.animation = anim;
     pronouncingContainer.style.opacity = opacity;
   }
   operateClock() {
@@ -1160,7 +1170,6 @@ class WordGame {
           this.showInstruments(true);
           clearInterval(interval);
           isPrinting = false;
-          console.log(isLeftArrowHidden);
           theWord.textContent = word;
           transcript.textContent = transcriptForPronouncing;
           theWord.addEventListener("pointerdown", translateButtonListener);
@@ -1216,7 +1225,7 @@ class WordGame {
           clearInterval(interval);
           return resolve();
         }
-      },200);
+      }, 200);
       if (isMicrophoneAvailable) {
         let index = globalWordIndex;
         let endpoint = isPhrasePronouncing
@@ -1226,6 +1235,7 @@ class WordGame {
           playAudio(mainUrl + endpoint)
             .then(() => {
               console.log("audio played");
+              clearInterval(interval);
               return resolve();
             })
             .catch((err) => reject(err));
@@ -1247,12 +1257,13 @@ class WordGame {
           youSay.style.transform = "translateX(-100px)";
         }, 1000);
       }
-
+      game.setPronouncingResult(0)
       setTimeout(() => game.listenMicrophone(), 100);
 
       mySpeech
         .speechRecognition()
         .then((result) => {
+          wordYouSaid = wordForPronouncing;
           setTimeout(() => {
             if (mediaRecorder) {
               mediaRecorder.stop();
@@ -1264,6 +1275,7 @@ class WordGame {
         })
         .catch((error) => {
           if (menu.pronouncing) {
+            wordYouSaid = "";
             game.showInfo(`<p>Error happened: \r\n<span>${error}</span><p>`);
           }
         })
@@ -1271,9 +1283,6 @@ class WordGame {
           game.setMicrophoneActive(true);
           game.showLoading(false);
           game.cancelMediaStream();
-          if (mediaRecorder) {
-            mediaRecorder.stop();
-          }
         });
       mySpeech
         .lookForSoundStart()
@@ -1284,6 +1293,9 @@ class WordGame {
         .catch((error) => {
           if (menu.pronouncing) {
             game.showInfo(`<p>Error happened: \r\n<span>${error}</span><p>`);
+          }
+          if (mediaRecorder) {
+            mediaRecorder.stop();
           }
         });
       mySpeech
@@ -1302,21 +1314,18 @@ class WordGame {
   processPronouncingResult(result) {
     ear.style.opacity = 0.8;
     if (!isPhrasePronouncing) {
+      youSay.textContent = result.phrase.toLowerCase();
       if (
         wordForPronouncing === result.phrase.toLowerCase() &&
         result.confidence > 0
       ) {
         pronouncingWord.style.color = "green";
-        pronouncingResult.textContent = `${(result.confidence * 100).toFixed(
-          1
-        )}%`;
-        youSay.textContent = result.phrase;
+        this.setPronouncingResult((result.confidence * 100).toFixed(0));
         youSay.style.opacity = "1";
         youSay.style.color = "green";
         youSay.style.transform = "translateX(0px)";
       } else {
-        pronouncingResult.textContent = `${(0).toFixed(1)}%`;
-        youSay.textContent = result.phrase;
+        this.setPronouncingResult(0);
         youSay.style.opacity = "1";
         youSay.style.color = "red";
         youSay.style.transform = "translateX(0px)";
@@ -1329,13 +1338,12 @@ class WordGame {
       let phraseArray = wordForPronouncing
         .toLowerCase()
         .replace(".", "")
+        .replace(";", "")
         .replace(",", "")
         .replace("?", "")
         .replace("!", "")
         .split(" ");
-      console.log(phraseArray);
       let pronouncingPhraseArray = result.phrase.toLowerCase().split(" ");
-      console.log(pronouncingPhraseArray);
       let innerhtml = "";
       pronouncingPhraseArray.forEach((item) => {
         if (phraseArray.includes(item)) {
@@ -1345,12 +1353,9 @@ class WordGame {
         }
       });
 
-      pronouncingResult.textContent = `${(result.confidence * 100).toFixed(
-        1
-      )}%`;
+      this.setPronouncingResult((result.confidence * 100).toFixed(0));
       youSay.innerHTML = innerhtml;
       youSay.style.opacity = "1";
-      youSay.style.color = "green";
       youSay.style.transform = "translateX(0px)";
 
       setTimeout(() => {
@@ -1358,7 +1363,9 @@ class WordGame {
       }, 3000);
     }
   }
-
+  setPronouncingResult(result=0) {
+    pronouncingResult.textContent = `${result}%`;
+  }
   createVisualisation() {
     for (let i = 0; i < stripNumber; i++) {
       let strip = document.createElement("div");
@@ -1407,10 +1414,19 @@ class WordGame {
     game.deleteAudio();
     const audio = document.createElement("audio");
     audio.setAttribute("controls", "");
-    audio.addEventListener('play',()=>{stopAudio();isMyVoicePlaying=true})
-    audio.addEventListener('ended',()=>{isMyVoicePlaying=false})
-    audio.addEventListener('pause',()=>{isMyVoicePlaying=false})
+    audio.title = "Your voice";
+    audio.addEventListener("play", () => {
+      stopAudio();
+      isMyVoicePlaying = true;
+    });
+    audio.addEventListener("ended", () => {
+      isMyVoicePlaying = false;
+    });
+    audio.addEventListener("pause", () => {
+      isMyVoicePlaying = false;
+    });
     audioPlace.appendChild(audio);
+    audioInfo.textContent = `Listen how you said: "${wordYouSaid}."`;
     const blob = new Blob(voice, { type: "audio/ogg; codecs=opus" });
     voice = [];
     const audioURL = window.URL.createObjectURL(blob);
@@ -1418,6 +1434,7 @@ class WordGame {
   }
 
   deleteAudio() {
+    audioInfo.textContent = "";
     document.querySelectorAll("audio").forEach((el) => el.remove());
   }
   loop() {
@@ -1454,10 +1471,7 @@ class WordGame {
       }
       stopAudio();
       game.hideInfo();
-      setTimeout(() => {
-        pronouncingResult.textContent = `${(0).toFixed(1)}%`;
-      }, 1000);
-
+    
       pronouncingWord.style.animationName = "go-forward";
       setTimeout(() => {
         if (isPhrasePronouncing) {
@@ -1715,6 +1729,7 @@ function translateButtonListener(event) {
     fillTranslatePanel(left, top);
   } else game.hideTranslatePanel();
 }
+
 function fillTranslatePanel(left, top) {
   let translation = isPhrasePronouncing
     ? wordsArray[currentIndexOfWord].textExampleTranslate
@@ -1728,10 +1743,29 @@ function wakeLock() {
 }
 
 function playAudio(src) {
-  if(isMyVoicePlaying){return Promise.resolve()}
+  if (isMyVoicePlaying) {
+    return Promise.resolve();
+  }
   stopAudio();
   audio.src = src;
-  audioPromise = audio.play().catch(console.log);
+  audioPromise = audio
+    .play()
+    .then(() => {
+      audioErrors = 0;
+    })
+    .catch((err) => {
+      console.log(err);
+      speakerNext.style.opacity = 0.1;
+      audioErrors++;
+      if (audioErrors === 1) {
+        game.showInfo(
+          `<p style="color:red">It's not possible to play audio</p><p>Check your internet connection!</p>`
+        );
+      }
+      if (menu.pronouncing) {
+        setTimeout(() => (speakerNext.style.opacity = 0.7), 5000);
+      }
+    });
   return audioPromise;
 }
 

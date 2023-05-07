@@ -242,10 +242,11 @@ body {
   border-left: 3px solid yellow;
   border-top: 3px solid blue;
   border-right: 3px solid yellow;
-  animation: rotate2 infinite;
+ 
   animation-duration: 500ms;
   animation-timing-function: linear;
 }
+
 .inner-circle-1 {
   width: 30px;
   height: 30px;
@@ -255,7 +256,7 @@ body {
   border-top: 4px solid yellow;
   border-right: 4px solid blue;
   opacity: 0.3;
-  animation: rotate2 infinite;
+ 
   animation-timing-function: linear;
   animation-duration: 2500ms;
   animation-delay: 500ms;
@@ -269,7 +270,7 @@ body {
   border-top: 5px solid blue;
   border-right: 5px solid yellow;
   opacity: 0.7;
-  animation: rotate1 infinite;
+ 
    animation-timing-function: linear;
   animation-duration: 2000ms;
   animation-delay: 1000ms;
@@ -361,7 +362,7 @@ body {
   gap: 5px;
   width: 60vw;
   min-width: 200px;
-  height: 200px;
+  height: 150px;
   font-size: 20px;
   color: #000066;
   text-align: center;
@@ -517,6 +518,7 @@ body {
 }
 .info {
   position: fixed;
+  z-index: 400;
   left: 20vw;
   top: 30vh;
   width: 60vw;
@@ -564,7 +566,6 @@ body {
   }
 }
 .heart {
-  animation: heart-animation infinite;
   animation-duration: 1s;
   position: fixed;
   top: calc(2vh + 9px);
@@ -737,7 +738,7 @@ body {
   font-size: 20px;
   color: #000066;
   text-align: center;
-  word-wrap: normal;
+  word-wrap:break-word;
   font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
   transition: 500ms;
   min-height: 64px;
@@ -791,8 +792,17 @@ font-weight: bold;
 }
 .audio-place{
   width:100%;
-  height:80px;
+  height: fit-content;
+  min-height:80px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+.audio-info{
+  font-size: 20px;
+  color: #000066;
+  text-align: center;
+  font-family: monospace;
+  transition: 500ms;
 }
