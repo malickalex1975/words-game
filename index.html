@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Words game</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <div class="level-container">
+        <div class="level-element level-1"></div>
+        <div class="level-element level-2"></div>
+        <div class="level-element level-3"></div>
+        <div class="level-element level-4"></div>
+        <div class="level-element level-5"></div>
+        <div class="level-element level-6"></div>
+      </div>
+
+      <div class="clock-container">
+        <div class="life-container">
+          <div class="white-heart"></div>
+          <div class="heart"></div>
+          <div class="life"></div>
+        </div>
+        <div class="strip-container"></div>
+        <div class="clock-strip"></div>
+        <div class="clock"></div>
+      </div>
+      <div class="score-place">
+        <div class="digit-2"><div class="digit-element-2">0</div></div>
+        <div class="digit-1"><div class="digit-element-1">0</div></div>
+      </div>
+      <div class="gamepad-container">
+        <div class="left-column">
+          <div class="button left-button-0"></div>
+          <div class="button left-button-1"></div>
+          <div class="button left-button-2"></div>
+          <div class="button left-button-3"></div>
+          <div class="button left-button-4"></div>
+          <div class="button left-button-5"></div>
+        </div>
+        <div class="right-column">
+          <div class="button right-button-0"></div>
+          <div class="button right-button-1"></div>
+          <div class="button right-button-2"></div>
+          <div class="button right-button-3"></div>
+          <div class="button right-button-4"></div>
+          <div class="button right-button-5"></div>
+        </div>
+      </div>
+      <div class="button-start">start</div>
+      <div class="button-stop">stop</div>
+      <div class="pronouncing-container">
+        <div class="toggle-container">
+          <div class="option-1">word</div>
+          <div class="toggle">
+            <div class="toggle-element"></div>
+          </div>
+          <div class="option-2">phrase</div>
+        </div>
+        <div class="visualisation"></div>
+        <div class="word-container">
+          <div class="left-arrow"></div>
+          <div class="pronouncing-word">
+            <p class='the-word'></p>
+            <span class='transcript'></span>
+            <div class="speaker-next" >
+            </div>
+          </div>
+          <div class="right-arrow"></div>
+        </div>
+        <div class="you-say-container">
+          <div class="ear"></div>
+          <div class="you-say"></div>
+        </div>
+        <div class="microphone"></div>
+        
+        <div class="pronouncing-result">
+          <div class="result-title">Your result:</div>
+          <div class="result-digit-1">
+            <div>&nbsp</div>
+            <div>1</div>
+            <div>2</div>
+            <div>3</div>
+            <div>4</div>
+            <div>5</div>
+            <div>6</div>
+            <div>7</div>
+            <div>8</div>
+            <div>9</div>
+          </div>
+          <div class="result-digit-2">
+            <div>0</div>
+            <div>1</div>
+            <div>2</div>
+            <div>3</div>
+            <div>4</div>
+            <div>5</div>
+            <div>6</div>
+            <div>7</div>
+            <div>8</div>
+            <div>9</div>
+          </div>
+          <div class="percent-sign">%</div>
+        </div>
+        <div class="audio-place">
+          <div class="audio-info"></div>
+        </div>
+      </div>
+    </div>
+    <div class="example-container"></div>
+    <div class="loading">
+      <div class="inner-circle-1">
+        <div class="inner-circle-2"></div>
+      </div>
+    </div>
+    <div class="info"></div>
+    <div class="mistakes-pad">
+      <h2>Problem words:</h2>
+      <div class="mistakes-container"></div>
+    </div>
+    <div class="warning-container">
+      <p>Turn your device!</p>
+      <p>Поверните гаджет!</p>
+    </div>
+    <div class="menu-button">
+      <div class="menu-line line-1"></div>
+      <div class="menu-line line-2"></div>
+      <div class="menu-line line-3"></div>
+    </div>
+    <div class="menu-panel">
+      <div class="menu-container">
+        <div class="menu-item menu-item-1">words matching</div>
+        <div class="menu-item menu-item-2">words pronouncing</div>
+        <div class="menu-item menu-item-3">Try another app from this author: Age by photo</div>
+      </div>
+     
+    </div>
+    <div class="translate-panel"></div>
+    <div class="ear"></div>
+    <a href="https://www.flaticon.com/ru/free-icons/" title="Слушать иконки">Слушать иконки от Freepik - Flaticon</a>
+    <script src="./index.js" type="module"></script>
+  </body>
+</html>
