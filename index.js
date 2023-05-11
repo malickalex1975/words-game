@@ -62,6 +62,7 @@ let timeRemained = 120000;
 let timeStart = 0;
 let timeCurrent = 0;
 let score = 0;
+let lastResult = 0;
 let currentLife = maxLife;
 let wordsIndexes = [];
 let threeWordsIndexes = [];
@@ -70,6 +71,9 @@ let isMenu = false;
 let audioCtx, analizer;
 const stripNumber = 32;
 let freqArray = new Uint8Array(stripNumber * 2);
+const resultDigit1 = document.querySelector(".result-digit-1");
+const resultDigit2 = document.querySelector(".result-digit-2");
+
 const audioPlace = document.querySelector(".audio-place");
 const audioInfo = document.querySelector(".audio-info");
 const theWord = document.querySelector(".the-word");
@@ -284,8 +288,8 @@ class WordGame {
     }, 4000);
   }
   hideInfo() {
-    info.style.transform = "translateY(-200%)";
-    info.innerHTML = "";
+    info.style.transform = "translateY(-200%) scale(.3)";
+    
   }
   showMistakesPad() {
     mistakesPad.style.transform = "translateY(0%)";
@@ -1257,7 +1261,7 @@ class WordGame {
           youSay.style.transform = "translateX(-100px)";
         }, 1000);
       }
-      game.setPronouncingResult(0)
+      game.setPronouncingResult(0);
       setTimeout(() => game.listenMicrophone(), 100);
 
       mySpeech
@@ -1316,7 +1320,7 @@ class WordGame {
     if (!isPhrasePronouncing) {
       youSay.textContent = result.phrase.toLowerCase();
       if (
-        wordForPronouncing === result.phrase.toLowerCase() &&
+        wordForPronouncing.toLowerCase() === result.phrase.toLowerCase() &&
         result.confidence > 0
       ) {
         pronouncingWord.style.color = "green";
@@ -1363,9 +1367,44 @@ class WordGame {
       }, 3000);
     }
   }
-  setPronouncingResult(result=0) {
-    pronouncingResult.textContent = `${result}%`;
+
+  setPronouncingResult(result = 0) {
+    console.log(result)
+    if (lastResult > result) {
+      this.decreaseResult(result);
+    } else if (lastResult < result) {
+      this.increaseResult(result);
+    }
+    lastResult = result;
   }
+  decreaseResult(result) {
+    let num = lastResult;
+    let interval = setInterval(() => {
+      this.showResult(num);
+      if (num <= result) {
+        clearInterval(interval);
+      } else {
+        num--;
+      }
+    }, 10);
+  }
+  increaseResult(result) {
+    let num = lastResult;
+    let interval = setInterval(() => {
+      this.showResult(num);
+      if (num >= result) {
+        clearInterval(interval);
+      } else {
+        num++;
+      }
+    }, 10);
+  }
+showResult(num){
+  let dig1= Math.floor(num/10);
+  let dig2= num%10;
+  resultDigit1.style.transform=`translateY(${-dig1* 34.5}px)`
+  resultDigit2.style.transform=`translateY(${-dig2* 34.5}px)`
+}
   createVisualisation() {
     for (let i = 0; i < stripNumber; i++) {
       let strip = document.createElement("div");
@@ -1396,7 +1435,7 @@ class WordGame {
         game.loop();
         mediaRecorder = new MediaRecorder(stream, { audiBitsPerSecond: 44000 });
         voice = [];
-        setTimeout(() => mediaRecorder.start());
+        mediaRecorder.start();
 
         mediaRecorder.addEventListener("dataavailable", function (event) {
           voice.push(event.data);
@@ -1412,25 +1451,32 @@ class WordGame {
 
   saveAudio() {
     game.deleteAudio();
-    const audio = document.createElement("audio");
-    audio.setAttribute("controls", "");
-    audio.title = "Your voice";
-    audio.addEventListener("play", () => {
-      stopAudio();
-      isMyVoicePlaying = true;
-    });
-    audio.addEventListener("ended", () => {
-      isMyVoicePlaying = false;
-    });
-    audio.addEventListener("pause", () => {
-      isMyVoicePlaying = false;
-    });
-    audioPlace.appendChild(audio);
-    audioInfo.textContent = `Listen how you said: "${wordYouSaid}."`;
-    const blob = new Blob(voice, { type: "audio/ogg; codecs=opus" });
-    voice = [];
-    const audioURL = window.URL.createObjectURL(blob);
-    audio.src = audioURL;
+    if (wordYouSaid !== "") {
+      const audio = document.createElement("audio");
+      audio.setAttribute("controls", "");
+      audio.title = "Your voice";
+      audio.addEventListener("play", () => {
+        stopAudio();
+        isMyVoicePlaying = true;
+      });
+      audio.addEventListener("ended", () => {
+        isMyVoicePlaying = false;
+      });
+      audio.addEventListener("pause", () => {
+        isMyVoicePlaying = false;
+      });
+      audioPlace.appendChild(audio);
+      const blob = new Blob(voice, { type: "audio/ogg; codecs=opus" });
+      voice = [];
+      const audioURL = window.URL.createObjectURL(blob);
+      audio.src = audioURL;
+    } else {
+      setTimeout(() => (audioInfo.textContent = ""), 2500);
+    }
+    audioInfo.textContent =
+      wordYouSaid !== ""
+        ? `Listen how you said: "${wordYouSaid}"`
+        : "We heard nothing!";
   }
 
   deleteAudio() {
@@ -1471,7 +1517,7 @@ class WordGame {
       }
       stopAudio();
       game.hideInfo();
-    
+
       pronouncingWord.style.animationName = "go-forward";
       setTimeout(() => {
         if (isPhrasePronouncing) {
@@ -1582,7 +1628,7 @@ class WordGame {
   }
 }
 const game = new WordGame();
-info.addEventListener("click", () => {
+info.addEventListener("pointerdown", () => {
   game.hideInfo();
   if (mistakes.length > 0) {
     game.processMistakes();
@@ -1652,6 +1698,7 @@ function init() {
 async function initMatching() {
   if (request) {
     cancelAnimationFrame(request);
+    request = undefined;
   }
   game.hideInfo();
   if (mySpeech) {
@@ -1820,10 +1867,8 @@ function handleToggle() {
   }
 }
 function beforeUnloadListener(event) {
-  event.preventDefault();
-  alert("see you later");
+  // event.preventDefault();
   console.log("see you later!");
-  game.showInfo("see you later!");
 }
 
 document.addEventListener("DOMContentLoaded", init);
