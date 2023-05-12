@@ -283,11 +283,11 @@ body {
   height: 80vh;
   opacity: 0;
   visibility: hidden;
-  transition: 1s;
+  transition: 500ms;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-around;
+  justify-content: space-evenly;
   background-image: linear-gradient(#ddffff, #eeffff, #ddffff);
 }
 .toggle-container {
@@ -706,6 +706,9 @@ body {
   background-image: url(./assets/images/microphone.png);
   opacity: 0.1;
   transition: 500ms;
+  position: relative;
+  top:-10px;
+ 
 }
 .visualisation {
   width: 30vw;
@@ -754,6 +757,7 @@ body {
   visibility: hidden;
   transition: 500ms;
   
+ 
 }
 
 .translate-panel {
@@ -830,7 +834,7 @@ font-weight: bold;
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  font-size: 30px;
+  font-size: 24px;
   color: #000066;
   text-align: center;
 }

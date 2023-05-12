@@ -5,6 +5,9 @@ const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 import Speech from "./speech.js";
 let audioErrors = 0;
+let averagePronouncingResult = 0;
+let pronouncingAttempts = 0;
+let sumPronouncingResult = 0;
 let isTranslateShown = false;
 let isLeftArrowHidden = true;
 let isMyVoicePlaying = false;
@@ -12,7 +15,6 @@ let globalWordIndex;
 let isMoving;
 let mediaRecorder;
 let voice = [];
-let mySpeech;
 let stream;
 let isPrinting = false;
 let currentIndexOfWord;
@@ -124,6 +126,7 @@ const digit1 = document.querySelector(".digit-1");
 const digit2 = document.querySelector(".digit-2");
 const ear = document.querySelector(".ear");
 const translatePanel = document.querySelector(".translate-panel");
+const percentSign = document.querySelector(".percent-sign");
 let isPhrasePronouncing = false;
 let wordsArray = [];
 const audio = new Audio();
@@ -145,6 +148,7 @@ let menu = {
   matching: true,
   pronouncing: false,
 };
+const mySpeech = new Speech("en");
 class WordGame {
   constructor() {}
   processMenu() {
@@ -289,7 +293,6 @@ class WordGame {
   }
   hideInfo() {
     info.style.transform = "translateY(-200%) scale(.3)";
-    
   }
   showMistakesPad() {
     mistakesPad.style.transform = "translateY(0%)";
@@ -1252,7 +1255,6 @@ class WordGame {
     if (!isMicrophoneAvailable || isPrinting) {
       return;
     } else {
-      mySpeech = new Speech("en");
       game.hideInfo();
       if (youSay.textContent !== "") {
         setTimeout(() => {
@@ -1316,15 +1318,16 @@ class WordGame {
     }
   }
   processPronouncingResult(result) {
+    let res = (result.confidence * 100).toFixed(0);
     ear.style.opacity = 0.8;
     if (!isPhrasePronouncing) {
       youSay.textContent = result.phrase.toLowerCase();
       if (
         wordForPronouncing.toLowerCase() === result.phrase.toLowerCase() &&
-        result.confidence > 0
+        res > 0
       ) {
         pronouncingWord.style.color = "green";
-        this.setPronouncingResult((result.confidence * 100).toFixed(0));
+        this.setPronouncingResult(res);
         youSay.style.opacity = "1";
         youSay.style.color = "green";
         youSay.style.transform = "translateX(0px)";
@@ -1357,7 +1360,7 @@ class WordGame {
         }
       });
 
-      this.setPronouncingResult((result.confidence * 100).toFixed(0));
+      this.setPronouncingResult(res);
       youSay.innerHTML = innerhtml;
       youSay.style.opacity = "1";
       youSay.style.transform = "translateX(0px)";
@@ -1366,10 +1369,24 @@ class WordGame {
         this.rightArrowHandler();
       }, 3000);
     }
+    this.operatePronouncingResult(res);
+  }
+
+  operatePronouncingResult(result) {
+    pronouncingAttempts++;
+    sumPronouncingResult += +result;
+    averagePronouncingResult = (
+      sumPronouncingResult / pronouncingAttempts
+    ).toFixed(0);
+    localStorage.setItem("pronouncingAttempts", pronouncingAttempts);
+    localStorage.setItem("sumPronouncingResult", sumPronouncingResult);
+    localStorage.setItem("averagePronouncingResult", averagePronouncingResult);
+    console.log("attempts:", pronouncingAttempts);
+    console.log("average:", averagePronouncingResult);
   }
 
   setPronouncingResult(result = 0) {
-    console.log(result)
+    console.log(result);
     if (lastResult > result) {
       this.decreaseResult(result);
     } else if (lastResult < result) {
@@ -1399,12 +1416,19 @@ class WordGame {
       }
     }, 10);
   }
-showResult(num){
-  let dig1= Math.floor(num/10);
-  let dig2= num%10;
-  resultDigit1.style.transform=`translateY(${-dig1* 34.5}px)`
-  resultDigit2.style.transform=`translateY(${-dig2* 34.5}px)`
-}
+  showResult(num = 0) {
+    let color = this.getResultColor(num);
+    let dig1 = Math.floor(num / 10);
+    let dig2 = num % 10;
+    resultDigit1.style.transform = `translateY(${-dig1 * 34.5}px)`;
+    resultDigit2.style.transform = `translateY(${-dig2 * 34.5}px)`;
+    resultDigit1.style.color = color;
+    resultDigit2.style.color = color;
+    percentSign.style.color = color;
+  }
+  getResultColor(result) {
+    return `rgba(${255 - result * 2.55},${result * 2.55},100,1)`;
+  }
   createVisualisation() {
     for (let i = 0; i < stripNumber; i++) {
       let strip = document.createElement("div");
@@ -1466,7 +1490,7 @@ showResult(num){
         isMyVoicePlaying = false;
       });
       audioPlace.appendChild(audio);
-      const blob = new Blob(voice, { type: "audio/ogg; codecs=opus" });
+      const blob = new Blob(voice, { type: "audio/wav" });
       voice = [];
       const audioURL = window.URL.createObjectURL(blob);
       audio.src = audioURL;
@@ -1626,6 +1650,17 @@ showResult(num){
       mediaRecorder = undefined;
     }
   }
+  loadUserData() {
+    pronouncingAttempts = localStorage.getItem("pronouncingAttempts")
+      ? +localStorage.getItem("pronouncingAttempts")
+      : 0;
+    sumPronouncingResult = localStorage.getItem("sumPronouncingResult")
+      ? +localStorage.getItem("sumPronouncingResult")
+      : 0;
+    averagePronouncingResult = localStorage.getItem("averagePronouncingResult")
+      ? +localStorage.getItem("averagePronouncingResult")
+      : 0;
+  }
 }
 const game = new WordGame();
 info.addEventListener("pointerdown", () => {
@@ -1654,6 +1689,7 @@ function levelChooseHandler() {
 }
 function init() {
   wakeLock();
+  game.loadUserData();
   menuButton.addEventListener("pointerdown", handleMenu);
   toggle.addEventListener("pointerdown", handleToggle);
   menuPanel.addEventListener("pointerdown", () => game.hideMenu());
@@ -1750,6 +1786,7 @@ function initPronouncing() {
   game.showRightArrow();
   game.showLevelsContainer();
   game.setToggleStyle();
+  game.showResult();
   exampleContainer.removeEventListener("pointerdown", listenExamples);
   microphone.addEventListener("pointerdown", game.microphoneHandler);
   rightArrow.addEventListener("pointerdown", game.rightArrowHandler);
