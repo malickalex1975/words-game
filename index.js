@@ -127,6 +127,7 @@ const digit2 = document.querySelector(".digit-2");
 const ear = document.querySelector(".ear");
 const translatePanel = document.querySelector(".translate-panel");
 const percentSign = document.querySelector(".percent-sign");
+const averageResultPlace = document.querySelector(".average-result");
 let isPhrasePronouncing = false;
 let wordsArray = [];
 const audio = new Audio();
@@ -590,12 +591,7 @@ class WordGame {
     this.stopClock();
     gamepad.removeEventListener("pointerdown", this.playHandler);
     gamepad.removeEventListener("pointerdown", this.listenHandler);
-    document.querySelectorAll(".button").forEach((el) => {
-      el.removeEventListener("pointermove", game.moveHandlerRight);
-      el.removeEventListener("pointermove", game.moveHandlerLeft);
-      this.moveToInitPosition(el);
-      el.style.zIndex = 1;
-    });
+    this.removeButtonListeners();
     lastLevel = currentLevel;
     this.hideClock();
     this.showScore(false);
@@ -630,7 +626,17 @@ class WordGame {
       }, 5000);
     }
   }
+
+  removeButtonListeners() {
+    document.querySelectorAll(".button").forEach((el) => {
+      el.removeEventListener("pointermove", game.moveHandlerRight);
+      el.removeEventListener("pointermove", game.moveHandlerLeft);
+      this.moveToInitPosition(el);
+      el.style.zIndex = 1;
+    });
+  }
   processMistakes() {
+    mistakesContainer.innerHTML = "";
     for (let item of mistakes) {
       let card = document.createElement("div");
       card.className = "mistake-card";
@@ -865,6 +871,7 @@ class WordGame {
     gamepad.addEventListener("pointerdown", this.listenHandler);
   }
   listenHandler(e) {
+    game.removeButtonListeners();
     let el = e.target;
     let index;
     if (
@@ -1108,6 +1115,7 @@ class WordGame {
     }, 300);
   }
   addNewWords() {
+    this.removeButtonListeners();
     this.setThreeWordsIndexes();
     this.defineThreeLeftWords();
     this.defineThreeRightWords();
@@ -1377,12 +1385,18 @@ class WordGame {
     sumPronouncingResult += +result;
     averagePronouncingResult = (
       sumPronouncingResult / pronouncingAttempts
-    ).toFixed(0);
+    ).toFixed(1);
     localStorage.setItem("pronouncingAttempts", pronouncingAttempts);
     localStorage.setItem("sumPronouncingResult", sumPronouncingResult);
     localStorage.setItem("averagePronouncingResult", averagePronouncingResult);
-    console.log("attempts:", pronouncingAttempts);
-    console.log("average:", averagePronouncingResult);
+    this.showAverageResult(averagePronouncingResult);
+  }
+  showAverageResult(result = "") {
+    averageResultPlace.style.opacity = 0;
+    setTimeout(() => {
+      averageResultPlace.textContent = result;
+      averageResultPlace.style.opacity = 1;
+    }, 500);
   }
 
   setPronouncingResult(result = 0) {
@@ -1688,6 +1702,7 @@ function levelChooseHandler() {
   });
 }
 function init() {
+  audioErrors = 0;
   wakeLock();
   game.loadUserData();
   menuButton.addEventListener("pointerdown", handleMenu);
@@ -1740,7 +1755,7 @@ async function initMatching() {
   if (mySpeech) {
     mySpeech.stopRecognition();
   }
-
+  game.showAverageResult("");
   game.showLoading(false);
   game.cancelMediaStream();
   game.resetVisualisation();
@@ -1771,6 +1786,7 @@ function initPronouncing() {
   }
   audioCtx = undefined;
   mistakes = [];
+  game.showAverageResult(averagePronouncingResult);
   game.showLoading(false);
   game.hideInfo();
   game.hideClock();
@@ -1828,22 +1844,20 @@ function wakeLock() {
 
 function playAudio(src) {
   if (isMyVoicePlaying) {
+    audioPromise = undefined;
     return Promise.resolve();
   }
   stopAudio();
   audio.src = src;
-  audioPromise = audio
-    .play()
-    .then(() => {
-      audioErrors = 0;
-    })
+  audioPromise = audio.play();
+  audioPromise
     .catch((err) => {
       console.log(err);
       speakerNext.style.opacity = 0.1;
       audioErrors++;
-      if (audioErrors === 1) {
+      if (audioErrors <3) {
         game.showInfo(
-          `<p style="color:red">It's not possible to play audio</p><p>Check your internet connection!</p>`
+          `<p style="color:red">You got some problem with audio!</p><p>Something went wrong!</p>`
         );
       }
       if (menu.pronouncing) {
@@ -1854,7 +1868,7 @@ function playAudio(src) {
 }
 
 function stopAudio() {
-  if (audioPromise !== undefined) {
+  if (audioPromise !== undefined ) {
     audio.pause();
   }
 }
