@@ -284,8 +284,7 @@ body {
 .pronouncing-container {
   position: fixed;
   top: 14vh;
-  left: 3vw;
-  width: 94vw;
+  width: 100vw;
   height: 80vh;
   opacity: 0;
   visibility: hidden;
@@ -294,8 +293,6 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: space-evenly;
-  background-image: linear-gradient(#ddffff, #eeffff, #ddffff);
-
 }
 .toggle-container {
   display: flex;
@@ -341,9 +338,12 @@ body {
 .right-arrow {
   width: 50px;
   height: 50px;
+  background-position: center;
   background-image: url(./assets/images/arrow.png);
+  border-radius: 50%;
   cursor: pointer;
   opacity: 0.7;
+  transition: 500ms;
 }
 .right-arrow:hover {
   opacity: 1;
@@ -352,12 +352,16 @@ body {
   width: 50px;
   height: 50px;
   background-image: url(./assets/images/arrow.png);
+  background-position: center;
   transform: rotate(180deg);
   cursor: pointer;
   opacity: 0.7;
+  border-radius: 50%;
+  transition: 500ms;
 }
 .left-arrow:hover {
   opacity: 1;
+ 
 }
 
 .pronouncing-word {
@@ -489,7 +493,7 @@ body {
   background-image: linear-gradient(#fff, #eee);
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
   border-radius: 5px;
-  z-index: 300;
+  z-index: 100;
 }
 .mistakes-container {
   width: 80vw;
@@ -871,5 +875,4 @@ border:2px solid #0000ee;
   font-size: 59vw;
   transition: 500ms;
   color:rgba(0,0,240,1);
-  
 }
