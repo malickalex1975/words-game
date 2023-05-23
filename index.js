@@ -1958,6 +1958,10 @@ function listenSwype() {
 function cancelListenSwype() {
   pronouncingContainer.removeEventListener("pointerdown", swypeStartListener);
   pronouncingContainer.removeEventListener("pointerup", swypeFinishListener);
+  swypeStartX = 0;
+  swypeFinishX = 0;
+  swypeStartY = 0;
+  swypeFinishY = 0;
 }
 function swypeStartListener(e) {
   swypeStartX = e.clientX;
@@ -1966,21 +1970,31 @@ function swypeStartListener(e) {
 }
 
 function swypeMovingListener(e) {
+  e.preventDefault();
   let currentX = e.clientX;
   let width = pronouncingContainer.clientWidth;
-  let delta = swypeStartX - currentX;
-  console.log(swypeStartX, currentX, delta, width);
-  if (delta > 0) {
-    pronouncingContainer.style.backgroundImage = `linear-gradient(270deg, rgba(0, 255, 0, 0.3), rgba(255, 0, 0, 0) ${
-      (delta / (width * 3)) * 100
-    }%)`;
+  let deltaX = swypeStartX - currentX;
+  console.log(swypeStartX, currentX, deltaX, width);
+  if (deltaX > 0 ) {
+    pronouncingContainer.style.backgroundImage = `linear-gradient(260deg, rgba(0, 255, 0, ${deltaX/(width*2)}), rgba(255, 0, 0, 0) ${
+      (deltaX / (width * 3)) * 100
+    }%), linear-gradient(280deg, rgba(0, 255, 0, ${deltaX/(width*2)}), rgba(255, 0, 0, 0) ${
+      (deltaX / (width * 3)) * 100
+    }%), linear-gradient(230deg, rgba(140, 255, 255, ${deltaX/(width)}), rgba(140, 255, 255, 0)  ${(deltaX / (width * 3)) * 100
+  }%),  linear-gradient(320deg, rgba(140, 255, 255, ${deltaX/(width)}), rgba(140, 255, 255, 0)  ${(deltaX / (width * 3)) * 100
+}%)`;
   }
-  if (delta < 0) {
-    pronouncingContainer.style.backgroundImage = `linear-gradient(90deg, rgba(0, 255, 0, 0.3), rgba(255, 0, 0, 0) ${
-      (-delta / (width * 3)) * 100
-    }%)`;
+  if (deltaX < 0 ) {
+    pronouncingContainer.style.backgroundImage = `linear-gradient(80deg, rgba(0, 255, 0, ${-deltaX/(width*2)}), rgba(255, 0, 0, 0) ${
+      (-deltaX / (width * 3)) * 100
+    }%), linear-gradient(100deg, rgba(0, 255, 0, ${-deltaX/(width*2)}), rgba(255, 0, 0, 0) ${
+      (-deltaX / (width * 3)) * 100
+    }%), linear-gradient(50deg, rgba(140, 255, 255, ${-deltaX/(width)}), rgba(140, 255, 255, 0)  ${(-deltaX / (width * 3)) * 100
+  }%),  linear-gradient(130deg, rgba(140, 255, 255, ${-deltaX/(width)}), rgba(140, 255, 255, 0)  ${(-deltaX / (width * 3)) * 100
+}%)`;
   }
 }
+
 function swypeFinishListener(e) {
   pronouncingContainer.removeEventListener("pointermove", swypeMovingListener);
   pronouncingContainer.style.backgroundImage =''
@@ -1990,21 +2004,10 @@ function swypeFinishListener(e) {
   let deltaY = Math.abs(swypeFinishY - swypeStartY);
   if (deltaX < -100 && deltaY < 50) {
     game.rightArrowHandler();
-    rightArrow.style.border = "2px solid green";
-    rightArrow.style.opacity = 1;
-    setTimeout(() => {
-      rightArrow.style.border = "";
-      rightArrow.style.opacity = "";
-    }, 1000);
+   
   }
   if (deltaX > 100 && deltaY < 50) {
     game.leftArrowHandler();
-    leftArrow.style.border = "2px solid green";
-    leftArrow.style.opacity = 1;
-    setTimeout(() => {
-      leftArrow.style.border = "";
-      leftArrow.style.opacity = "";
-    }, 1000);
   }
   swypeStartX = 0;
   swypeFinishX = 0;
