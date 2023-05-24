@@ -302,9 +302,11 @@ class WordGame {
   }
   showMistakesPad() {
     mistakesPad.style.transform = "translateY(0%)";
+    document.body.style.touchAction = "auto";
   }
   hideMistakesPad() {
     mistakesPad.style.transform = "translateY(200%)";
+    document.body.style.touchAction = "";
   }
   showMenu() {
     menuPanel.style.transform = "translateX(0px)";
@@ -674,7 +676,7 @@ class WordGame {
         mistakesContainer.appendChild(card);
       }
       this.showMistakesPad();
-      document.body.style.touchAction = "auto";
+     
     }
   }
 
