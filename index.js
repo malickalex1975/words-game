@@ -2034,6 +2034,7 @@ function swypeMovingListener(e) {
   let width = pronouncingContainer.clientWidth;
   let deltaX = swypeStartX - currentX;
   console.log(swypeStartX, currentX, deltaX, width);
+  if(!isPrinting && isMicrophoneAvailable){
   if (deltaX > 0) {
     pronouncingContainer.style.backgroundImage = `linear-gradient(260deg, rgba(0, 255, 0, ${
       deltaX / (width * 2)
@@ -2067,7 +2068,43 @@ function swypeMovingListener(e) {
     }%),  linear-gradient(130deg, rgba(140, 255, 255, ${
       -deltaX / width
     }), rgba(140, 255, 255, 0)  ${(-deltaX / (width * 3)) * 100}%)`;
+  }}else{
+    vibrate.wrong()
+    if (deltaX > 0) {
+      pronouncingContainer.style.backgroundImage = `linear-gradient(260deg, rgba(255, 0, 0, ${
+        deltaX / (width * 2)
+      }), rgba(0, 0, 0, 0) ${
+        (deltaX / (width * 3)) * 100
+      }%), linear-gradient(280deg, rgba(255, 0, 0, ${
+        deltaX / (width * 2)
+      }), rgba(0, 0, 0, 0) ${
+        (deltaX / (width * 3)) * 100
+      }%), linear-gradient(230deg, rgba(140, 255, 255, ${
+        deltaX / width
+      }), rgba(140, 255, 255, 0)  ${
+        (deltaX / (width * 3)) * 100
+      }%),  linear-gradient(320deg, rgba(140, 255, 255, ${
+        deltaX / width
+      }), rgba(140, 255, 255, 0)  ${(deltaX / (width * 3)) * 100}%)`;
+    }
+    if (deltaX < 0) {
+      pronouncingContainer.style.backgroundImage = `linear-gradient(80deg, rgba(255, 0, 0, ${
+        -deltaX / (width * 2)
+      }), rgba(255, 0, 0, 0) ${
+        (-deltaX / (width * 3)) * 100
+      }%), linear-gradient(100deg, rgba(255, 0, 0, ${
+        -deltaX / (width * 2)
+      }), rgba(255, 0, 0, 0) ${
+        (-deltaX / (width * 3)) * 100
+      }%), linear-gradient(50deg, rgba(140, 255, 255, ${
+        -deltaX / width
+      }), rgba(140, 255, 255, 0)  ${
+        (-deltaX / (width * 3)) * 100
+      }%),  linear-gradient(130deg, rgba(140, 255, 255, ${
+        -deltaX / width
+      }), rgba(140, 255, 255, 0)  ${(-deltaX / (width * 3)) * 100}%)`;
   }
+}
 }
 
 function swypeFinishListener(e) {
