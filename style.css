@@ -768,6 +768,8 @@ body {
   opacity: 0;
   visibility: hidden;
   transition: 500ms;
+  cursor: pointer;
+ 
 }
 
 .translate-panel {
