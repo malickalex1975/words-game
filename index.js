@@ -1,11 +1,14 @@
 const mainUrl = "https://learnlangapp1.herokuapp.com/";
+const AIUrl = "https://stablediffusionapi.com/api/v3/text2img";
+const APIKey = "xRkNj473iRYE0qsHCvFbwfl35sUb7oxpnoMobo4KgJzMIPpHHEHXqFFDtxE2";
 const ageByPhotoUrl = "https://malickalex1975.github.io/age-by-photo/";
 const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 import Speech from "./speech.js";
 let isRecognizeFail = false;
-let lastAudioUrl
+let showErrorInformationTimeout = undefined;
+let lastAudioUrl;
 let audioErrors = 0;
 let swypeStartX = 0;
 let swypeFinishX = 0;
@@ -20,12 +23,12 @@ let isMyVoicePlaying = false;
 let globalWordIndex;
 let isMoving;
 let loadingInterval;
-let loadingStartTime
+let loadingStartTime;
 let mediaRecorder;
 let voice = [];
 let stream;
 let isPrinting = false;
-let currentIndexOfWord;
+let currentIndexOfWord, lastIndexOfWord;
 let audioPromise, request, transcriptForPronouncing;
 let isMicrophoneAvailable = true;
 let wordForPronouncing = "";
@@ -79,13 +82,17 @@ let threeWordsIndexes = [];
 let wordYouSaid = "";
 let isMenu = false;
 let audioCtx, analizer;
+let wasHiddenByHandler = false;
 const stripNumber = 32;
 let freqArray = new Uint8Array(stripNumber * 2);
 const exampleButton = document.querySelector(".example-button");
 const exampleCardImage = document.querySelector(".example-card-image");
 const examplePhrase = document.querySelector(".example-phrase");
-const examplePhraseTranslate = document.querySelector(".example-phrase-translate");
+const examplePhraseTranslate = document.querySelector(
+  ".example-phrase-translate"
+);
 const phraseSpeaker = document.querySelector(".phrase-speaker");
+const errorInformation = document.querySelector(".error-information");
 const resultDigit1 = document.querySelector(".result-digit-1");
 const resultDigit2 = document.querySelector(".result-digit-2");
 const wordExampleCard = document.querySelector(".word-example-card");
@@ -141,6 +148,8 @@ const ear = document.querySelector(".ear");
 const translatePanel = document.querySelector(".translate-panel");
 const percentSign = document.querySelector(".percent-sign");
 const averageResultPlace = document.querySelector(".average-result");
+const progressLine = document.querySelector(".progress-line");
+const progressContainer = document.querySelector(".progress-container");
 let isPhrasePronouncing = false;
 let wordsArray = [];
 const audio = new Audio();
@@ -163,6 +172,7 @@ let menu = {
   pronouncing: false,
 };
 const mySpeech = new Speech("en");
+const myWorker = new Worker("./worker.js");
 class WordGame {
   constructor() {}
   processMenu() {
@@ -309,6 +319,26 @@ class WordGame {
   hideInfo() {
     info.style.transform = "translateY(-200%) scale(.3)";
   }
+  showErrorInformation(error = "Error! No additional information") {
+    errorInformation.style.visibility = "visible";
+    errorInformation.textContent = error;
+    if (!showErrorInformationTimeout) {
+      showErrorInformationTimeout = setTimeout(() => {
+        this.hideErrorInformation();
+        showErrorInformationTimeout = undefined;
+      }, 30000);
+    } else {
+      clearTimeout(showErrorInformationTimeout);
+      showErrorInformationTimeout = undefined;
+      this.showErrorInformation(error);
+    }
+  }
+
+  hideErrorInformation() {
+    errorInformation.style.visibility = "hidden";
+    errorInformation.textContent = "";
+  }
+
   showMistakesPad() {
     mistakesPad.style.transform = "translateY(0%)";
     document.body.style.touchAction = "auto";
@@ -726,7 +756,7 @@ class WordGame {
       return;
     }
     console.log(from, "-", visibility);
-   
+
     isLoading = visibility;
     let v = visibility ? "visible" : "hidden";
     let anim = visibility ? " 1s linear rotate2 infinite" : "";
@@ -737,10 +767,10 @@ class WordGame {
     innerCircle2.style.animation = anim;
     pronouncingContainer.style.opacity = opacity;
 
-    if (isLoading ) {
+    if (isLoading) {
       loadingStartTime = Date.now();
       loadingInterval = setInterval(() => {
-        if (Date.now() - loadingStartTime > 5000) {
+        if (Date.now() - loadingStartTime > 10000) {
           clearInterval(loadingInterval);
           if (
             confirm(
@@ -748,11 +778,13 @@ class WordGame {
             )
           ) {
             location.reload();
+          } else {
+            this.showLoading(false);
+            this.showErrorInformation("Reload the page manually!");
           }
         }
-      }, 200);
+      }, 500);
     } else {
-
       loadingStartTime = undefined;
       clearInterval(loadingInterval);
     }
@@ -1334,6 +1366,7 @@ class WordGame {
             })
             .catch((err) => {
               console.log("error occured:", err);
+              this.showErrorInformation(err);
               clearInterval(interval);
               return resolve();
             });
@@ -1377,6 +1410,7 @@ class WordGame {
             if (game.checkError(err)) {
               game.showInfo(`<p>Error happened: \r\n<span>${err}</span><p>`);
             }
+            this.showErrorInformation(err);
           }
         })
         .finally(() => {
@@ -1395,6 +1429,7 @@ class WordGame {
             if (game.checkError(err)) {
               game.showInfo(`<p>Error happened: \r\n<span>${err}</span><p>`);
             }
+            this.showErrorInformation(err);
           }
           if (mediaRecorder) {
             mediaRecorder.stop();
@@ -1411,6 +1446,7 @@ class WordGame {
             if (game.checkError(err)) {
               game.showInfo(`<p>Error happened: \r\n<span>${err}</span><p>`);
             }
+            this.showErrorInformation(err);
           }
         });
     }
@@ -1431,16 +1467,19 @@ class WordGame {
   notRecognizeHandler() {
     console.log("notRecognizedHandler");
     game.showInfo(`<p>Not recognize! \r\n<span>Try again!</span><p>`);
+    game.showErrorInformation("Not recognize!Try again!");
     game.cancelMediaStream();
     isRecognizeFail = true;
     setTimeout(() => {
       game.microphoneHandler();
+      game.hideErrorInformation();
     }, 1500);
   }
 
   abortHandler() {
     console.log("abortHandler");
     game.showInfo(`<p>Your action: \r\n<span>STOP!</span><p>`);
+    game.showErrorInformation("Your action: STOP!");
 
     game.cancelMediaStream();
   }
@@ -1600,6 +1639,7 @@ class WordGame {
         mediaRecorder.addEventListener("stop", game.saveAudio);
       })
       .catch((err) => {
+        game.showErrorInformation(err);
         alert(err + "\r\n The page will be reloaded!");
         location.reload();
       });
@@ -1822,34 +1862,79 @@ class WordGame {
     exampleButton.removeEventListener("pointerdown", this.exampleButtonHandler);
   }
 
-  exampleButtonHandler() {
-    game.removeSpeakerListener(lastAudioUrl)
+  async exampleButtonHandler() {
+    game.removeSpeakerListener(lastAudioUrl);
     game.showExampleCard();
     game.hideExampleButton();
-    let imageEndpoint= wordsArray?.[currentIndexOfWord].image;
-    let audioEndpoint= wordsArray?.[currentIndexOfWord].audioExample;
-    let imageUrl=mainUrl+imageEndpoint;
-    let audioUrl=mainUrl+audioEndpoint;
-    examplePhrase.style.opacity=0;
-    examplePhraseTranslate.style.opacity=0;
-      exampleCardImage.style.opacity=0;
-      phraseSpeaker.style.opacity=0;
-    examplePhrase.innerHTML= wordsArray?.[currentIndexOfWord].textExample;
-    examplePhraseTranslate.innerHTML= wordsArray?.[currentIndexOfWord].textExampleTranslate;
-    exampleCardImage.src=imageUrl;
-    setTimeout(()=>{ examplePhrase.style.opacity=1;
-      },1200)
-    setTimeout(()=>{ 
-      exampleCardImage.style.opacity=1;
-      },800)
-    setTimeout(()=>{ 
-      phraseSpeaker.style.opacity=1;},1600)
-      setTimeout(()=>{ examplePhraseTranslate.style.opacity=1;
-      },2000)
-    
-    game.addSpeakerListener(audioUrl)
-    lastAudioUrl=audioUrl
+    wasHiddenByHandler = true;
+    if (lastIndexOfWord === currentIndexOfWord) {
+      return;
+    } else {
+      lastIndexOfWord = currentIndexOfWord;
+      let imageEndpoint = wordsArray?.[currentIndexOfWord].image;
+      let audioEndpoint = wordsArray?.[currentIndexOfWord].audioExample;
+      let imageUrl = mainUrl + imageEndpoint;
+      myWorker.postMessage({ url: imageUrl });
+      game.showLoading(true);
+      game.drawProgress(0);
+      exampleCardImage.src = "";
+      let audioUrl = mainUrl + audioEndpoint;
+      examplePhrase.style.opacity = 0;
+      examplePhraseTranslate.style.opacity = 0;
+      exampleCardImage.style.opacity = 0;
+      phraseSpeaker.style.opacity = 0;
+      let textExample = wordsArray?.[currentIndexOfWord].textExample;
+      try {
+        let AIImageUrl = await getAIImageUrl(textExample);
+        console.log(AIImageUrl);
+      } catch (err) {
+        console.log(err);
+        game.showErrorInformation(err);
+      }
+     
+      examplePhrase.innerHTML = textExample;
+      examplePhraseTranslate.innerHTML =
+        wordsArray?.[currentIndexOfWord].textExampleTranslate;
+      myWorker.onmessage = (e) => {
+        if (!(e.data instanceof Array)) {
+          exampleCardImage.src = URL.createObjectURL(e.data);
+          game.showLoading(false);
+        } else {
+          let loaded = e.data[0];
+          let total = e.data[1];
+          let progress = +((loaded / total) * 100).toFixed(1);
+          game.drawProgress(progress);
+        }
+      };
 
+      setTimeout(() => {
+        examplePhrase.style.opacity = 1;
+      }, 1200);
+      setTimeout(() => {
+        exampleCardImage.style.opacity = 1;
+      }, 800);
+      setTimeout(() => {
+        phraseSpeaker.style.opacity = 1;
+      }, 1600);
+      setTimeout(() => {
+        examplePhraseTranslate.style.opacity = 1;
+      }, 2000);
+
+      game.addSpeakerListener(audioUrl);
+      lastAudioUrl = audioUrl;
+    }
+  }
+
+  drawProgress(progress) {
+    if (progress === 0) {
+      progressContainer.style.visibility = "visible";
+    }
+    setTimeout(() => {
+      progressLine.style.width = `${(200 * progress) / 100}px`;
+    }, progress * 10);
+    if (progress > 99) {
+      setTimeout(() => (progressContainer.style.visibility = "hidden"), 1200);
+    }
   }
   showExampleCard() {
     wordExampleCard.style.transform = "translateY(0%) scale(1)";
@@ -1861,13 +1946,23 @@ class WordGame {
   hideExampleCard() {
     wordExampleCard.style.transform = "translateY(-200%) scale(0.1)";
     wordExampleCard.style.opacity = 0;
-    setExampleButtonVisibility();
+    wordExampleCard.removeEventListener("pointerdown", this.hideExampleCard);
+    if (wasHiddenByHandler) {
+      game.showExampleButton();
+      wasHiddenByHandler = false;
+    }
   }
-  addSpeakerListener(src){
-    phraseSpeaker.addEventListener('pointerdown', (e)=>{playAudio(src);e.stopPropagation()})
+  addSpeakerListener(src) {
+    phraseSpeaker.addEventListener("pointerdown", (e) => {
+      playAudio(src);
+      e.stopPropagation();
+    });
   }
-  removeSpeakerListener(src){
-    phraseSpeaker.removeEventListener('pointerdown', (e)=>{playAudio(src);e.stopPropagation()})
+  removeSpeakerListener(src) {
+    phraseSpeaker.removeEventListener("pointerdown", (e) => {
+      playAudio(src);
+      e.stopPropagation();
+    });
   }
 }
 const game = new WordGame();
@@ -1902,6 +1997,7 @@ function init() {
   menuButton.addEventListener("pointerdown", handleMenu);
   toggle.addEventListener("pointerdown", handleToggle);
   menuPanel.addEventListener("pointerdown", () => game.hideMenu());
+  errorInformation.addEventListener("pointerdown", game.hideErrorInformation);
   mainContainer.addEventListener("pointerdown", () => {
     game.hideMenu();
     game.hideTranslatePanel();
@@ -2253,6 +2349,54 @@ function setExampleButtonVisibility() {
   } else {
     game.hideExampleButton();
   }
+}
+
+function getAIImageUrl(text) {
+  return new Promise((resolve, reject) => {
+    let myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Access-Control-Allow-Origin", "*");
+
+    var raw = {
+      key: APIKey,
+      prompt: text,
+      negative_prompt:
+        " ((out of frame)), ((extra fingers)), mutated hands, ((poorly drawn hands)), ((poorly drawn face)), (((mutation))), (((deformed))), (((tiling))), ((naked)), ((tile)), ((fleshpile)), ((ugly)), (((abstract))), blurry, ((bad anatomy)), ((bad proportions)), ((extra limbs)), cloned face, glitchy, ((extra breasts)), ((double torso)), ((extra arms)), ((extra hands)), ((mangled fingers)), ((missing breasts)), (missing lips), ((ugly face)), ((fat)), ((extra legs))",
+      width: "512",
+      height: "512",
+      samples: "1",
+      num_inference_steps: "20",
+      seed: null,
+      guidance_scale: 7.5,
+      safety_checker: "yes",
+      multi_lingual: "no",
+      panorama: "no",
+      self_attention: "no",
+      upscale: "no",
+      embeddings_model: "embeddings_model_id",
+      webhook: null,
+      track_id: null,
+    };
+
+    var requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow",
+      //mode:"no-cors"
+    };
+
+    fetch(AIUrl, requestOptions)
+      .then((response) => response.text())
+      .then((result) => {
+        console.log(result);
+        return resolve(result);
+      })
+      .catch((error) => {
+        game.showErrorInformation(error);
+        return reject(error);
+      });
+  });
 }
 
 function beforeUnloadListener(event) {
