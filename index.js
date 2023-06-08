@@ -5,6 +5,7 @@ const ageByPhotoUrl = "https://malickalex1975.github.io/age-by-photo/";
 const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
+
 import Speech from "./speech.js";
 let isRecognizeFail = false;
 let showErrorInformationTimeout = undefined;
@@ -28,7 +29,8 @@ let mediaRecorder;
 let voice = [];
 let stream;
 let isPrinting = false;
-let currentIndexOfWord, lastIndexOfWord;
+let currentIndexOfWord = undefined,
+  lastIndexOfWord = undefined;
 let audioPromise, request, transcriptForPronouncing;
 let isMicrophoneAvailable = true;
 let wordForPronouncing = "";
@@ -319,9 +321,9 @@ class WordGame {
   hideInfo() {
     info.style.transform = "translateY(-200%) scale(.3)";
   }
-  showErrorInformation(error = "Error! No additional information") {
+  showErrorInformation(error = "Error!") {
     errorInformation.style.visibility = "visible";
-    errorInformation.textContent = error;
+    errorInformation.textContent = error + ". Tap to hide this!";
     if (!showErrorInformationTimeout) {
       showErrorInformationTimeout = setTimeout(() => {
         this.hideErrorInformation();
@@ -1471,7 +1473,7 @@ class WordGame {
     game.cancelMediaStream();
     isRecognizeFail = true;
     setTimeout(() => {
-      game.microphoneHandler();
+      //game.microphoneHandler();
       game.hideErrorInformation();
     }, 1500);
   }
@@ -1480,7 +1482,6 @@ class WordGame {
     console.log("abortHandler");
     game.showInfo(`<p>Your action: \r\n<span>STOP!</span><p>`);
     game.showErrorInformation("Your action: STOP!");
-
     game.cancelMediaStream();
   }
   processPronouncingResult(result) {
@@ -1884,14 +1885,13 @@ class WordGame {
       exampleCardImage.style.opacity = 0;
       phraseSpeaker.style.opacity = 0;
       let textExample = wordsArray?.[currentIndexOfWord].textExample;
-      try {
-        let AIImageUrl = await getAIImageUrl(textExample);
-        console.log(AIImageUrl);
-      } catch (err) {
-        console.log(err);
-        game.showErrorInformation(err);
-      }
-     
+      getAIImageUrl(textExample)
+        .then((AIImageUrl) => console.log("AI image URL:", AIImageUrl))
+        .catch((err) => {
+          console.log(err);
+          game.showErrorInformation(err);
+        });
+
       examplePhrase.innerHTML = textExample;
       examplePhraseTranslate.innerHTML =
         wordsArray?.[currentIndexOfWord].textExampleTranslate;
@@ -1899,6 +1899,8 @@ class WordGame {
         if (!(e.data instanceof Array)) {
           exampleCardImage.src = URL.createObjectURL(e.data);
           game.showLoading(false);
+          let progress = 100;
+          game.drawProgress(progress);
         } else {
           let loaded = e.data[0];
           let total = e.data[1];
@@ -1926,6 +1928,7 @@ class WordGame {
   }
 
   drawProgress(progress) {
+    console.log("draw progress:", progress);
     if (progress === 0) {
       progressContainer.style.visibility = "visible";
     }
@@ -2018,7 +2021,7 @@ function init() {
     game.processMenu();
   });
   menuItem3.addEventListener("pointerdown", (e) => {
-    window.location.assign(ageByPhotoUrl);
+    window.open(ageByPhotoUrl,"_blank");
   });
   game.getLevel();
   game.getMaxLevel();
@@ -2056,6 +2059,7 @@ async function initMatching() {
   game.hideLeftArrow();
   game.hideRightArrow();
   game.hideTranslatePanel();
+
   stopAudio();
 
   exampleContainer.addEventListener("pointerdown", listenExamples);
@@ -2352,23 +2356,24 @@ function setExampleButtonVisibility() {
 }
 
 function getAIImageUrl(text) {
+  //location.href=AIUrl
   return new Promise((resolve, reject) => {
     let myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Access-Control-Allow-Origin", "*");
+    myHeaders.append("Access-Control-Allow-Origin", `*`);
 
-    var raw = {
+    var raw = JSON.stringify({
       key: APIKey,
       prompt: text,
-      negative_prompt:
-        " ((out of frame)), ((extra fingers)), mutated hands, ((poorly drawn hands)), ((poorly drawn face)), (((mutation))), (((deformed))), (((tiling))), ((naked)), ((tile)), ((fleshpile)), ((ugly)), (((abstract))), blurry, ((bad anatomy)), ((bad proportions)), ((extra limbs)), cloned face, glitchy, ((extra breasts)), ((double torso)), ((extra arms)), ((extra hands)), ((mangled fingers)), ((missing breasts)), (missing lips), ((ugly face)), ((fat)), ((extra legs))",
+      negative_prompt: null,
       width: "512",
       height: "512",
       samples: "1",
       num_inference_steps: "20",
+      safety_checker: "no",
+      enhance_prompt: "yes",
       seed: null,
       guidance_scale: 7.5,
-      safety_checker: "yes",
       multi_lingual: "no",
       panorama: "no",
       self_attention: "no",
@@ -2376,14 +2381,13 @@ function getAIImageUrl(text) {
       embeddings_model: "embeddings_model_id",
       webhook: null,
       track_id: null,
-    };
+    });
 
     var requestOptions = {
       method: "POST",
       headers: myHeaders,
       body: raw,
-      redirect: "follow",
-      //mode:"no-cors"
+      // mode:'no-cors'
     };
 
     fetch(AIUrl, requestOptions)
