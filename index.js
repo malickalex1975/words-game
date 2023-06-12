@@ -2043,6 +2043,7 @@ function init() {
   game.handleButtonStart();
   game.handleButtonStop();
   game.processMenu();
+  deviceOrientationListener();
 }
 
 async function initMatching() {
@@ -2089,7 +2090,7 @@ function removeListeners() {
   leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
   translatePanel.removeEventListener("pointerdown", game.hideTranslatePanel);
   speakerNext.removeEventListener("pointerdown", game.rewriteWord);
-  window.removeEventListener("deviceorientation", handleOrientationEvent, true);
+  // window.removeEventListener("deviceorientation", handleOrientationEvent, true);
 }
 
 function initPronouncing() {
@@ -2122,7 +2123,6 @@ function initPronouncing() {
   game.showLevelsContainer();
   game.setToggleStyle();
   game.showResult();
-  deviceOrientationListener();
   ear.addEventListener("pointerdown", abortMicrophoneListener);
   exampleContainer.removeEventListener("pointerdown", listenExamples);
   microphone.addEventListener("pointerdown", game.microphoneHandler);
@@ -2434,15 +2434,16 @@ function handleOrientationEvent(event) {
   const rotateDegrees = event.alpha; // alpha: rotation around z-axis
   const leftToRight = event.gamma; // gamma: left to right
   const frontToBack = event.beta; // beta: front back motion
-  game.showErrorInformation(
-    `f/b: ${frontToBack?.toFixed(1)}, l/r: ${leftToRight?.toFixed(
-      1
-    )},rotate: ${rotateDegrees?.toFixed(1)}`
-  );
-  if(menu.matching){
-    gamepad.style.left=`${-leftToRight/2}px`
+  if (rotateDegrees != undefined) {
+    game.showErrorInformation(
+      `f/b: ${frontToBack?.toFixed(1)}, l/r: ${leftToRight?.toFixed(
+        1
+      )},rotate: ${rotateDegrees?.toFixed(1)}`
+    );
+    if (menu.matching) {
+      gamepad.style.left = `${-leftToRight / 2}px`;
+    }
   }
 }
-
 document.addEventListener("DOMContentLoaded", init);
 addEventListener("beforeunload", beforeUnloadListener, { capture: true });

@@ -284,6 +284,7 @@ body {
 .pronouncing-container {
   position: fixed;
   top: 14vh;
+  left:0px;
   width: 100vw;
   height: 80vh;
   opacity: 0;
