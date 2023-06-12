@@ -2047,7 +2047,10 @@ function init() {
   game.handleButtonStop();
   game.processMenu();
   deviceOrientationListener();
-  deviceMotionListener()
+  deviceMotionListener();
+  window.addEventListener("offline", (event) => {
+    game.showErrorInformation("The network connection has been lost.");
+  });
 }
 
 async function initMatching() {
@@ -2445,15 +2448,15 @@ function handleMotionEvent(event) {
   maxAccelerationX=maxAccelerationX<x?x:maxAccelerationX
   maxAccelerationY=maxAccelerationY<y?y:maxAccelerationY
   maxAccelerationZ=maxAccelerationZ<z?z:maxAccelerationZ
-  if(maxAccelerationX!==undefined){
-    game.showErrorInformation(`x: ${maxAccelerationX}y: ${maxAccelerationY} z: ${maxAccelerationZ}`)
+  if(maxAccelerationX!==0){
+    //game.showErrorInformation(`x: ${maxAccelerationX} y: ${maxAccelerationY} z: ${maxAccelerationZ}`)
   }
 }
 function handleOrientationEvent(event) {
   const rotateDegrees = event.alpha; // alpha: rotation around z-axis
   const leftToRight = event.gamma; // gamma: left to right
   const frontToBack = event.beta; // beta: front back motion
-  if (rotateDegrees != undefined && false) {
+  if (rotateDegrees != undefined ) {
     game.showErrorInformation(
       `f/b: ${frontToBack?.toFixed(1)}, l/r: ${leftToRight?.toFixed(
         1
