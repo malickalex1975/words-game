@@ -74,6 +74,7 @@ const rightWords = {
 };
 const wordsQuantity = 6;
 let timeRemained = 120000;
+let lastConvertedTime;
 let timeStart = 0;
 let timeCurrent = 0;
 let score = 0;
@@ -754,19 +755,23 @@ class WordGame {
     this.firstTimeShowWords();
   }
   showLoading(visibility, from = "unknown") {
+
     if (visibility === isLoading) {
       return;
     }
+    
     console.log(from, "-", visibility);
 
     isLoading = visibility;
     let v = visibility ? "visible" : "hidden";
-    let anim = visibility ? " 1s linear rotate2 infinite" : "";
+    let anim1 = visibility ? " 1s linear rotate2 infinite" : "";
+    let anim2 = visibility ? " 4.4s linear rotate2 infinite" : "";
+    let anim3 = visibility ? " 8.1s linear rotate2 infinite" : "";
     let opacity = visibility ? 0.6 : 1;
     loadingElement.style.visibility = v;
-    loadingElement.style.animation = anim;
-    innerCircle1.style.animation = anim;
-    innerCircle2.style.animation = anim;
+    loadingElement.style.animation = anim1;
+    innerCircle1.style.animation = anim2;
+    innerCircle2.style.animation = anim3;
     pronouncingContainer.style.opacity = opacity;
 
     if (isLoading) {
@@ -800,11 +805,14 @@ class WordGame {
         clearInterval(interval);
         this.stopGame();
       }
-    }, 500);
+    }, 200);
   }
   operateEverySecond() {
     timeCurrent = Date.now();
     timeRemained = timeAll - (timeCurrent - timeStart);
+    if (timeRemained < 0) {
+      timeRemained = 0;
+    }
 
     if (timeRemained < 15000) {
       vibrate.timeIsOver();
@@ -812,7 +820,13 @@ class WordGame {
     if (timeRemained <= 1000) {
       playAudio(failedSound);
     }
-    clock.textContent = this.convertTime(timeRemained);
+   
+    let convertedTime=this.convertTime(timeRemained);
+   
+    clock.textContent = convertedTime;
+  
+  
+
     this.clockStyle(timeRemained);
   }
   clockStyle(time) {
@@ -839,13 +853,15 @@ class WordGame {
       min = Math.floor(sec / 60);
       sec = sec - min * 60;
     }
+    let rest=time-(min*60000+sec*1000)
     if (min < 10) {
       min = "0" + min.toString();
     }
     if (sec < 10) {
       sec = "0" + sec.toString();
     }
-    return `${min}:${sec}`;
+   let result=rest>500?`${min}:${sec}`:`${min} ${sec}`
+    return result;
   }
   stopClock() {
     clearInterval(interval);
@@ -1412,7 +1428,7 @@ class WordGame {
             if (game.checkError(err)) {
               game.showInfo(`<p>Error happened: \r\n<span>${err}</span><p>`);
             }
-            this.showErrorInformation(err);
+            game.showErrorInformation('Error happened: '+err);
           }
         })
         .finally(() => {
@@ -2008,20 +2024,18 @@ function init() {
   });
   menuItem1.addEventListener("pointerdown", (e) => {
     e.stopPropagation();
-
     menu.matching = true;
     menu.pronouncing = false;
     game.processMenu();
   });
   menuItem2.addEventListener("pointerdown", (e) => {
     e.stopPropagation();
-
     menu.matching = false;
     menu.pronouncing = true;
     game.processMenu();
   });
   menuItem3.addEventListener("pointerdown", (e) => {
-    window.open(ageByPhotoUrl,"_blank");
+    window.open(ageByPhotoUrl, "_blank");
   });
   game.getLevel();
   game.getMaxLevel();
@@ -2110,6 +2124,7 @@ function initPronouncing() {
   game.showLevelsContainer();
   game.setToggleStyle();
   game.showResult();
+  deviceOrientationListener()
   ear.addEventListener("pointerdown", abortMicrophoneListener);
   exampleContainer.removeEventListener("pointerdown", listenExamples);
   microphone.addEventListener("pointerdown", game.microphoneHandler);
@@ -2160,6 +2175,7 @@ function playAudio(src) {
   audioPromise = audio.play();
   audioPromise.catch((err) => {
     console.log(err);
+    game.showErrorInformation(err)
     speakerNext.style.opacity = 0.1;
     audioErrors++;
     if (audioErrors < 2) {
@@ -2406,6 +2422,26 @@ function getAIImageUrl(text) {
 function beforeUnloadListener(event) {
   // event.preventDefault();
   console.log("see you later!");
+}
+
+function deviceOrientationListener(){
+  if (window.DeviceOrientationEvent) {
+    console.log('DeviceOrientation present!')
+    window.addEventListener(
+      "deviceorientation",
+      (event) => {
+        const rotateDegrees = event.alpha; // alpha: rotation around z-axis
+        const leftToRight = event.gamma; // gamma: left to right
+        const frontToBack = event.beta; // beta: front back motion
+  
+        handleOrientationEvent(frontToBack, leftToRight, rotateDegrees);
+      },
+      true
+    );
+  }else{console.log('DeviceOrientation is absent!')}
+}
+function handleOrientationEvent(frontToBack, leftToRight, rotateDegrees){
+  game.showErrorInformation(`f/b: ${frontToBack?.toFixed(1)}, l/r: ${leftToRight?.toFixed(1)},rotate: ${rotateDegrees?.toFixed(1)}`)
 }
 
 document.addEventListener("DOMContentLoaded", init);

@@ -249,7 +249,7 @@ body {
   border-top: 3px solid blue;
   border-right: 3px solid yellow;
  
-  animation-duration: 500ms;
+  animation-duration: 5000ms;
   animation-timing-function: linear;
 }
 
@@ -417,6 +417,7 @@ body {
   background-image: linear-gradient(#fff, #eee);
   box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.2);
   font-size: 16px;
+  hyphens: auto;
   color: #000066;
   cursor: pointer;
   transition: 0ms;
@@ -472,7 +473,10 @@ body {
   left: 72vw;
   width: 13vw;
   height: 20px;
-  font-size: 20px;
+  font-size: 18px;
+  letter-spacing: 0px;
+  white-space: nowrap;
+  font-family: monospace;
   color: orange;
 }
 .mistakes-pad {
@@ -981,7 +985,7 @@ transition: 200ms;
   z-index: 400;
   color:red;
   font-size: 20px;
-  background-color:#ddd;
+  background-color: transparent;
   padding: 0 10px;
   visibility: hidden;
   overflow: hidden;
