@@ -385,6 +385,7 @@ body {
 .gamepad-container {
   position: fixed;
   top: 14vh;
+  left:0px;
   width: 94vw;
   max-width: 500px;
   height: 70vh;

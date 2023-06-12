@@ -755,11 +755,10 @@ class WordGame {
     this.firstTimeShowWords();
   }
   showLoading(visibility, from = "unknown") {
-
     if (visibility === isLoading) {
       return;
     }
-    
+
     console.log(from, "-", visibility);
 
     isLoading = visibility;
@@ -820,12 +819,10 @@ class WordGame {
     if (timeRemained <= 1000) {
       playAudio(failedSound);
     }
-   
-    let convertedTime=this.convertTime(timeRemained);
-   
+
+    let convertedTime = this.convertTime(timeRemained);
+
     clock.textContent = convertedTime;
-  
-  
 
     this.clockStyle(timeRemained);
   }
@@ -853,14 +850,14 @@ class WordGame {
       min = Math.floor(sec / 60);
       sec = sec - min * 60;
     }
-    let rest=time-(min*60000+sec*1000)
+    let rest = time - (min * 60000 + sec * 1000);
     if (min < 10) {
       min = "0" + min.toString();
     }
     if (sec < 10) {
       sec = "0" + sec.toString();
     }
-   let result=rest>500?`${min}:${sec}`:`${min} ${sec}`
+    let result = rest > 500 ? `${min}:${sec}` : `${min} ${sec}`;
     return result;
   }
   stopClock() {
@@ -1428,7 +1425,7 @@ class WordGame {
             if (game.checkError(err)) {
               game.showInfo(`<p>Error happened: \r\n<span>${err}</span><p>`);
             }
-            game.showErrorInformation('Error happened: '+err);
+            game.showErrorInformation("Error happened: " + err);
           }
         })
         .finally(() => {
@@ -2092,6 +2089,7 @@ function removeListeners() {
   leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
   translatePanel.removeEventListener("pointerdown", game.hideTranslatePanel);
   speakerNext.removeEventListener("pointerdown", game.rewriteWord);
+  window.removeEventListener("deviceorientation", handleOrientationEvent, true);
 }
 
 function initPronouncing() {
@@ -2124,7 +2122,7 @@ function initPronouncing() {
   game.showLevelsContainer();
   game.setToggleStyle();
   game.showResult();
-  deviceOrientationListener()
+  deviceOrientationListener();
   ear.addEventListener("pointerdown", abortMicrophoneListener);
   exampleContainer.removeEventListener("pointerdown", listenExamples);
   microphone.addEventListener("pointerdown", game.microphoneHandler);
@@ -2175,7 +2173,7 @@ function playAudio(src) {
   audioPromise = audio.play();
   audioPromise.catch((err) => {
     console.log(err);
-    game.showErrorInformation(err)
+    game.showErrorInformation(err);
     speakerNext.style.opacity = 0.1;
     audioErrors++;
     if (audioErrors < 2) {
@@ -2424,24 +2422,26 @@ function beforeUnloadListener(event) {
   console.log("see you later!");
 }
 
-function deviceOrientationListener(){
+function deviceOrientationListener() {
   if (window.DeviceOrientationEvent) {
-    console.log('DeviceOrientation present!')
-    window.addEventListener(
-      "deviceorientation",
-      (event) => {
-        const rotateDegrees = event.alpha; // alpha: rotation around z-axis
-        const leftToRight = event.gamma; // gamma: left to right
-        const frontToBack = event.beta; // beta: front back motion
-  
-        handleOrientationEvent(frontToBack, leftToRight, rotateDegrees);
-      },
-      true
-    );
-  }else{console.log('DeviceOrientation is absent!')}
+    console.log("DeviceOrientation present!");
+    window.addEventListener("deviceorientation", handleOrientationEvent, true);
+  } else {
+    console.log("DeviceOrientation is absent!");
+  }
 }
-function handleOrientationEvent(frontToBack, leftToRight, rotateDegrees){
-  game.showErrorInformation(`f/b: ${frontToBack?.toFixed(1)}, l/r: ${leftToRight?.toFixed(1)},rotate: ${rotateDegrees?.toFixed(1)}`)
+function handleOrientationEvent(event) {
+  const rotateDegrees = event.alpha; // alpha: rotation around z-axis
+  const leftToRight = event.gamma; // gamma: left to right
+  const frontToBack = event.beta; // beta: front back motion
+  game.showErrorInformation(
+    `f/b: ${frontToBack?.toFixed(1)}, l/r: ${leftToRight?.toFixed(
+      1
+    )},rotate: ${rotateDegrees?.toFixed(1)}`
+  );
+  if(menu.matching){
+    gamepad.style.left=`${-leftToRight/2}px`
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
