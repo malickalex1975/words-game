@@ -2441,7 +2441,7 @@ function handleOrientationEvent(event) {
       )},rotate: ${rotateDegrees?.toFixed(1)}`
     );
     if (menu.matching) {
-      gamepad.style.left = `${-leftToRight / 2}px`;
+      gamepad.style.transform = `translateX(${-leftToRight / 2}px)`;
     }
   }
 }

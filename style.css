@@ -88,7 +88,7 @@ body {
   gap: 5px;
   transition: 1s;
   cursor: pointer;
-  z-index: 200;
+  z-index: 402;
 }
 .menu-line {
   transition: 500ms;
@@ -386,7 +386,6 @@ body {
 .gamepad-container {
   position: fixed;
   top: 14vh;
-  left:0px;
   width: 94vw;
   max-width: 500px;
   height: 70vh;
@@ -675,7 +674,7 @@ body {
   width: 90vw;
   max-width: 300px;
   height: calc(96vh - 90px);
-  z-index: 101;
+  z-index: 401;
   background-image: linear-gradient(#fff, #eee);
   border-radius: 5px;
   transition: 500ms;
