@@ -7,6 +7,9 @@ const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 
 import Speech from "./speech.js";
+let maxAccelerationX = 0,
+  maxAccelerationY = 0,
+  maxAccelerationZ = 0;
 let isRecognizeFail = false;
 let showErrorInformationTimeout = undefined;
 let lastAudioUrl;
@@ -2044,6 +2047,7 @@ function init() {
   game.handleButtonStop();
   game.processMenu();
   deviceOrientationListener();
+  deviceMotionListener()
 }
 
 async function initMatching() {
@@ -2430,11 +2434,26 @@ function deviceOrientationListener() {
     console.log("DeviceOrientation is absent!");
   }
 }
+function deviceMotionListener() {
+  window.addEventListener("devicemotion", handleMotionEvent, true);
+}
+
+function handleMotionEvent(event) {
+  const x = event.accelerationIncludingGravity.x;
+  const y = event.accelerationIncludingGravity.y;
+  const z = event.accelerationIncludingGravity.z;
+  maxAccelerationX=maxAccelerationX<x?x:maxAccelerationX
+  maxAccelerationY=maxAccelerationY<y?y:maxAccelerationY
+  maxAccelerationZ=maxAccelerationZ<z?z:maxAccelerationZ
+  if(maxAccelerationX!==undefined){
+    game.showErrorInformation(`x: ${maxAccelerationX}y: ${maxAccelerationY} z: ${maxAccelerationZ}`)
+  }
+}
 function handleOrientationEvent(event) {
   const rotateDegrees = event.alpha; // alpha: rotation around z-axis
   const leftToRight = event.gamma; // gamma: left to right
   const frontToBack = event.beta; // beta: front back motion
-  if (rotateDegrees != undefined) {
+  if (rotateDegrees != undefined && false) {
     game.showErrorInformation(
       `f/b: ${frontToBack?.toFixed(1)}, l/r: ${leftToRight?.toFixed(
         1
@@ -2442,6 +2461,11 @@ function handleOrientationEvent(event) {
     );
     if (menu.matching) {
       gamepad.style.transform = `translateX(${-leftToRight / 2}px)`;
+    }
+    if (menu.pronouncing) {
+      pronouncingContainer.style.transform = `translateX(${
+        -leftToRight / 2
+      }px)`;
     }
   }
 }
