@@ -11,6 +11,7 @@ let maxAccelerationX = 0,
   maxAccelerationY = 0,
   maxAccelerationZ = 0;
 let isRecognizeFail = false;
+let isAIPhrase = false;
 let showErrorInformationTimeout = undefined;
 let lastAudioUrl;
 let audioErrors = 0;
@@ -98,6 +99,8 @@ const examplePhraseTranslate = document.querySelector(
   ".example-phrase-translate"
 );
 const phraseSpeaker = document.querySelector(".phrase-speaker");
+const AImention = document.querySelector(".AI-mention");
+const AIphrase = document.querySelector(".AI-phrase");
 const errorInformation = document.querySelector(".error-information");
 const resultDigit1 = document.querySelector(".result-digit-1");
 const resultDigit2 = document.querySelector(".result-digit-2");
@@ -366,7 +369,12 @@ class WordGame {
     line1.style.transform = "rotate(0deg)";
     line3.style.transform = "rotate(0deg)";
   }
-
+  showAIMention() {
+    AImention.style.opacity = 1;
+  }
+  hideAIMention() {
+    AImention.style.opacity = 0;
+  }
   showGamepad() {
     gamepad.style.visibility = "visible";
     gamepad.style.opacity = "1";
@@ -779,7 +787,7 @@ class WordGame {
     if (isLoading) {
       loadingStartTime = Date.now();
       loadingInterval = setInterval(() => {
-        if (Date.now() - loadingStartTime > 10000) {
+        if (Date.now() - loadingStartTime > 15000) {
           clearInterval(loadingInterval);
           if (
             confirm(
@@ -1883,26 +1891,34 @@ class WordGame {
     game.removeSpeakerListener(lastAudioUrl);
     game.showExampleCard();
     game.hideExampleButton();
+    let textExample = wordsArray?.[currentIndexOfWord].textExample;
     wasHiddenByHandler = true;
     if (lastIndexOfWord === currentIndexOfWord) {
+      AIphrase.textContent = "generate phrase by AI";
+      examplePhrase.innerHTML = textExample;
+      phraseSpeaker.style.visibility = "visible";
       return;
     } else {
       lastIndexOfWord = currentIndexOfWord;
+      isAIPhrase = false;
       let imageEndpoint = wordsArray?.[currentIndexOfWord].image;
       let audioEndpoint = wordsArray?.[currentIndexOfWord].audioExample;
       let imageUrl = mainUrl + imageEndpoint;
       myWorker.postMessage({ url: imageUrl });
       game.showLoading(true);
       game.drawProgress(0);
+      game.hideAIMention();
       exampleCardImage.src = "";
       let audioUrl = mainUrl + audioEndpoint;
       examplePhrase.style.opacity = 0;
       examplePhraseTranslate.style.opacity = 0;
       exampleCardImage.style.opacity = 0;
       phraseSpeaker.style.opacity = 0;
-      let textExample = wordsArray?.[currentIndexOfWord].textExample;
-      getAIImageUrl(textExample)
-        .then((AIImageUrl) => console.log("AI image URL:", AIImageUrl))
+
+      getAIImage(textExample)
+        .then((img) => {
+          game.createNewImage(img);
+        })
         .catch((err) => {
           console.log(err);
           game.showErrorInformation(err);
@@ -1943,6 +1959,56 @@ class WordGame {
     }
   }
 
+  createNewImage(img) {
+    exampleCardImage.src = `data:image/png;base64,${img}`;
+    this.showAIMention();
+  }
+  generateAIPhrase(e) {
+    e.stopPropagation();
+    let currentWord = wordsArray?.[currentIndexOfWord].word;
+    let currentWordLength = currentWord.length;
+
+    let phrase = wordsArray?.[currentIndexOfWord].textExample;
+
+    if (!isAIPhrase) {
+      examplePhrase.innerHTML = phrase;
+      isAIPhrase = !isAIPhrase;
+      AIphrase.textContent = "generate phrase by AI";
+      phraseSpeaker.style.visibility = "visible";
+      return;
+    }
+    game.showLoading(true);
+    getAIExample(phrase)
+      .then((result) => {
+        game.showLoading(false);
+       
+        // isAIPhrase = !isAIPhrase;
+        let currentIndex = result.indexOf(currentWord);
+        console.log('result:',result)
+        console.log('current word:',currentWord)
+        console.log('current index:',currentIndex)
+        AIphrase.textContent = "show origin phrase";
+        phraseSpeaker.style.visibility = "hidden";
+        
+        let outputPhrase =currentIndex!==-1 ?
+          `${result.slice(0, currentIndex)}<b> ${currentWord}</b>${result.slice(currentIndex + currentWordLength)}`: result;
+        isAIPhrase = !isAIPhrase;
+        examplePhrase.innerHTML = outputPhrase;
+      })
+      .catch((err) => {
+        console.log(err);
+        game.showLoading(false);
+        game.handleAIPhraseError();
+      });
+  }
+  handleAIPhraseError() {
+    AIphrase.textContent = "Error! Try again!";
+    AIphrase.style.color = "#990000";
+    setTimeout(() => {
+      AIphrase.textContent = "generate phrase by AI";
+      AIphrase.style.color = "#009900";
+    }, 2000);
+  }
   drawProgress(progress) {
     console.log("draw progress:", progress);
     if (progress === 0) {
@@ -2097,6 +2163,7 @@ function removeListeners() {
   leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
   translatePanel.removeEventListener("pointerdown", game.hideTranslatePanel);
   speakerNext.removeEventListener("pointerdown", game.rewriteWord);
+  AIphrase.removeEventListener("pointerdown", game.generateAIPhrase);
   // window.removeEventListener("deviceorientation", handleOrientationEvent, true);
 }
 
@@ -2131,6 +2198,7 @@ function initPronouncing() {
   game.setToggleStyle();
   game.showResult();
   ear.addEventListener("pointerdown", abortMicrophoneListener);
+  AIphrase.addEventListener("pointerdown", game.generateAIPhrase);
   exampleContainer.removeEventListener("pointerdown", listenExamples);
   microphone.addEventListener("pointerdown", game.microphoneHandler);
   rightArrow.addEventListener("pointerdown", game.rightArrowHandler);
@@ -2376,49 +2444,97 @@ function setExampleButtonVisibility() {
   }
 }
 
-function getAIImageUrl(text) {
-  //location.href=AIUrl
+function getAIImage(txt) {
+  let text = txt.replace("<b>", "").replace("</b>", "");
   return new Promise((resolve, reject) => {
-    let myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Access-Control-Allow-Origin", `*`);
-
-    var raw = JSON.stringify({
-      key: APIKey,
-      prompt: text,
-      negative_prompt: null,
-      width: "512",
-      height: "512",
-      samples: "1",
-      num_inference_steps: "20",
-      safety_checker: "no",
-      enhance_prompt: "yes",
-      seed: null,
-      guidance_scale: 7.5,
-      multi_lingual: "no",
-      panorama: "no",
-      self_attention: "no",
-      upscale: "no",
-      embeddings_model: "embeddings_model_id",
-      webhook: null,
-      track_id: null,
+    const raw = JSON.stringify({
+      user_app_id: {
+        user_id: "borisdayma",
+        app_id: "generative-art",
+      },
+      inputs: [
+        {
+          data: {
+            text: {
+              raw: text,
+            },
+          },
+        },
+      ],
     });
 
-    var requestOptions = {
+    const requestOptions = {
       method: "POST",
-      headers: myHeaders,
+      headers: {
+        Accept: "application/json",
+        Authorization: "Key " + "d5c7c4eebbba4c19a6e475d9d98d497e",
+      },
       body: raw,
-      // mode:'no-cors'
     };
 
-    fetch(AIUrl, requestOptions)
-      .then((response) => response.text())
+    // NOTE: MODEL_VERSION_ID is optional, you can also call prediction with the MODEL_ID only
+    // https://api.clarifai.com/v2/models/{YOUR_MODEL_ID}/outputs
+    // this will default to the latest version_id
+
+    fetch(
+      `https://api.clarifai.com/v2/models/general-image-generator-dalle-mini/versions/86c0ae39083e45a8bf96fde91f4e1952/outputs`,
+      requestOptions
+    )
+      .then((response) => response.json())
       .then((result) => {
-        console.log(result);
-        return resolve(result);
+        let img = result.outputs[0].data.image.base64;
+        return resolve(img);
       })
       .catch((error) => {
-        game.showErrorInformation(error);
+        console.log("error ai image", error);
+        this.showErrorInformation(error);
+      });
+  });
+}
+function getAIExample(txt) {
+  let text = txt.replace("<b>", "").replace("</b>", "");
+  return new Promise((resolve, reject) => {
+    const raw = JSON.stringify({
+      user_app_id: {
+        user_id: "clarifai",
+        app_id: "LLM-auto-annotation-demo",
+      },
+      inputs: [
+        {
+          data: {
+            text: {
+              raw: "перефразируй этот текст: " + text,
+            },
+          },
+        },
+      ],
+    });
+
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: "Key " + "d5c7c4eebbba4c19a6e475d9d98d497e",
+      },
+      body: raw,
+    };
+
+    // NOTE: MODEL_VERSION_ID is optional, you can also call prediction with the MODEL_ID only
+    // https://api.clarifai.com/v2/models/{YOUR_MODEL_ID}/outputs
+    // this will default to the latest version_id
+
+    fetch(
+      `https://api.clarifai.com/v2/models/chatgpt-3_5/versions/7ba93ee621c941268f0d96d86c4c4c98/outputs`,
+      requestOptions
+    )
+      .then((response) => response.json())
+      .then((result) => {
+        let txt = result.outputs[0].data.text.raw;
+        return resolve(txt);
+      })
+      .catch((error) => {
+        console.log("error ai phrase", error);
+        game.showErrorInformation(error + " Try again.");
         return reject(error);
       });
   });
@@ -2445,10 +2561,10 @@ function handleMotionEvent(event) {
   const x = event.accelerationIncludingGravity.x;
   const y = event.accelerationIncludingGravity.y;
   const z = event.accelerationIncludingGravity.z;
-  maxAccelerationX=maxAccelerationX<x?x:maxAccelerationX
-  maxAccelerationY=maxAccelerationY<y?y:maxAccelerationY
-  maxAccelerationZ=maxAccelerationZ<z?z:maxAccelerationZ
-  if(maxAccelerationX!==0){
+  maxAccelerationX = maxAccelerationX < x ? x : maxAccelerationX;
+  maxAccelerationY = maxAccelerationY < y ? y : maxAccelerationY;
+  maxAccelerationZ = maxAccelerationZ < z ? z : maxAccelerationZ;
+  if (maxAccelerationX !== 0) {
     //game.showErrorInformation(`x: ${maxAccelerationX} y: ${maxAccelerationY} z: ${maxAccelerationZ}`)
   }
 }
@@ -2456,7 +2572,7 @@ function handleOrientationEvent(event) {
   const rotateDegrees = event.alpha; // alpha: rotation around z-axis
   const leftToRight = event.gamma; // gamma: left to right
   const frontToBack = event.beta; // beta: front back motion
-  if (rotateDegrees != undefined ) {
+  if (rotateDegrees != undefined) {
     game.showErrorInformation(
       `f/b: ${frontToBack?.toFixed(1)}, l/r: ${leftToRight?.toFixed(
         1

@@ -934,11 +934,11 @@ border:2px solid #0000ee;
   border-radius: 5px;
 }
 .example-card-image{
-  width:200px;
-  height:200px;
+  width:256px;
+  height:256px;
   border: 1px solid #ddd;
   border-radius: 5px;
-  transition:200ms;
+  transition:1000ms;
   opacity: 0;
 }
 .phrase-1-container, .translate-container{
@@ -991,4 +991,26 @@ transition: 200ms;
   visibility: hidden;
   overflow: hidden;
 
+}
+.AI-mention{
+  color:#009900;
+  font-size: 20px;
+  font-family: monospace;
+  opacity:0;
+  transition: 500ms;
+}
+.AI-phrase{
+  width: fit-content;
+  height: 25px;
+  padding: 5px;
+  border: 2px solid #ddd;
+  background-color: #eee;
+  border-radius: 5px;
+  animation: button-flow infinite;
+  animation-duration: 2s;
+  color:#009900;
+  font-size: 20px;
+  font-family: monospace;
+  cursor:pointer;
+ 
 }
