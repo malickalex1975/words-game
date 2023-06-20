@@ -1891,6 +1891,7 @@ class WordGame {
     game.removeSpeakerListener(lastAudioUrl);
     game.showExampleCard();
     game.hideExampleButton();
+    AIphrase.style.opacity=0;
     let textExample = wordsArray?.[currentIndexOfWord].textExample;
     wasHiddenByHandler = true;
     if (lastIndexOfWord === currentIndexOfWord) {
@@ -1943,6 +1944,7 @@ class WordGame {
 
       setTimeout(() => {
         examplePhrase.style.opacity = 1;
+        AIphrase.style.opacity=1
       }, 1200);
       setTimeout(() => {
         exampleCardImage.style.opacity = 1;
@@ -1975,13 +1977,15 @@ class WordGame {
       isAIPhrase = !isAIPhrase;
       AIphrase.textContent = "generate phrase by AI";
       phraseSpeaker.style.visibility = "visible";
+      examplePhraseTranslate.innerHTML =
+      wordsArray?.[currentIndexOfWord].textExampleTranslate;
       return;
     }
     game.showLoading(true);
-    getAIExample(phrase)
+    getAIExample(phrase,false)
       .then((result) => {
-        game.showLoading(false);
-       
+        
+       examplePhraseTranslate.textContent=''
         // isAIPhrase = !isAIPhrase;
         let currentIndex = result.indexOf(currentWord);
         console.log('result:',result)
@@ -1989,7 +1993,15 @@ class WordGame {
         console.log('current index:',currentIndex)
         AIphrase.textContent = "show origin phrase";
         phraseSpeaker.style.visibility = "hidden";
-        
+        getAIExample(result,true)
+      .then((response) => {
+        game.showLoading(false);
+        examplePhraseTranslate.textContent= response
+      }).catch((err) => {
+        console.log(err);
+        game.showLoading(false);
+        game.handleAIPhraseError();
+      });
         let outputPhrase =currentIndex!==-1 ?
           `${result.slice(0, currentIndex)}<b> ${currentWord}</b>${result.slice(currentIndex + currentWordLength)}`: result;
         isAIPhrase = !isAIPhrase;
@@ -2491,7 +2503,8 @@ function getAIImage(txt) {
       });
   });
 }
-function getAIExample(txt) {
+function getAIExample(txt, translate=false) {
+  let command= translate? 'translate to Russian this text: ':"перефразируй этот текст: "
   let text = txt.replace("<b>", "").replace("</b>", "");
   return new Promise((resolve, reject) => {
     const raw = JSON.stringify({
@@ -2503,7 +2516,7 @@ function getAIExample(txt) {
         {
           data: {
             text: {
-              raw: "перефразируй этот текст: " + text,
+              raw: command + text,
             },
           },
         },
