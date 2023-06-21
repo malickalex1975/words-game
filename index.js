@@ -10,8 +10,12 @@ import Speech from "./speech.js";
 let maxAccelerationX = 0,
   maxAccelerationY = 0,
   maxAccelerationZ = 0;
+let isGettingAIImage = false;
+let isGettingAIPhrase = false;
+let isAbortedAIPhrase = false;
 let isRecognizeFail = false;
 let isAIPhrase = false;
+let textExample;
 let showErrorInformationTimeout = undefined;
 let lastAudioUrl;
 let audioErrors = 0;
@@ -99,6 +103,7 @@ const examplePhraseTranslate = document.querySelector(
   ".example-phrase-translate"
 );
 const phraseSpeaker = document.querySelector(".phrase-speaker");
+const buttonClose = document.querySelector(".button-close");
 const AImention = document.querySelector(".AI-mention");
 const AIphrase = document.querySelector(".AI-phrase");
 const errorInformation = document.querySelector(".error-information");
@@ -371,9 +376,31 @@ class WordGame {
   }
   showAIMention() {
     AImention.style.opacity = 1;
+    AImention.style.cursor = "pointer";
+  }
+  inactiveAIMention() {
+    AImention.style.opacity = 0.3;
+    AImention.style.cursor = "auto";
+  }
+  activeAiMention() {
+    this.showAIMention();
   }
   hideAIMention() {
     AImention.style.opacity = 0;
+  }
+  showAIPhrase() {
+    AIphrase.style.opacity = 1;
+    AIphrase.style.cursor = "pointer";
+  }
+  inactiveAIPhrase() {
+    AIphrase.style.opacity = 0.3;
+    AIphrase.style.cursor = "auto";
+  }
+  activeAIPhrase() {
+    this.showAIPhrase();
+  }
+  hideAIPhrase() {
+    AIphrase.style.opacity = 0;
   }
   showGamepad() {
     gamepad.style.visibility = "visible";
@@ -787,7 +814,7 @@ class WordGame {
     if (isLoading) {
       loadingStartTime = Date.now();
       loadingInterval = setInterval(() => {
-        if (Date.now() - loadingStartTime > 15000) {
+        if (Date.now() - loadingStartTime > 20000) {
           clearInterval(loadingInterval);
           if (
             confirm(
@@ -1879,8 +1906,8 @@ class WordGame {
     exampleButton.addEventListener("pointerdown", this.exampleButtonHandler);
   }
   hideExampleButton() {
-    exampleButton.style.left = -100;
-    exampleButton.style.top = -100;
+    exampleButton.style.left = "-100px";
+    exampleButton.style.top = "-100px";
     exampleButton.style.visibility = "hidden";
     exampleButton.style.opacity = 0;
     exampleButton.style.animation = "";
@@ -1891,17 +1918,22 @@ class WordGame {
     game.removeSpeakerListener(lastAudioUrl);
     game.showExampleCard();
     game.hideExampleButton();
-    AIphrase.style.opacity=0;
-    let textExample = wordsArray?.[currentIndexOfWord].textExample;
+    game.hideAIPhrase();
+    textExample = wordsArray?.[currentIndexOfWord].textExample;
     wasHiddenByHandler = true;
     if (lastIndexOfWord === currentIndexOfWord) {
       AIphrase.textContent = "generate phrase by AI";
       examplePhrase.innerHTML = textExample;
+      examplePhraseTranslate.innerHTML =
+        wordsArray?.[currentIndexOfWord].textExampleTranslate;
       phraseSpeaker.style.visibility = "visible";
+      game.showAIPhrase();
+      isAbortedAIPhrase = true;
       return;
     } else {
       lastIndexOfWord = currentIndexOfWord;
       isAIPhrase = false;
+      isAbortedAIPhrase = false;
       let imageEndpoint = wordsArray?.[currentIndexOfWord].image;
       let audioEndpoint = wordsArray?.[currentIndexOfWord].audioExample;
       let imageUrl = mainUrl + imageEndpoint;
@@ -1916,21 +1948,13 @@ class WordGame {
       exampleCardImage.style.opacity = 0;
       phraseSpeaker.style.opacity = 0;
 
-      getAIImage(textExample)
-        .then((img) => {
-          game.createNewImage(img);
-        })
-        .catch((err) => {
-          console.log(err);
-          game.showErrorInformation(err);
-        });
-
       examplePhrase.innerHTML = textExample;
       examplePhraseTranslate.innerHTML =
         wordsArray?.[currentIndexOfWord].textExampleTranslate;
       myWorker.onmessage = (e) => {
         if (!(e.data instanceof Array)) {
           exampleCardImage.src = URL.createObjectURL(e.data);
+          game.showAIMention();
           game.showLoading(false);
           let progress = 100;
           game.drawProgress(progress);
@@ -1944,7 +1968,7 @@ class WordGame {
 
       setTimeout(() => {
         examplePhrase.style.opacity = 1;
-        AIphrase.style.opacity=1
+        game.showAIPhrase();
       }, 1200);
       setTimeout(() => {
         exampleCardImage.style.opacity = 1;
@@ -1960,58 +1984,102 @@ class WordGame {
       lastAudioUrl = audioUrl;
     }
   }
+  getAIImageHandler(e) {
+    if (!isGettingAIImage) {
+      e.stopPropagation();
+      game.showLoading(true);
+      game.inactiveAIMention();
+      isGettingAIImage = true;
+      getAIImage(textExample)
+        .then((img) => {
+          game.createNewImage(img);
+          game.activeAiMention();
+        })
+        .catch((err) => {
+          console.log(err);
+          game.showErrorInformation(err);
+        })
+        .finally(() => {
+          isGettingAIImage = false;
+        });
+    } else return;
+  }
 
   createNewImage(img) {
     exampleCardImage.src = `data:image/png;base64,${img}`;
-    this.showAIMention();
+    game.showLoading(false);
   }
   generateAIPhrase(e) {
-    e.stopPropagation();
-    let currentWord = wordsArray?.[currentIndexOfWord].word;
-    let currentWordLength = currentWord.length;
+    if (!isGettingAIPhrase) {
+      e.stopPropagation();
+      let currentWord = wordsArray?.[currentIndexOfWord].word;
+      let currentWordLength = currentWord.length;
 
-    let phrase = wordsArray?.[currentIndexOfWord].textExample;
+      let phrase = wordsArray?.[currentIndexOfWord].textExample;
 
-    if (!isAIPhrase) {
-      examplePhrase.innerHTML = phrase;
-      isAIPhrase = !isAIPhrase;
-      AIphrase.textContent = "generate phrase by AI";
-      phraseSpeaker.style.visibility = "visible";
-      examplePhraseTranslate.innerHTML =
-      wordsArray?.[currentIndexOfWord].textExampleTranslate;
-      return;
-    }
-    game.showLoading(true);
-    getAIExample(phrase,false)
-      .then((result) => {
-        
-       examplePhraseTranslate.textContent=''
-        // isAIPhrase = !isAIPhrase;
-        let currentIndex = result.indexOf(currentWord);
-        console.log('result:',result)
-        console.log('current word:',currentWord)
-        console.log('current index:',currentIndex)
-        AIphrase.textContent = "show origin phrase";
-        phraseSpeaker.style.visibility = "hidden";
-        getAIExample(result,true)
-      .then((response) => {
-        game.showLoading(false);
-        examplePhraseTranslate.textContent= response
-      }).catch((err) => {
-        console.log(err);
-        game.showLoading(false);
-        game.handleAIPhraseError();
-      });
-        let outputPhrase =currentIndex!==-1 ?
-          `${result.slice(0, currentIndex)}<b> ${currentWord}</b>${result.slice(currentIndex + currentWordLength)}`: result;
+      if (!isAIPhrase) {
+        examplePhrase.innerHTML = phrase;
         isAIPhrase = !isAIPhrase;
-        examplePhrase.innerHTML = outputPhrase;
-      })
-      .catch((err) => {
-        console.log(err);
-        game.showLoading(false);
-        game.handleAIPhraseError();
-      });
+        AIphrase.textContent = "generate phrase by AI";
+
+        phraseSpeaker.style.visibility = "visible";
+        examplePhraseTranslate.innerHTML =
+          wordsArray?.[currentIndexOfWord].textExampleTranslate;
+        return;
+      }
+      game.showLoading(true);
+      game.inactiveAIPhrase();
+      isGettingAIPhrase = true;
+      getAIExample(phrase, false)
+        .then((result) => {
+          if (!isAbortedAIPhrase) {
+            examplePhraseTranslate.textContent = "";
+            // isAIPhrase = !isAIPhrase;
+            let currentIndex = result.indexOf(currentWord);
+            console.log("result:", result);
+            console.log("current word:", currentWord);
+            console.log("current index:", currentIndex);
+
+            phraseSpeaker.style.visibility = "hidden";
+            getAIExample(result, true)
+              .then((response) => {
+                game.showLoading(false);
+                examplePhraseTranslate.textContent = response;
+                game.activeAIPhrase();
+                AIphrase.textContent = "show origin phrase";
+              })
+              .catch((err) => {
+                console.log(err);
+                game.showLoading(false);
+                game.activeAIPhrase();
+                game.handleAIPhraseError();
+              })
+              .finally(() => {
+                isGettingAIPhrase = false;
+              });
+            let outputPhrase =
+              currentIndex !== -1
+                ? `${result.slice(
+                    0,
+                    currentIndex
+                  )}<b> ${currentWord}</b>${result.slice(
+                    currentIndex + currentWordLength
+                  )}`
+                : result;
+            isAIPhrase = !isAIPhrase;
+            examplePhrase.innerHTML = outputPhrase;
+          } else {
+            game.showLoading(false);
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+          game.showLoading(false);
+          game.activeAIPhrase();
+          game.handleAIPhraseError();
+          isGettingAIPhrase = false;
+        });
+    } else return;
   }
   handleAIPhraseError() {
     AIphrase.textContent = "Error! Try again!";
@@ -2035,7 +2103,7 @@ class WordGame {
   }
   showExampleCard() {
     wordExampleCard.style.transform = "translateY(0%) scale(1)";
-    wordExampleCard.addEventListener("pointerdown", this.hideExampleCard);
+    buttonClose.addEventListener("pointerdown", this.hideExampleCard);
     wordExampleCard.style.opacity = 1;
     this.hideMenu();
     this.hideInfo();
@@ -2043,7 +2111,7 @@ class WordGame {
   hideExampleCard() {
     wordExampleCard.style.transform = "translateY(-200%) scale(0.1)";
     wordExampleCard.style.opacity = 0;
-    wordExampleCard.removeEventListener("pointerdown", this.hideExampleCard);
+    buttonClose.removeEventListener("pointerdown", this.hideExampleCard);
     if (wasHiddenByHandler) {
       game.showExampleButton();
       wasHiddenByHandler = false;
@@ -2176,6 +2244,7 @@ function removeListeners() {
   translatePanel.removeEventListener("pointerdown", game.hideTranslatePanel);
   speakerNext.removeEventListener("pointerdown", game.rewriteWord);
   AIphrase.removeEventListener("pointerdown", game.generateAIPhrase);
+  AImention.removeEventListener("pointerdown", game.getAIImageHandler);
   // window.removeEventListener("deviceorientation", handleOrientationEvent, true);
 }
 
@@ -2211,6 +2280,7 @@ function initPronouncing() {
   game.showResult();
   ear.addEventListener("pointerdown", abortMicrophoneListener);
   AIphrase.addEventListener("pointerdown", game.generateAIPhrase);
+  AImention.addEventListener("pointerdown", game.getAIImageHandler);
   exampleContainer.removeEventListener("pointerdown", listenExamples);
   microphone.addEventListener("pointerdown", game.microphoneHandler);
   rightArrow.addEventListener("pointerdown", game.rightArrowHandler);
@@ -2494,17 +2564,22 @@ function getAIImage(txt) {
     )
       .then((response) => response.json())
       .then((result) => {
+        console.log(result);
         let img = result.outputs[0].data.image.base64;
         return resolve(img);
       })
       .catch((error) => {
         console.log("error ai image", error);
-        this.showErrorInformation(error);
+        game.showErrorInformation(error);
+        game.showLoading(false);
+        game.activeAiMention();
       });
   });
 }
-function getAIExample(txt, translate=false) {
-  let command= translate? 'translate to Russian this text: ':"перефразируй этот текст: "
+function getAIExample(txt, translate = false) {
+  let command = translate
+    ? "translate to Russian this text: "
+    : "перефразируй этот текст: ";
   let text = txt.replace("<b>", "").replace("</b>", "");
   return new Promise((resolve, reject) => {
     const raw = JSON.stringify({
@@ -2585,21 +2660,15 @@ function handleOrientationEvent(event) {
   const rotateDegrees = event.alpha; // alpha: rotation around z-axis
   const leftToRight = event.gamma; // gamma: left to right
   const frontToBack = event.beta; // beta: front back motion
-  if (rotateDegrees != undefined) {
-    game.showErrorInformation(
-      `f/b: ${frontToBack?.toFixed(1)}, l/r: ${leftToRight?.toFixed(
-        1
-      )},rotate: ${rotateDegrees?.toFixed(1)}`
-    );
-    if (menu.matching) {
-      gamepad.style.transform = `translateX(${-leftToRight / 2}px)`;
-    }
-    if (menu.pronouncing) {
-      pronouncingContainer.style.transform = `translateX(${
-        -leftToRight / 2
-      }px)`;
-    }
+
+  if (menu.matching) {
+    gamepad.style.transform = `translateX(${-leftToRight / 2}px)`;
+  }
+  if (menu.pronouncing) {
+    pronouncingContainer.style.transform = `translateX(${-leftToRight / 5}px)`;
   }
 }
+
 document.addEventListener("DOMContentLoaded", init);
 addEventListener("beforeunload", beforeUnloadListener, { capture: true });
+//document.body.addEventListener("pointerdown", (e)=>{console.log(e.target.className)})

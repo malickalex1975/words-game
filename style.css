@@ -944,6 +944,7 @@ border:2px solid #0000ee;
 .phrase-1-container, .translate-container{
   width:80vw;
   height:100px;
+  overflow-y: auto;
   max-width: 400px;
   display: flex;
   align-items: center;
@@ -992,13 +993,7 @@ transition: 200ms;
   overflow: hidden;
 
 }
-.AI-mention{
-  color:#009900;
-  font-size: 20px;
-  font-family: monospace;
-  opacity:0;
-  transition: 500ms;
-}
+
 .AI-phrase{
   width: fit-content;
   height: 25px;
@@ -1013,4 +1008,28 @@ transition: 200ms;
   font-family: monospace;
   cursor:pointer;
  
+}
+.AI-mention{
+  width: fit-content;
+  height: 25px;
+  padding: 5px;
+  border: 2px solid #ddd;
+  background-color: #eee;
+  border-radius: 5px;
+  animation: button-flow infinite;
+  animation-duration: 1.9s;
+  color:#009900;
+  font-size: 20px;
+  font-family: monospace;
+  cursor:pointer;
+ 
+}
+.button-close{
+  position: relative;
+  top:2px;
+  left:40%;
+  color:#aa0000;
+  font-size: 20px;
+  font-family: monospace;
+  cursor: pointer;
 }
