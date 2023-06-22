@@ -10,6 +10,7 @@ import Speech from "./speech.js";
 let maxAccelerationX = 0,
   maxAccelerationY = 0,
   maxAccelerationZ = 0;
+let isSaing = false;
 let isGettingAIImage = false;
 let isGettingAIPhrase = false;
 let isAbortedAIPhrase = false;
@@ -103,6 +104,14 @@ const examplePhraseTranslate = document.querySelector(
   ".example-phrase-translate"
 );
 const phraseSpeaker = document.querySelector(".phrase-speaker");
+const sayAndDrawingContainer = document.querySelector(
+  ".say-and-drawing-container"
+);
+const sayAndDrawingImage = document.querySelector(".say-and-drawing-image");
+const sayAndDrawingText = document.querySelector(".say-and-drawing-text");
+const sayAndDrawingMicrophone = document.querySelector(
+  ".say-and-drawing-microphone"
+);
 const buttonClose = document.querySelector(".button-close");
 const AImention = document.querySelector(".AI-mention");
 const AIphrase = document.querySelector(".AI-phrase");
@@ -151,6 +160,7 @@ const line3 = document.querySelector(".line-3");
 const menuItem1 = document.querySelector(".menu-item-1");
 const menuItem2 = document.querySelector(".menu-item-2");
 const menuItem3 = document.querySelector(".menu-item-3");
+const menuItem4 = document.querySelector(".menu-item-4");
 const option1 = document.querySelector(".option-1");
 const option2 = document.querySelector(".option-2");
 const toggle = document.querySelector(".toggle");
@@ -184,6 +194,7 @@ const vibrate = {
 let menu = {
   matching: true,
   pronouncing: false,
+  drawing: false,
 };
 const mySpeech = new Speech("en");
 const myWorker = new Worker("./worker.js");
@@ -194,21 +205,31 @@ class WordGame {
     this.hideMenu();
     if (menu.matching) {
       initMatching();
-    } else {
-      if (menu.pronouncing) {
-        initPronouncing();
-      }
+    }
+    if (menu.pronouncing) {
+      initPronouncing();
+    }
+
+    if (menu.drawing) {
+      initDrawing();
     }
   }
   setMenuStyle() {
     if (menu.matching) {
       menuItem1.style.color = "#009900";
       menuItem2.style.color = "#000066";
+      menuItem4.style.color = "#000066";
     } else {
       if (menu.pronouncing) {
         menuItem2.style.color = "#009900";
         menuItem1.style.color = "#000066";
+        menuItem4.style.color = "#000066";
       }
+    }
+    if (menu.drawing) {
+      menuItem2.style.color = "#000066";
+      menuItem1.style.color = "#000066";
+      menuItem4.style.color = "#009900";
     }
   }
   getLevel() {
@@ -541,6 +562,15 @@ class WordGame {
   hideLevelsContainer() {
     levelContainer.style.visibility = "hidden";
     levelContainer.style.opacity = "0";
+  }
+
+  showSayAndDrawContainer() {
+    sayAndDrawingContainer.style.transform = "scale(1)";
+    sayAndDrawingContainer.style.top = "0px";
+  }
+  hideSayAndDrawContainer() {
+    sayAndDrawingContainer.style.transform = "scale(.1)";
+    sayAndDrawingContainer.style.top = "-100%";
   }
   handleButtonStart() {
     buttonStart.addEventListener("pointerdown", (e) => {
@@ -1608,6 +1638,9 @@ class WordGame {
       averageResultPlace.style.opacity = 1;
     }, 500);
   }
+  hideAverageResult() {
+    averageResultPlace.style.opacity = 0;
+  }
 
   setPronouncingResult(result = 0) {
     if (lastResult > result) {
@@ -2129,6 +2162,101 @@ class WordGame {
       e.stopPropagation();
     });
   }
+  sayAndDrawingMicrophoneHandler() {
+    if (!isSaing) {
+      let recognizer = new Speech("en");
+      sayAndDrawingMicrophone.style.opacity = 0.1;
+      isSaing = true;
+      game.showLoading(true)
+      game.eraseSayAndDrawingText().then(()=>{
+      recognizer
+        .speechRecognition()
+        .then((result) => {
+          sayAndDrawingText.style.color = "#0d0";
+          game.printSayAndDrawingText(result.phrase);
+          game.sayAndDrawingDrawImage(result.phrase)
+        })
+        .catch((err) => {
+          console.log(err);
+          sayAndDrawingText.style.color = "#d00";
+          game.printSayAndDrawingText("Error! Try again.");
+          game.sayAndDrawingDrawImage();
+  
+        })
+        .finally(() => {
+         
+        });
+      })
+    }
+  }
+
+  sayAndDrawingDrawImage(txt=''){
+    if(txt===''){
+      sayAndDrawingImage.src='';
+      this.showLoading(false);
+      isSaing = false;
+      sayAndDrawingMicrophone.style.opacity = 0.5;
+    }else{
+      getAIImage(txt).then((img)=>{
+        sayAndDrawingImage.src = `data:image/png;base64,${img}`;
+    game.showLoading(false);
+    isSaing = false;
+    sayAndDrawingMicrophone.style.opacity = 0.5;
+      })
+    }
+  }
+  printSayAndDrawingText(word) {
+    let symbolNumber = word.length;
+    let timeInterval = 75;
+    let n = 0;
+    let interval;
+    isPrinting = true;
+    interval = setInterval(() => {
+      n++;
+      sayAndDrawingText.focus()
+      sayAndDrawingText.value = `${word.slice(
+        0,
+        n
+      )}`;
+
+      if (n >= symbolNumber) {
+        clearInterval(interval);
+        isPrinting = false;
+
+        sayAndDrawingText.value = `${word}`;
+      }
+    }, timeInterval);
+  }
+
+  eraseSayAndDrawingText() {
+    let word= sayAndDrawingText.value.slice(0,-1);
+    
+    return new Promise((resolve, reject) => {
+      if (word === "") {
+        return resolve();
+      }
+      let symbolNumber = word.length;
+      let timeInterval = 30;
+      let n = symbolNumber;
+      let interval;
+      isPrinting = true;
+
+      interval = setInterval(() => {
+        n--;
+        sayAndDrawingText.focus()
+        sayAndDrawingText.value = `${word.slice(
+          0,
+          n
+        )}`;
+
+        if (n === 0) {
+          clearInterval(interval);
+          isPrinting = false;
+          return resolve();
+        }
+      }, timeInterval);
+    });
+  }
 }
 const game = new WordGame();
 info.addEventListener("pointerdown", () => {
@@ -2172,12 +2300,21 @@ function init() {
     e.stopPropagation();
     menu.matching = true;
     menu.pronouncing = false;
+    menu.drawing = false;
     game.processMenu();
   });
   menuItem2.addEventListener("pointerdown", (e) => {
     e.stopPropagation();
     menu.matching = false;
     menu.pronouncing = true;
+    menu.drawing = false;
+    game.processMenu();
+  });
+  menuItem4.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    menu.matching = false;
+    menu.pronouncing = false;
+    menu.drawing = true;
     game.processMenu();
   });
   menuItem3.addEventListener("pointerdown", (e) => {
@@ -2209,7 +2346,8 @@ async function initMatching() {
   if (mySpeech) {
     mySpeech.stopRecognition();
   }
-  game.showAverageResult("");
+  game.hideSayAndDrawContainer();
+  game.hideAverageResult();
   game.showLoading(false, "initMatching");
   game.cancelMediaStream();
   game.resetVisualisation();
@@ -2224,6 +2362,7 @@ async function initMatching() {
   game.hideLeftArrow();
   game.hideRightArrow();
   game.hideTranslatePanel();
+  game.showLevelsContainer();
 
   stopAudio();
 
@@ -2245,6 +2384,10 @@ function removeListeners() {
   speakerNext.removeEventListener("pointerdown", game.rewriteWord);
   AIphrase.removeEventListener("pointerdown", game.generateAIPhrase);
   AImention.removeEventListener("pointerdown", game.getAIImageHandler);
+  sayAndDrawingMicrophone.removeEventListener(
+    "pointerdown",
+    game.sayAndDrawingMicrophoneHandler
+  );
   // window.removeEventListener("deviceorientation", handleOrientationEvent, true);
 }
 
@@ -2258,6 +2401,7 @@ function initPronouncing() {
   listenSwype();
   isRecognizeFail = false;
   removeListeners();
+  game.hideSayAndDrawContainer();
   game.resetVisualisation();
   game.hideExampleCard();
   game.hideExampleButton();
@@ -2295,6 +2439,38 @@ function initPronouncing() {
   game.setMicrophoneActive(true);
   game.createVisualisation();
   // game.listenMicrophone();
+}
+
+function initDrawing() {
+  if (mySpeech) {
+    mySpeech.stopRecognition();
+  }
+  stopAudio();
+  audioCtx = undefined;
+  mistakes = [];
+  removeListeners();
+  game.hideExampleCard();
+  game.hideExampleButton();
+  game.showLoading(false, "initDrawing");
+  game.hideInfo();
+  game.hideClock();
+  game.stopClock();
+  game.hideExamples();
+  game.hideMistakesPad();
+  game.hideButtonStart();
+  game.hideButtonStop();
+  game.hideGamePad();
+  game.showScore(false);
+  game.hidePronouncing();
+  game.hideLeftArrow();
+  game.hideRightArrow();
+  game.hideLevelsContainer();
+  game.hideAverageResult();
+  game.showSayAndDrawContainer();
+  sayAndDrawingMicrophone.addEventListener(
+    "pointerdown",
+    game.sayAndDrawingMicrophoneHandler
+  );
 }
 
 function translateButtonListener(event) {
@@ -2573,6 +2749,8 @@ function getAIImage(txt) {
         game.showErrorInformation(error);
         game.showLoading(false);
         game.activeAiMention();
+        isGettingAIImage = false;
+        return reject(error);
       });
   });
 }
@@ -2623,6 +2801,8 @@ function getAIExample(txt, translate = false) {
       .catch((error) => {
         console.log("error ai phrase", error);
         game.showErrorInformation(error + " Try again.");
+        isGettingAIPhrase = false;
+        game.activeAIPhrase();
         return reject(error);
       });
   });
