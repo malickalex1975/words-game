@@ -1104,3 +1104,13 @@ transition: 200ms;
   visibility: hidden;
   transition: 500ms;
 }
+.drawing-timer{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 30px;
+  color: #0d0;
+  font-size: 24px;
+  transition: 500ms;
+}

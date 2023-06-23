@@ -176,6 +176,7 @@ const percentSign = document.querySelector(".percent-sign");
 const averageResultPlace = document.querySelector(".average-result");
 const progressLine = document.querySelector(".progress-line");
 const progressContainer = document.querySelector(".progress-container");
+const sayAndDrawingTimer = document.querySelector(".drawing-timer");
 let isPhrasePronouncing = false;
 let wordsArray = [];
 const audio = new Audio();
@@ -2210,7 +2211,13 @@ class WordGame {
       isSaing = false;
       sayAndDrawingMicrophone.style.opacity = 0.5;
     } else {
+      let drawingTimer= new Timer();
+      drawingTimer.start(100);
+      let interval= setInterval(()=>{ sayAndDrawingTimer.textContent=drawingTimer.getCurrentSecond()},100)
       getAIImage(txt).then((img) => {
+        drawingTimer.abort();
+        clearInterval(interval);
+        sayAndDrawingTimer.textContent='';
         sayAndDrawingImage.src = `data:image/png;base64,${img}`;
         sayAndDrawingImage.style.animation = "appear-animation";
         sayAndDrawingImage.style.animationDuration = "2s";

@@ -14,6 +14,9 @@ export default class Timer {
       }, 200);
     });
   }
+  getCurrentSecond(){
+    return((Date.now() - this.startTime) / 1000).toFixed(2)
+  }
   abort(){
     clearInterval(this.interval);
   }
