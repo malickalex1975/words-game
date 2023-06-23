@@ -109,6 +109,7 @@ const sayAndDrawingContainer = document.querySelector(
 );
 const sayAndDrawingImage = document.querySelector(".say-and-drawing-image");
 const sayAndDrawingText = document.querySelector(".say-and-drawing-text");
+const buttonDraw = document.querySelector(".say-and-drawing-draw");
 const sayAndDrawingMicrophone = document.querySelector(
   ".say-and-drawing-microphone"
 );
@@ -572,6 +573,18 @@ class WordGame {
     sayAndDrawingContainer.style.transform = "scale(.1)";
     sayAndDrawingContainer.style.top = "-100%";
   }
+
+showButtonDraw(){
+  buttonDraw.style.opacity=1;
+  buttonDraw.style.visibility='visible';
+  buttonDraw.style.cursor='pointer'
+}
+hideButtonDraw(){
+  buttonDraw.style.opacity=0;
+  buttonDraw.style.visibility='hidden';
+  buttonDraw.style.cursor='auto';
+}
+
   handleButtonStart() {
     buttonStart.addEventListener("pointerdown", (e) => {
       e.preventDefault();
@@ -835,6 +848,8 @@ class WordGame {
     let anim2 = visibility ? " 4.4s linear rotate2 infinite" : "";
     let anim3 = visibility ? " 8.1s linear rotate2 infinite" : "";
     let opacity = visibility ? 0.6 : 1;
+    let atr=visibility ? true : false;
+   // sayAndDrawingText.setAttribute('readonly', atr)
     loadingElement.style.visibility = v;
     loadingElement.style.animation = anim1;
     innerCircle1.style.animation = anim2;
@@ -853,7 +868,7 @@ class WordGame {
           ) {
             location.reload();
           } else {
-            this.showLoading(false);
+            //this.showLoading(false);
             this.showErrorInformation("Reload the page manually!");
           }
         }
@@ -2167,42 +2182,43 @@ class WordGame {
       let recognizer = new Speech("en");
       sayAndDrawingMicrophone.style.opacity = 0.1;
       isSaing = true;
-      game.showLoading(true)
-      game.eraseSayAndDrawingText().then(()=>{
-      recognizer
-        .speechRecognition()
-        .then((result) => {
-          sayAndDrawingText.style.color = "#0d0";
-          game.printSayAndDrawingText(result.phrase);
-          game.sayAndDrawingDrawImage(result.phrase)
-        })
-        .catch((err) => {
-          console.log(err);
-          sayAndDrawingText.style.color = "#d00";
-          game.printSayAndDrawingText("Error! Try again.");
-          game.sayAndDrawingDrawImage();
-  
-        })
-        .finally(() => {
-         
-        });
-      })
+      game.showLoading(true);
+      game.eraseSayAndDrawingText().then(() => {
+        recognizer
+          .speechRecognition()
+          .then((result) => {
+            sayAndDrawingText.style.color = "#0d0";
+            game.printSayAndDrawingText(result.phrase);
+            game.sayAndDrawingDrawImage(result.phrase);
+          })
+          .catch((err) => {
+            console.log(err);
+            sayAndDrawingText.style.color = "#d00";
+            game.printSayAndDrawingText("Error! Try again.");
+            game.sayAndDrawingDrawImage();
+          })
+          .finally(() => {});
+      });
     }
   }
 
-  sayAndDrawingDrawImage(txt=''){
-    if(txt===''){
-      sayAndDrawingImage.src='';
+  sayAndDrawingDrawImage(txt = "") {
+    if (txt === "") {
+      sayAndDrawingImage.src = "";
       this.showLoading(false);
       isSaing = false;
       sayAndDrawingMicrophone.style.opacity = 0.5;
-    }else{
-      getAIImage(txt).then((img)=>{
+    } else {
+      getAIImage(txt).then((img) => {
         sayAndDrawingImage.src = `data:image/png;base64,${img}`;
-    game.showLoading(false);
-    isSaing = false;
-    sayAndDrawingMicrophone.style.opacity = 0.5;
-      })
+        sayAndDrawingImage.style.animation="appear-animation"
+        sayAndDrawingImage.style.animationDuration="2s";
+        setTimeout(()=>{ sayAndDrawingImage.style.animation=""},2000)
+        game.showLoading(false);
+        isSaing = false;
+        sayAndDrawingMicrophone.style.opacity = 0.5;
+        if(sayAndDrawingText.value.length>2){game.showButtonDraw()}
+      });
     }
   }
   printSayAndDrawingText(word) {
@@ -2213,24 +2229,22 @@ class WordGame {
     isPrinting = true;
     interval = setInterval(() => {
       n++;
-      sayAndDrawingText.focus()
-      sayAndDrawingText.value = `${word.slice(
-        0,
-        n
-      )}`;
+      sayAndDrawingText.focus();
+      sayAndDrawingText.value = `${word.slice(0, n)}`;
 
       if (n >= symbolNumber) {
         clearInterval(interval);
         isPrinting = false;
 
         sayAndDrawingText.value = `${word}`;
+        sayAndDrawingText.blur();
       }
     }, timeInterval);
   }
 
   eraseSayAndDrawingText() {
-    let word= sayAndDrawingText.value.slice(0,-1);
-    
+    let word = sayAndDrawingText.value.slice(0, -1);
+
     return new Promise((resolve, reject) => {
       if (word === "") {
         return resolve();
@@ -2243,19 +2257,40 @@ class WordGame {
 
       interval = setInterval(() => {
         n--;
-        sayAndDrawingText.focus()
-        sayAndDrawingText.value = `${word.slice(
-          0,
-          n
-        )}`;
+        sayAndDrawingText.focus();
+        sayAndDrawingText.value = `${word.slice(0, n)}`;
 
         if (n === 0) {
           clearInterval(interval);
           isPrinting = false;
+          sayAndDrawingText.blur();
           return resolve();
         }
       }, timeInterval);
     });
+  }
+
+  sayAndDrawingTextChangeHandler(e){
+    let value=e.target.value
+    console.log('çhange: ',value);
+    sayAndDrawingText.style.color="#00d !important"
+  }
+  sayAndDrawingTextInputHandler(e){
+    let value=e.target.value
+    console.log('input: ',value);
+    sayAndDrawingText.style.color="#00d !important";
+    if(value.length>2 && !isSaing){
+      game.showButtonDraw()
+    }else {game.hideButtonDraw()}
+  }
+
+  buttonDrawHandler(){
+    game.hideButtonDraw()
+    let text= sayAndDrawingText.value;
+    game.sayAndDrawingDrawImage(text);
+    game.showLoading(true);
+    isSaing=true;
+    sayAndDrawingMicrophone.style.opacity=0.1
   }
 }
 const game = new WordGame();
@@ -2388,6 +2423,8 @@ function removeListeners() {
     "pointerdown",
     game.sayAndDrawingMicrophoneHandler
   );
+  sayAndDrawingText.removeEventListener('change', game.sayAndDrawingTextChangeHandler)
+  sayAndDrawingText.removeEventListener('change', game.sayAndDrawingTextInputHandler)
   // window.removeEventListener("deviceorientation", handleOrientationEvent, true);
 }
 
@@ -2471,6 +2508,9 @@ function initDrawing() {
     "pointerdown",
     game.sayAndDrawingMicrophoneHandler
   );
+  sayAndDrawingText.addEventListener('change', game.sayAndDrawingTextChangeHandler)
+  sayAndDrawingText.addEventListener('input', game.sayAndDrawingTextInputHandler)
+  buttonDraw.addEventListener('pointerdown', game.buttonDrawHandler)
 }
 
 function translateButtonListener(event) {
@@ -2730,10 +2770,6 @@ function getAIImage(txt) {
       body: raw,
     };
 
-    // NOTE: MODEL_VERSION_ID is optional, you can also call prediction with the MODEL_ID only
-    // https://api.clarifai.com/v2/models/{YOUR_MODEL_ID}/outputs
-    // this will default to the latest version_id
-
     fetch(
       `https://api.clarifai.com/v2/models/general-image-generator-dalle-mini/versions/86c0ae39083e45a8bf96fde91f4e1952/outputs`,
       requestOptions
@@ -2741,8 +2777,12 @@ function getAIImage(txt) {
       .then((response) => response.json())
       .then((result) => {
         console.log(result);
-        let img = result.outputs[0].data.image.base64;
-        return resolve(img);
+        let img = result?.outputs[0]?.data?.image?.base64;
+        if (img !== undefined) {
+          return resolve(img);
+        } else {
+          return reject("no response");
+        }
       })
       .catch((error) => {
         console.log("error ai image", error);

@@ -8,5 +8,5 @@ onmessage=async(e)=>{
   xhr.responseType='blob';
   xhr.send();
   xhr.onload=()=>{setTimeout(()=>postMessage(xhr.response),1000)}
-  xhr.onprogress=(e)=>{setTimeout(()=>postMessage([e.loaded, e.total]),100)}
+  xhr.onprogress=(e)=>{setTimeout(()=>postMessage([e.loaded, e.total]),0)}
 }
