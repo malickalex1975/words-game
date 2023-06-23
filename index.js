@@ -7,6 +7,7 @@ const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
 
 import Speech from "./speech.js";
+import Timer from "./timer.js";
 let maxAccelerationX = 0,
   maxAccelerationY = 0,
   maxAccelerationZ = 0;
@@ -199,6 +200,7 @@ let menu = {
 };
 const mySpeech = new Speech("en");
 const myWorker = new Worker("./worker.js");
+const timer = new Timer();
 class WordGame {
   constructor() {}
   processMenu() {
@@ -574,16 +576,16 @@ class WordGame {
     sayAndDrawingContainer.style.top = "-100%";
   }
 
-showButtonDraw(){
-  buttonDraw.style.opacity=1;
-  buttonDraw.style.visibility='visible';
-  buttonDraw.style.cursor='pointer'
-}
-hideButtonDraw(){
-  buttonDraw.style.opacity=0;
-  buttonDraw.style.visibility='hidden';
-  buttonDraw.style.cursor='auto';
-}
+  showButtonDraw() {
+    buttonDraw.style.opacity = 1;
+    buttonDraw.style.visibility = "visible";
+    buttonDraw.style.cursor = "pointer";
+  }
+  hideButtonDraw() {
+    buttonDraw.style.opacity = 0;
+    buttonDraw.style.visibility = "hidden";
+    buttonDraw.style.cursor = "auto";
+  }
 
   handleButtonStart() {
     buttonStart.addEventListener("pointerdown", (e) => {
@@ -848,8 +850,8 @@ hideButtonDraw(){
     let anim2 = visibility ? " 4.4s linear rotate2 infinite" : "";
     let anim3 = visibility ? " 8.1s linear rotate2 infinite" : "";
     let opacity = visibility ? 0.6 : 1;
-    let atr=visibility ? true : false;
-   // sayAndDrawingText.setAttribute('readonly', atr)
+    let atr = visibility ? true : false;
+    // sayAndDrawingText.setAttribute('readonly', atr)
     loadingElement.style.visibility = v;
     loadingElement.style.animation = anim1;
     innerCircle1.style.animation = anim2;
@@ -857,25 +859,20 @@ hideButtonDraw(){
     pronouncingContainer.style.opacity = opacity;
 
     if (isLoading) {
-      loadingStartTime = Date.now();
-      loadingInterval = setInterval(() => {
-        if (Date.now() - loadingStartTime > 20000) {
-          clearInterval(loadingInterval);
-          if (
-            confirm(
-              "Loading is taking too long time! Do you want to reload page?"
-            )
-          ) {
-            location.reload();
-          } else {
-            //this.showLoading(false);
-            this.showErrorInformation("Reload the page manually!");
-          }
+      timer.start(20).then(() => {
+        if (
+          confirm(
+            "Loading is taking too long time! Do you want to reload page?"
+          )
+        ) {
+          location.reload();
+        } else {
+          //this.showLoading(false);
+          this.showErrorInformation("Reload the page manually!");
         }
-      }, 500);
+      });
     } else {
-      loadingStartTime = undefined;
-      clearInterval(loadingInterval);
+      timer.abort();
     }
   }
   operateClock() {
@@ -2183,10 +2180,12 @@ hideButtonDraw(){
       sayAndDrawingMicrophone.style.opacity = 0.1;
       isSaing = true;
       game.showLoading(true);
+      game.hideButtonDraw();
       game.eraseSayAndDrawingText().then(() => {
         recognizer
           .speechRecognition()
           .then((result) => {
+            game.showButtonDraw();
             sayAndDrawingText.style.color = "#0d0";
             game.printSayAndDrawingText(result.phrase);
             game.sayAndDrawingDrawImage(result.phrase);
@@ -2195,6 +2194,8 @@ hideButtonDraw(){
             console.log(err);
             sayAndDrawingText.style.color = "#d00";
             game.printSayAndDrawingText("Error! Try again.");
+           
+            setTimeout(()=>{game.eraseSayAndDrawingText()},4000)
             game.sayAndDrawingDrawImage();
           })
           .finally(() => {});
@@ -2211,13 +2212,17 @@ hideButtonDraw(){
     } else {
       getAIImage(txt).then((img) => {
         sayAndDrawingImage.src = `data:image/png;base64,${img}`;
-        sayAndDrawingImage.style.animation="appear-animation"
-        sayAndDrawingImage.style.animationDuration="2s";
-        setTimeout(()=>{ sayAndDrawingImage.style.animation=""},2000)
+        sayAndDrawingImage.style.animation = "appear-animation";
+        sayAndDrawingImage.style.animationDuration = "2s";
+        setTimeout(() => {
+          sayAndDrawingImage.style.animation = "";
+        }, 2000);
         game.showLoading(false);
         isSaing = false;
         sayAndDrawingMicrophone.style.opacity = 0.5;
-        if(sayAndDrawingText.value.length>2){game.showButtonDraw()}
+        if (sayAndDrawingText.value.trim().length > 2) {
+          game.showButtonDraw();
+        }
       });
     }
   }
@@ -2229,15 +2234,15 @@ hideButtonDraw(){
     isPrinting = true;
     interval = setInterval(() => {
       n++;
-      sayAndDrawingText.focus();
       sayAndDrawingText.value = `${word.slice(0, n)}`;
-
+      sayAndDrawingText.blur();
       if (n >= symbolNumber) {
         clearInterval(interval);
         isPrinting = false;
 
         sayAndDrawingText.value = `${word}`;
         sayAndDrawingText.blur();
+       
       }
     }, timeInterval);
   }
@@ -2257,40 +2262,43 @@ hideButtonDraw(){
 
       interval = setInterval(() => {
         n--;
-        sayAndDrawingText.focus();
+        sayAndDrawingText.blur();
         sayAndDrawingText.value = `${word.slice(0, n)}`;
 
         if (n === 0) {
           clearInterval(interval);
           isPrinting = false;
           sayAndDrawingText.blur();
+          sayAndDrawingText.style.color = "#0d0";
           return resolve();
         }
       }, timeInterval);
     });
   }
 
-  sayAndDrawingTextChangeHandler(e){
-    let value=e.target.value
-    console.log('çhange: ',value);
-    sayAndDrawingText.style.color="#00d !important"
+  sayAndDrawingTextChangeHandler(e) {
+    let value = e.target.value;
+    console.log("change: ", value);
+    sayAndDrawingText.style.color = "#00d !important";
   }
-  sayAndDrawingTextInputHandler(e){
-    let value=e.target.value
-    console.log('input: ',value);
-    sayAndDrawingText.style.color="#00d !important";
-    if(value.length>2 && !isSaing){
-      game.showButtonDraw()
-    }else {game.hideButtonDraw()}
+  sayAndDrawingTextInputHandler(e) {
+    let value = e.target.value;
+    console.log("input: ", value);
+    sayAndDrawingText.style.color = "#00d !important";
+    if (value.trim().length > 2 && !isSaing) {
+      game.showButtonDraw();
+    } else {
+      game.hideButtonDraw();
+    }
   }
 
-  buttonDrawHandler(){
-    game.hideButtonDraw()
-    let text= sayAndDrawingText.value;
+  buttonDrawHandler() {
+    game.hideButtonDraw();
+    let text = sayAndDrawingText.value;
     game.sayAndDrawingDrawImage(text);
     game.showLoading(true);
-    isSaing=true;
-    sayAndDrawingMicrophone.style.opacity=0.1
+    isSaing = true;
+    sayAndDrawingMicrophone.style.opacity = 0.1;
   }
 }
 const game = new WordGame();
@@ -2423,8 +2431,14 @@ function removeListeners() {
     "pointerdown",
     game.sayAndDrawingMicrophoneHandler
   );
-  sayAndDrawingText.removeEventListener('change', game.sayAndDrawingTextChangeHandler)
-  sayAndDrawingText.removeEventListener('change', game.sayAndDrawingTextInputHandler)
+  sayAndDrawingText.removeEventListener(
+    "change",
+    game.sayAndDrawingTextChangeHandler
+  );
+  sayAndDrawingText.removeEventListener(
+    "change",
+    game.sayAndDrawingTextInputHandler
+  );
   // window.removeEventListener("deviceorientation", handleOrientationEvent, true);
 }
 
@@ -2508,9 +2522,15 @@ function initDrawing() {
     "pointerdown",
     game.sayAndDrawingMicrophoneHandler
   );
-  sayAndDrawingText.addEventListener('change', game.sayAndDrawingTextChangeHandler)
-  sayAndDrawingText.addEventListener('input', game.sayAndDrawingTextInputHandler)
-  buttonDraw.addEventListener('pointerdown', game.buttonDrawHandler)
+  sayAndDrawingText.addEventListener(
+    "change",
+    game.sayAndDrawingTextChangeHandler
+  );
+  sayAndDrawingText.addEventListener(
+    "input",
+    game.sayAndDrawingTextInputHandler
+  );
+  buttonDraw.addEventListener("pointerdown", game.buttonDrawHandler);
 }
 
 function translateButtonListener(event) {
