@@ -2211,6 +2211,7 @@ class WordGame {
       isSaing = false;
       sayAndDrawingMicrophone.style.opacity = 0.5;
     } else {
+      this.hideButtonDraw()
       let drawingTimer= new Timer();
       drawingTimer.start(100);
       let interval= setInterval(()=>{ sayAndDrawingTimer.textContent=drawingTimer.getCurrentSecond()},100)
