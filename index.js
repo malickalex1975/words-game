@@ -12,9 +12,12 @@ let maxAccelerationX = 0,
   maxAccelerationY = 0,
   maxAccelerationZ = 0;
 let isSaing = false;
+let isSayAndDrawingError = false;
+let artStyle = "Style of children's book illustration";
 let isGettingAIImage = false;
 let isGettingAIPhrase = false;
 let isAbortedAIPhrase = false;
+let isAbortedDrawImage = false;
 let isRecognizeFail = false;
 let isAIPhrase = false;
 let textExample;
@@ -114,6 +117,7 @@ const buttonDraw = document.querySelector(".say-and-drawing-draw");
 const sayAndDrawingMicrophone = document.querySelector(
   ".say-and-drawing-microphone"
 );
+const artStyleSelector = document.querySelector("#art-style-selector");
 const buttonClose = document.querySelector(".button-close");
 const AImention = document.querySelector(".AI-mention");
 const AIphrase = document.querySelector(".AI-phrase");
@@ -398,6 +402,12 @@ class WordGame {
     line2.style.opacity = 1;
     line1.style.transform = "rotate(0deg)";
     line3.style.transform = "rotate(0deg)";
+  }
+  lockSelector() {
+    artStyleSelector.setAttribute("disabled", "disabled");
+  }
+  unlockSelector() {
+    artStyleSelector.removeAttribute("disabled");
   }
   showAIMention() {
     AImention.style.opacity = 1;
@@ -2176,6 +2186,9 @@ class WordGame {
     });
   }
   sayAndDrawingMicrophoneHandler() {
+    isSayAndDrawingError = false;
+    game.lockSelector();
+    sayAndDrawingTimer.textContent = "";
     if (!isSaing) {
       let recognizer = new Speech("en");
       sayAndDrawingMicrophone.style.opacity = 0.1;
@@ -2195,36 +2208,78 @@ class WordGame {
             console.log(err);
             sayAndDrawingText.style.color = "#d00";
             game.printSayAndDrawingText("Error! Try again.");
-           
-            setTimeout(()=>{game.eraseSayAndDrawingText()},4000)
+            isSayAndDrawingError = true;
+
+            setTimeout(() => {
+              game.eraseSayAndDrawingText();
+            }, 4000);
             game.sayAndDrawingDrawImage();
           })
-          .finally(() => {});
+          .finally(() => {
+            game.unlockSelector();
+          });
       });
     }
   }
 
   sayAndDrawingDrawImage(txt = "") {
+    sayAndDrawingTimer.textContent = "";
+    isAbortedDrawImage = false;
     if (txt === "") {
       sayAndDrawingImage.src = "";
       this.showLoading(false);
       isSaing = false;
       sayAndDrawingMicrophone.style.opacity = 0.5;
     } else {
-      this.hideButtonDraw()
-      let drawingTimer= new Timer();
-      drawingTimer.start(100);
-      let interval= setInterval(()=>{ sayAndDrawingTimer.textContent=drawingTimer.getCurrentSecond()},100)
-      getAIImage(txt).then((img) => {
+      game.lockSelector();
+      txt = txt + ", " + artStyle;
+      this.hideButtonDraw();
+      let drawingTimer = new Timer();
+      let interval = setInterval(() => {
+        sayAndDrawingTimer.textContent = this.transformTime(
+          drawingTimer.getCurrentSecond()
+        );
+      }, 200);
+      drawingTimer.start(10).then(() => {
+        let prev = sayAndDrawingText.value;
         drawingTimer.abort();
         clearInterval(interval);
-        sayAndDrawingTimer.textContent='';
-        sayAndDrawingImage.src = `data:image/png;base64,${img}`;
-        sayAndDrawingImage.style.animation = "appear-animation";
-        sayAndDrawingImage.style.animationDuration = "2s";
-        setTimeout(() => {
-          sayAndDrawingImage.style.animation = "";
-        }, 2000);
+        sayAndDrawingTimer.textContent = "";
+        this.eraseSayAndDrawingText().then(() => {
+          sayAndDrawingText.style.color = "#d00";
+          this.printSayAndDrawingText("It took too long time! Try again!");
+          isAbortedDrawImage = true;
+          setTimeout(() => {
+            this.eraseSayAndDrawingText().then(() => {
+              sayAndDrawingText.style.color = "#0d0";
+
+              this.printSayAndDrawingText(prev).then(() => {
+                game.showLoading(false);
+                isSaing = false;
+                game.unlockSelector();
+                sayAndDrawingMicrophone.style.opacity = 0.5;
+                if (sayAndDrawingText.value.trim().length > 2) {
+                  game.showButtonDraw();
+                }
+              });
+            });
+          }, 4000);
+        });
+      });
+
+      getAIImage(txt).then((img) => {
+        game.unlockSelector();
+        if (!isAbortedDrawImage) {
+          drawingTimer.abort();
+          clearInterval(interval);
+
+          sayAndDrawingImage.src = `data:image/png;base64,${img}`;
+          sayAndDrawingImage.style.animation = "appear-animation";
+          sayAndDrawingImage.style.animationDuration = "2s";
+          setTimeout(() => {
+            sayAndDrawingImage.style.animation = "";
+          }, 2000);
+        }
         game.showLoading(false);
         isSaing = false;
         sayAndDrawingMicrophone.style.opacity = 0.5;
@@ -2234,25 +2289,51 @@ class WordGame {
       });
     }
   }
-  printSayAndDrawingText(word) {
-    let symbolNumber = word.length;
-    let timeInterval = 75;
-    let n = 0;
-    let interval;
-    isPrinting = true;
-    interval = setInterval(() => {
-      n++;
-      sayAndDrawingText.value = `${word.slice(0, n)}`;
-      sayAndDrawingText.blur();
-      if (n >= symbolNumber) {
-        clearInterval(interval);
-        isPrinting = false;
 
-        sayAndDrawingText.value = `${word}`;
+  transformTime(time) {
+    time = Number(time);
+    let minutes = 0;
+    let seconds = Math.floor(time);
+    let mseconds = ((time - seconds) * 1000).toFixed(0);
+    if (mseconds.length === 2) {
+      mseconds += "0";
+    }
+    if (mseconds.length === 1) {
+      mseconds += "00";
+    }
+    if (seconds > 59) {
+      minutes = Math.floor(seconds / 60);
+      seconds = seconds - minutes * 60;
+    }
+    if (minutes < 10) {
+      minutes = "0" + minutes.toString();
+    }
+    if (seconds < 10) {
+      seconds = "0" + seconds.toString();
+    }
+    return `${minutes}:${seconds}.${mseconds}`;
+  }
+  printSayAndDrawingText(word) {
+    return new Promise((resolve) => {
+      let symbolNumber = word.length;
+      let timeInterval = 75;
+      let n = 0;
+      let interval;
+      isPrinting = true;
+      interval = setInterval(() => {
+        n++;
+        sayAndDrawingText.value = `${word.slice(0, n)}`;
         sayAndDrawingText.blur();
-       
-      }
-    }, timeInterval);
+        if (n >= symbolNumber) {
+          clearInterval(interval);
+          isPrinting = false;
+
+          sayAndDrawingText.value = `${word}`;
+          sayAndDrawingText.blur();
+          return resolve();
+        }
+      }, timeInterval);
+    });
   }
 
   eraseSayAndDrawingText() {
@@ -2286,13 +2367,12 @@ class WordGame {
 
   sayAndDrawingTextChangeHandler(e) {
     let value = e.target.value;
-    console.log("change: ", value);
-    sayAndDrawingText.style.color = "#00d !important";
+    sayAndDrawingText.style.color = "#0d0 !important";
   }
   sayAndDrawingTextInputHandler(e) {
-    let value = e.target.value;
-    console.log("input: ", value);
-    sayAndDrawingText.style.color = "#00d !important";
+    isSayAndDrawingError = false;
+    let value =e? e.target.value:sayAndDrawingText.value;
+    sayAndDrawingText.style.color = "#0d0 !important";
     if (value.trim().length > 2 && !isSaing) {
       game.showButtonDraw();
     } else {
@@ -2307,6 +2387,16 @@ class WordGame {
     game.showLoading(true);
     isSaing = true;
     sayAndDrawingMicrophone.style.opacity = 0.1;
+  }
+
+  artStyleSelectorHandler() {
+    artStyle = artStyleSelector.value;
+    let txt = sayAndDrawingText.value;
+    if (txt.length > 2 && !isSayAndDrawingError && !isSaing) {
+      isSaing = true;
+      game.showLoading(true);
+      game.sayAndDrawingDrawImage(txt);
+    }
   }
 }
 const game = new WordGame();
@@ -2508,6 +2598,7 @@ function initDrawing() {
   audioCtx = undefined;
   mistakes = [];
   removeListeners();
+  loadDrawingData();
   game.hideExampleCard();
   game.hideExampleButton();
   game.showLoading(false, "initDrawing");
@@ -2539,6 +2630,7 @@ function initDrawing() {
     game.sayAndDrawingTextInputHandler
   );
   buttonDraw.addEventListener("pointerdown", game.buttonDrawHandler);
+  artStyleSelector.addEventListener("input", game.artStyleSelectorHandler);
 }
 
 function translateButtonListener(event) {
@@ -2696,7 +2788,7 @@ function swypeMovingListener(e) {
       }), rgba(140, 255, 255, 0)  ${(-deltaX / (width * 3)) * 100}%)`;
     }
   } else {
-    vibrate.wrong();
+    //vibrate.wrong();
     if (deltaX > 0) {
       pronouncingContainer.style.backgroundImage = `linear-gradient(260deg, rgba(255, 0, 0, ${
         deltaX / (width * 2)
@@ -2878,9 +2970,28 @@ function getAIExample(txt, translate = false) {
 
 function beforeUnloadListener(event) {
   // event.preventDefault();
-  console.log("see you later!");
+  console.log("your data saved!");
+  saveDrawingData();
 }
-
+function saveDrawingData() {
+  localStorage.setItem("drawingPrompt", sayAndDrawingText.value);
+  localStorage.setItem("artStyle", artStyle);
+}
+function loadDrawingData() {
+  if (localStorage.getItem("drawingPrompt")) {
+    sayAndDrawingText.style.color = "#0d0 !important";
+    sayAndDrawingText.value = localStorage.getItem("drawingPrompt");
+  }
+  if (localStorage.getItem("artStyle")) {
+    artStyle = localStorage.getItem("artStyle");
+    document.querySelectorAll("option").forEach((item) => {
+      if (item.value === artStyle) {
+        item.setAttribute("selected", "selected");
+      }
+    });
+  }
+  game.sayAndDrawingTextInputHandler()
+}
 function deviceOrientationListener() {
   if (window.DeviceOrientationEvent) {
     console.log("DeviceOrientation present!");
