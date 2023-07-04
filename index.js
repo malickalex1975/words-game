@@ -181,6 +181,9 @@ const averageResultPlace = document.querySelector(".average-result");
 const progressLine = document.querySelector(".progress-line");
 const progressContainer = document.querySelector(".progress-container");
 const sayAndDrawingTimer = document.querySelector(".drawing-timer");
+const ruButton = document.querySelector(".lang-ru");
+const enButton = document.querySelector(".lang-en");
+let voiceLang = "en";
 let isPhrasePronouncing = false;
 let wordsArray = [];
 const audio = new Audio();
@@ -2086,7 +2089,7 @@ class WordGame {
       game.showLoading(true);
       game.inactiveAIPhrase();
       isGettingAIPhrase = true;
-      getAIExample(phrase, false)
+      getAIExample(phrase)
         .then((result) => {
           if (!isAbortedAIPhrase) {
             examplePhraseTranslate.textContent = "";
@@ -2097,7 +2100,7 @@ class WordGame {
             console.log("current index:", currentIndex);
 
             phraseSpeaker.style.visibility = "hidden";
-            getAIExample(result, true)
+            getAIExample(result, {direction:"ENtoRU"})
               .then((response) => {
                 game.showLoading(false);
                 examplePhraseTranslate.textContent = response;
@@ -2190,7 +2193,7 @@ class WordGame {
     game.lockSelector();
     sayAndDrawingTimer.textContent = "";
     if (!isSaing) {
-      let recognizer = new Speech("en");
+      let recognizer = new Speech(voiceLang);
       sayAndDrawingMicrophone.style.opacity = 0.1;
       isSaing = true;
       game.showLoading(true);
@@ -2222,7 +2225,7 @@ class WordGame {
     }
   }
 
-  sayAndDrawingDrawImage(txt = "") {
+  async sayAndDrawingDrawImage(txt = "") {
     sayAndDrawingTimer.textContent = "";
     isAbortedDrawImage = false;
     if (txt === "") {
@@ -2232,7 +2235,11 @@ class WordGame {
       sayAndDrawingMicrophone.style.opacity = 0.5;
     } else {
       game.lockSelector();
+      if (voiceLang === "ru") {
+        txt = await getAIExample(txt,{direction:'RUtoEN'});
+      }
       txt = txt + ", " + artStyle;
+      console.log('txt: ', txt)
       this.hideButtonDraw();
       let drawingTimer = new Timer();
       let interval = setInterval(() => {
@@ -2371,7 +2378,7 @@ class WordGame {
   }
   sayAndDrawingTextInputHandler(e) {
     isSayAndDrawingError = false;
-    let value =e? e.target.value:sayAndDrawingText.value;
+    let value = e ? e.target.value : sayAndDrawingText.value;
     sayAndDrawingText.style.color = "#0d0 !important";
     if (value.trim().length > 2 && !isSaing) {
       game.showButtonDraw();
@@ -2487,6 +2494,7 @@ async function initMatching() {
   if (mySpeech) {
     mySpeech.stopRecognition();
   }
+  voiceLang = "en";
   game.hideSayAndDrawContainer();
   game.hideAverageResult();
   game.showLoading(false, "initMatching");
@@ -2537,6 +2545,8 @@ function removeListeners() {
     "change",
     game.sayAndDrawingTextInputHandler
   );
+  ruButton.removeEventListener("pointerdown", changeVoiceLanguage);
+  enButton.removeEventListener("pointerdown", changeVoiceLanguage);
   // window.removeEventListener("deviceorientation", handleOrientationEvent, true);
 }
 
@@ -2544,6 +2554,7 @@ function initPronouncing() {
   if (mySpeech) {
     mySpeech.stopRecognition();
   }
+  voiceLang = "en";
   audioCtx = undefined;
   mistakes = [];
   stripsArray = [];
@@ -2631,6 +2642,26 @@ function initDrawing() {
   );
   buttonDraw.addEventListener("pointerdown", game.buttonDrawHandler);
   artStyleSelector.addEventListener("input", game.artStyleSelectorHandler);
+  ruButton.addEventListener("pointerdown", changeVoiceLanguage);
+  enButton.addEventListener("pointerdown", changeVoiceLanguage);
+}
+
+function changeVoiceLanguage(e) {
+  let button = e.target;
+  let lang = button.classList.contains("lang-ru") ? "ru" : "en";
+  if (voiceLang === lang) {
+    return;
+  } else {
+    voiceLang = voiceLang === "en" ? "ru" : "en";
+    toggleButtonClasses();
+  }
+}
+
+function toggleButtonClasses() {
+  enButton.classList.toggle("active-button");
+  enButton.classList.toggle("passive-button");
+  ruButton.classList.toggle("active-button");
+  ruButton.classList.toggle("passive-button");
 }
 
 function translateButtonListener(event) {
@@ -2914,10 +2945,15 @@ function getAIImage(txt) {
       });
   });
 }
-function getAIExample(txt, translate = false) {
-  let command = translate
-    ? "translate to Russian this text: "
-    : "перефразируй этот текст: ";
+function getAIExample(txt, option) {
+  let command =
+    option === undefined
+      ? "перефразируй этот текст: "
+      : option.direction === "ENtoRU"
+      ? "translate to Russian this text: "
+      : option.direction === "RUtoEN"
+      ? "translate to English this text: "
+      : "";
   let text = txt.replace("<b>", "").replace("</b>", "");
   return new Promise((resolve, reject) => {
     const raw = JSON.stringify({
@@ -2990,7 +3026,7 @@ function loadDrawingData() {
       }
     });
   }
-  game.sayAndDrawingTextInputHandler()
+  game.sayAndDrawingTextInputHandler();
 }
 function deviceOrientationListener() {
   if (window.DeviceOrientationEvent) {
