@@ -88,7 +88,7 @@ body {
   gap: 5px;
   transition: 1s;
   cursor: pointer;
-  z-index: 200;
+  z-index: 402;
 }
 .menu-line {
   transition: 500ms;
@@ -240,7 +240,7 @@ body {
   left: calc(50% - 25px);
   transform: translate(-50%, -50%);
   color: green;
-  z-index: 300;
+  z-index: 500;
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -249,7 +249,7 @@ body {
   border-top: 3px solid blue;
   border-right: 3px solid yellow;
  
-  animation-duration: 500ms;
+  animation-duration: 5000ms;
   animation-timing-function: linear;
 }
 
@@ -284,6 +284,7 @@ body {
 .pronouncing-container {
   position: fixed;
   top: 14vh;
+  left:0px;
   width: 100vw;
   height: 80vh;
   opacity: 0;
@@ -417,6 +418,7 @@ body {
   background-image: linear-gradient(#fff, #eee);
   box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.2);
   font-size: 16px;
+  hyphens: auto;
   color: #000066;
   cursor: pointer;
   transition: 0ms;
@@ -472,7 +474,10 @@ body {
   left: 72vw;
   width: 13vw;
   height: 20px;
-  font-size: 20px;
+  font-size: 18px;
+  letter-spacing: 0px;
+  white-space: nowrap;
+  font-family: monospace;
   color: orange;
 }
 .mistakes-pad {
@@ -622,12 +627,13 @@ body {
   color: #ccc;
   visibility: hidden;
   border-radius: 5px;
-  z-index: 300;
+  z-index: 500;
 }
 .speaker,
-.speaker-next {
-  width: 25px;
-  height: 25px;
+.speaker-next,
+.phrase-speaker {
+  min-width: 25px;
+  min-height: 25px;
   background-image: url(./assets/images/speaker.png);
   background-size: cover;
   opacity: 0.7;
@@ -657,6 +663,9 @@ body {
   font-size: 20px;
   scroll-behavior: smooth;
   padding: 0px 10px;
+ -webkit-mask-image: linear-gradient( rgba(240,255,255,0.1), rgba(240,255,255,1), rgba(240,255,255,0.1));
+ mask-image: linear-gradient( rgba(240,255,255,0.1), rgba(240,255,255,1), rgba(240,255,255,0.1));
+ 
 }
 .menu-panel {
   position: fixed;
@@ -665,12 +674,14 @@ body {
   width: 90vw;
   max-width: 300px;
   height: calc(96vh - 90px);
-  z-index: 100;
+  z-index: 401;
   background-image: linear-gradient(#fff, #eee);
   border-radius: 5px;
   transition: 500ms;
   transform: translateX(300px);
   transition-timing-function: ease-in-out;
+  border:1px solid #ddd;
+  border-radius: 5px;
 }
 .menu-container {
   position: relative;
@@ -684,6 +695,8 @@ body {
   width: 90vw;
   max-width: 300px;
   height: calc(96vh - 90px);
+  
+
 }
 .menu-item:nth-child(odd) {
   background-color: #eee;
@@ -877,4 +890,253 @@ border:2px solid #0000ee;
   font-size: 59vw;
   transition: 500ms;
   color:rgba(0,0,240,1);
+}
+.example-button{
+  visibility: hidden;
+  opacity:0;
+  position: fixed;
+  width:70px;
+  height:30px;
+  padding:5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color:#00aa00;
+  color:#fff;
+  font-size: 20px;
+  border: 2px solid #00aa00;
+  border-radius:10px;
+  transition: 500ms;
+  animation-duration: 2s;
+  cursor:pointer;
+  z-index: 100;
+}
+.word-example-card{
+  position:fixed;
+  width:90vw;
+  height:80vh;
+  top:10vh;
+  left:5vw;
+  max-width: 500px;
+  max-height: 1000px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  transform: translateY(-200%) scale(0.5);
+  transition: 1000ms;
+  opacity:0;
+  z-index: 100;
+  font-size: 24px;
+  color: #555;
+  background-image: linear-gradient(#fff, #eee);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+}
+.example-card-image{
+  width:256px;
+  height:256px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  transition:1000ms;
+  opacity: 0;
+}
+.phrase-1-container, .translate-container{
+  width:80vw;
+  height:100px;
+  overflow-y: auto;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+}
+.example-phrase,.example-phrase-translate{
+opacity:0;
+transition: 200ms;
+}
+.phrase-speaker{
+ opacity:0 ;
+ transition:200ms
+}
+.progress-container{
+  width:200px;
+  height:10px;
+  border: 2px solid #00aa00;
+  display: flex;
+  align-items: center;
+  justify-content:flex-start;
+  visibility: hidden;
+
+}
+.progress-line{
+  width:10px;
+  height:8px;
+  background-image: linear-gradient(#00ff00, #009900);
+}
+.error-information{
+  animation: blinking infinite;
+  animation-duration: 3s;
+  position: fixed;
+  top:0px;
+  left:0px;
+  width:100%;
+  height:22px;
+  z-index: 400;
+  color:red;
+  font-size: 20px;
+  background-color: transparent;
+  padding: 0 10px;
+  visibility: hidden;
+  overflow: hidden;
+
+}
+
+.AI-phrase{
+  width: fit-content;
+  height: 25px;
+  padding: 5px;
+  border: 2px solid #ddd;
+  background-color: #eee;
+  border-radius: 5px;
+  animation: button-flow infinite;
+  animation-duration: 2s;
+  color:#009900;
+  font-size: 20px;
+  font-family: monospace;
+  cursor:pointer;
+ 
+}
+.AI-mention{
+  width: fit-content;
+  height: 25px;
+  padding: 5px;
+  border: 2px solid #ddd;
+  background-color: #eee;
+  border-radius: 5px;
+  animation: button-flow infinite;
+  animation-duration: 1.9s;
+  color:#009900;
+  font-size: 20px;
+  font-family: monospace;
+  cursor:pointer;
+ 
+}
+.button-close{
+  position: relative;
+  top:2px;
+  left:40%;
+  color:#aa0000;
+  font-size: 20px;
+  font-family: monospace;
+  cursor: pointer;
+}
+.say-and-drawing-container{
+  position:fixed;
+  display:flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  width:100%;
+  height:100%;
+  background-image: linear-gradient(#eeffff, #eeeeee, #eeffff);
+  top:-100%;
+  left:0%;
+  transition:1000ms;
+  transform: scale(0.1);
+  z-index: 400;
+}
+@keyframes appear-animation {
+  from {opacity:0}
+  to{opacity:1}
+}
+@keyframes disappear-animation {
+  from {opacity:1}
+  to{opacity:0}
+}
+.say-and-drawing-image{
+ min-width:256px;
+ min-height:256px;
+ width:80vw;
+ height:80vw;
+ box-shadow: inset 2px 2px 10px rgba(0, 0, 0, 0.2);
+ border: 2px solid #ddd;
+ border-radius: 5px;
+ animation-duration: 2s !important;
+}
+.say-and-drawing-text{
+ width:256px;
+ min-height:100px;
+ height:fit-content;
+ box-shadow:  2px 2px 8px rgba(0, 240, 0, 0.5);
+ border: 2px solid #0d0;
+ border-radius: 5px;
+ color: #0d0;
+ font-size: 20px;
+ font-family: monospace;
+ padding: 10px;
+
+}
+.say-and-drawing-microphone{
+  width: 50px;
+  height: 50px;
+  background-image: url(./assets/images/microphone.png);
+  opacity: .5;
+  transition: 500ms;
+  cursor:pointer;
+ 
+}
+.say-and-drawing-microphone:hover{
+  opacity: .9; 
+}
+.say-and-drawing-draw{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 30px;
+  color: #0d0;
+  font-size: 24px;
+  font-family: monospace;
+  opacity: 0;
+  visibility: hidden;
+  transition: 500ms;
+}
+.drawing-timer{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 30px;
+  color: #0d0;
+  font-size: 24px;
+  transition: 500ms;
+}
+.lang-container{
+  display: flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px
+}
+.lang-button{
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  width:30px;
+  height:30px;
+  border:2px solid #eee;
+  border-radius: 3px;
+  font-size: 24px;
+  font-family: monospace;
+  cursor:pointer;
+}
+.active-button{
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.2);
+  color:#0d0
+}
+.passive-button{
+  box-shadow:  2px 2px 5px rgba(0, 0, 0, 0.2);
+  color: #999;
 }

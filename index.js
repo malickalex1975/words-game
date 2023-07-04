@@ -1,10 +1,28 @@
 const mainUrl = "https://learnlangapp1.herokuapp.com/";
+const AIUrl = "https://stablediffusionapi.com/api/v3/text2img";
+const APIKey = "xRkNj473iRYE0qsHCvFbwfl35sUb7oxpnoMobo4KgJzMIPpHHEHXqFFDtxE2";
 const ageByPhotoUrl = "https://malickalex1975.github.io/age-by-photo/";
 const url = "./assets/json/";
 const failedSound = "./assets/mp3/failed.mp3";
 const successSound = "./assets/mp3/success.mp3";
+
 import Speech from "./speech.js";
+import Timer from "./timer.js";
+let maxAccelerationX = 0,
+  maxAccelerationY = 0,
+  maxAccelerationZ = 0;
+let isSaing = false;
+let isSayAndDrawingError = false;
+let artStyle = "Style of children's book illustration";
+let isGettingAIImage = false;
+let isGettingAIPhrase = false;
+let isAbortedAIPhrase = false;
+let isAbortedDrawImage = false;
 let isRecognizeFail = false;
+let isAIPhrase = false;
+let textExample;
+let showErrorInformationTimeout = undefined;
+let lastAudioUrl;
 let audioErrors = 0;
 let swypeStartX = 0;
 let swypeFinishX = 0;
@@ -18,11 +36,14 @@ let isLeftArrowHidden = true;
 let isMyVoicePlaying = false;
 let globalWordIndex;
 let isMoving;
+let loadingInterval;
+let loadingStartTime;
 let mediaRecorder;
 let voice = [];
 let stream;
 let isPrinting = false;
-let currentIndexOfWord;
+let currentIndexOfWord = undefined,
+  lastIndexOfWord = undefined;
 let audioPromise, request, transcriptForPronouncing;
 let isMicrophoneAvailable = true;
 let wordForPronouncing = "";
@@ -66,6 +87,7 @@ const rightWords = {
 };
 const wordsQuantity = 6;
 let timeRemained = 120000;
+let lastConvertedTime;
 let timeStart = 0;
 let timeCurrent = 0;
 let score = 0;
@@ -76,11 +98,33 @@ let threeWordsIndexes = [];
 let wordYouSaid = "";
 let isMenu = false;
 let audioCtx, analizer;
+let wasHiddenByHandler = false;
 const stripNumber = 32;
 let freqArray = new Uint8Array(stripNumber * 2);
+const exampleButton = document.querySelector(".example-button");
+const exampleCardImage = document.querySelector(".example-card-image");
+const examplePhrase = document.querySelector(".example-phrase");
+const examplePhraseTranslate = document.querySelector(
+  ".example-phrase-translate"
+);
+const phraseSpeaker = document.querySelector(".phrase-speaker");
+const sayAndDrawingContainer = document.querySelector(
+  ".say-and-drawing-container"
+);
+const sayAndDrawingImage = document.querySelector(".say-and-drawing-image");
+const sayAndDrawingText = document.querySelector(".say-and-drawing-text");
+const buttonDraw = document.querySelector(".say-and-drawing-draw");
+const sayAndDrawingMicrophone = document.querySelector(
+  ".say-and-drawing-microphone"
+);
+const artStyleSelector = document.querySelector("#art-style-selector");
+const buttonClose = document.querySelector(".button-close");
+const AImention = document.querySelector(".AI-mention");
+const AIphrase = document.querySelector(".AI-phrase");
+const errorInformation = document.querySelector(".error-information");
 const resultDigit1 = document.querySelector(".result-digit-1");
 const resultDigit2 = document.querySelector(".result-digit-2");
-
+const wordExampleCard = document.querySelector(".word-example-card");
 const audioPlace = document.querySelector(".audio-place");
 const audioInfo = document.querySelector(".audio-info");
 const theWord = document.querySelector(".the-word");
@@ -122,6 +166,7 @@ const line3 = document.querySelector(".line-3");
 const menuItem1 = document.querySelector(".menu-item-1");
 const menuItem2 = document.querySelector(".menu-item-2");
 const menuItem3 = document.querySelector(".menu-item-3");
+const menuItem4 = document.querySelector(".menu-item-4");
 const option1 = document.querySelector(".option-1");
 const option2 = document.querySelector(".option-2");
 const toggle = document.querySelector(".toggle");
@@ -133,6 +178,12 @@ const ear = document.querySelector(".ear");
 const translatePanel = document.querySelector(".translate-panel");
 const percentSign = document.querySelector(".percent-sign");
 const averageResultPlace = document.querySelector(".average-result");
+const progressLine = document.querySelector(".progress-line");
+const progressContainer = document.querySelector(".progress-container");
+const sayAndDrawingTimer = document.querySelector(".drawing-timer");
+const ruButton = document.querySelector(".lang-ru");
+const enButton = document.querySelector(".lang-en");
+let voiceLang = "en";
 let isPhrasePronouncing = false;
 let wordsArray = [];
 const audio = new Audio();
@@ -153,8 +204,11 @@ const vibrate = {
 let menu = {
   matching: true,
   pronouncing: false,
+  drawing: false,
 };
 const mySpeech = new Speech("en");
+const myWorker = new Worker("./worker.js");
+const timer = new Timer();
 class WordGame {
   constructor() {}
   processMenu() {
@@ -162,21 +216,31 @@ class WordGame {
     this.hideMenu();
     if (menu.matching) {
       initMatching();
-    } else {
-      if (menu.pronouncing) {
-        initPronouncing();
-      }
+    }
+    if (menu.pronouncing) {
+      initPronouncing();
+    }
+
+    if (menu.drawing) {
+      initDrawing();
     }
   }
   setMenuStyle() {
     if (menu.matching) {
       menuItem1.style.color = "#009900";
       menuItem2.style.color = "#000066";
+      menuItem4.style.color = "#000066";
     } else {
       if (menu.pronouncing) {
         menuItem2.style.color = "#009900";
         menuItem1.style.color = "#000066";
+        menuItem4.style.color = "#000066";
       }
+    }
+    if (menu.drawing) {
+      menuItem2.style.color = "#000066";
+      menuItem1.style.color = "#000066";
+      menuItem4.style.color = "#009900";
     }
   }
   getLevel() {
@@ -198,6 +262,7 @@ class WordGame {
       }
       if (menu.pronouncing) {
         if (lastLevel !== level) {
+          this.hideExampleCard();
           usedWordsForPronouncing = [];
         }
         this.defineWordForPronouncing();
@@ -290,7 +355,7 @@ class WordGame {
     scorePlace.style.opacity = opacity;
   }
   showInfo(html) {
-    this.showLoading(false);
+    this.showLoading(false, "showInfo");
     info.style.transform = "translateY(0%)";
     info.innerHTML = html;
     setTimeout(() => {
@@ -300,6 +365,26 @@ class WordGame {
   hideInfo() {
     info.style.transform = "translateY(-200%) scale(.3)";
   }
+  showErrorInformation(error = "Error!") {
+    errorInformation.style.visibility = "visible";
+    errorInformation.textContent = error + ". Tap to hide this!";
+    if (!showErrorInformationTimeout) {
+      showErrorInformationTimeout = setTimeout(() => {
+        this.hideErrorInformation();
+        showErrorInformationTimeout = undefined;
+      }, 30000);
+    } else {
+      clearTimeout(showErrorInformationTimeout);
+      showErrorInformationTimeout = undefined;
+      this.showErrorInformation(error);
+    }
+  }
+
+  hideErrorInformation() {
+    errorInformation.style.visibility = "hidden";
+    errorInformation.textContent = "";
+  }
+
   showMistakesPad() {
     mistakesPad.style.transform = "translateY(0%)";
     document.body.style.touchAction = "auto";
@@ -321,7 +406,40 @@ class WordGame {
     line1.style.transform = "rotate(0deg)";
     line3.style.transform = "rotate(0deg)";
   }
-
+  lockSelector() {
+    artStyleSelector.setAttribute("disabled", "disabled");
+  }
+  unlockSelector() {
+    artStyleSelector.removeAttribute("disabled");
+  }
+  showAIMention() {
+    AImention.style.opacity = 1;
+    AImention.style.cursor = "pointer";
+  }
+  inactiveAIMention() {
+    AImention.style.opacity = 0.3;
+    AImention.style.cursor = "auto";
+  }
+  activeAiMention() {
+    this.showAIMention();
+  }
+  hideAIMention() {
+    AImention.style.opacity = 0;
+  }
+  showAIPhrase() {
+    AIphrase.style.opacity = 1;
+    AIphrase.style.cursor = "pointer";
+  }
+  inactiveAIPhrase() {
+    AIphrase.style.opacity = 0.3;
+    AIphrase.style.cursor = "auto";
+  }
+  activeAIPhrase() {
+    this.showAIPhrase();
+  }
+  hideAIPhrase() {
+    AIphrase.style.opacity = 0;
+  }
   showGamepad() {
     gamepad.style.visibility = "visible";
     gamepad.style.opacity = "1";
@@ -462,6 +580,27 @@ class WordGame {
     levelContainer.style.visibility = "hidden";
     levelContainer.style.opacity = "0";
   }
+
+  showSayAndDrawContainer() {
+    sayAndDrawingContainer.style.transform = "scale(1)";
+    sayAndDrawingContainer.style.top = "0px";
+  }
+  hideSayAndDrawContainer() {
+    sayAndDrawingContainer.style.transform = "scale(.1)";
+    sayAndDrawingContainer.style.top = "-100%";
+  }
+
+  showButtonDraw() {
+    buttonDraw.style.opacity = 1;
+    buttonDraw.style.visibility = "visible";
+    buttonDraw.style.cursor = "pointer";
+  }
+  hideButtonDraw() {
+    buttonDraw.style.opacity = 0;
+    buttonDraw.style.visibility = "hidden";
+    buttonDraw.style.cursor = "auto";
+  }
+
   handleButtonStart() {
     buttonStart.addEventListener("pointerdown", (e) => {
       e.preventDefault();
@@ -478,7 +617,6 @@ class WordGame {
     });
   }
   setMicrophoneActive(value) {
-    console.log('setMicrophoneActive:', value)
     let opacity = value ? 0.7 : 0;
     let earOpacity = !value ? 0.7 : 0;
     let earVisibility = !value ? "visible" : "hidden";
@@ -676,7 +814,6 @@ class WordGame {
         mistakesContainer.appendChild(card);
       }
       this.showMistakesPad();
-     
     }
   }
 
@@ -691,7 +828,7 @@ class WordGame {
     return item.data;
   }
   loadWords() {
-    this.showLoading(true);
+    this.showLoading(true, "loadWords");
     if (lastLevel !== currentLevel) {
       this.loadData()
         .then((arr) => {
@@ -704,7 +841,7 @@ class WordGame {
     }
   }
   afterLoading() {
-    setTimeout(() => this.showLoading(false), 1000);
+    setTimeout(() => this.showLoading(false, "afterLoading"), 1000);
     this.showButtonStop();
     this.showGamepad();
     this.showClock();
@@ -714,16 +851,43 @@ class WordGame {
     this.defineRightWords();
     this.firstTimeShowWords();
   }
-  showLoading(visibility) {
+  showLoading(visibility, from = "unknown") {
+    if (visibility === isLoading) {
+      return;
+    }
+
+    console.log(from, "-", visibility);
+
     isLoading = visibility;
     let v = visibility ? "visible" : "hidden";
-    let anim = visibility ? " 1s linear rotate2 infinite" : "";
+    let anim1 = visibility ? " 1s linear rotate2 infinite" : "";
+    let anim2 = visibility ? " 4.4s linear rotate2 infinite" : "";
+    let anim3 = visibility ? " 8.1s linear rotate2 infinite" : "";
     let opacity = visibility ? 0.6 : 1;
+    let atr = visibility ? true : false;
+    // sayAndDrawingText.setAttribute('readonly', atr)
     loadingElement.style.visibility = v;
-    loadingElement.style.animation = anim;
-    innerCircle1.style.animation = anim;
-    innerCircle2.style.animation = anim;
+    loadingElement.style.animation = anim1;
+    innerCircle1.style.animation = anim2;
+    innerCircle2.style.animation = anim3;
     pronouncingContainer.style.opacity = opacity;
+
+    if (isLoading) {
+      timer.start(20).then(() => {
+        if (
+          confirm(
+            "Loading is taking too long time! Do you want to reload page?"
+          )
+        ) {
+          location.reload();
+        } else {
+          //this.showLoading(false);
+          this.showErrorInformation("Reload the page manually!");
+        }
+      });
+    } else {
+      timer.abort();
+    }
   }
   operateClock() {
     timeStart = Date.now();
@@ -734,11 +898,14 @@ class WordGame {
         clearInterval(interval);
         this.stopGame();
       }
-    }, 500);
+    }, 200);
   }
   operateEverySecond() {
     timeCurrent = Date.now();
     timeRemained = timeAll - (timeCurrent - timeStart);
+    if (timeRemained < 0) {
+      timeRemained = 0;
+    }
 
     if (timeRemained < 15000) {
       vibrate.timeIsOver();
@@ -746,7 +913,11 @@ class WordGame {
     if (timeRemained <= 1000) {
       playAudio(failedSound);
     }
-    clock.textContent = this.convertTime(timeRemained);
+
+    let convertedTime = this.convertTime(timeRemained);
+
+    clock.textContent = convertedTime;
+
     this.clockStyle(timeRemained);
   }
   clockStyle(time) {
@@ -773,13 +944,15 @@ class WordGame {
       min = Math.floor(sec / 60);
       sec = sec - min * 60;
     }
+    let rest = time - (min * 60000 + sec * 1000);
     if (min < 10) {
       min = "0" + min.toString();
     }
     if (sec < 10) {
       sec = "0" + sec.toString();
     }
-    return `${min}:${sec}`;
+    let result = rest > 500 ? `${min}:${sec}` : `${min} ${sec}`;
+    return result;
   }
   stopClock() {
     clearInterval(interval);
@@ -843,7 +1016,7 @@ class WordGame {
     emptyRightButtons = [];
   }
   firstTimeShowWords() {
-    this.showLoading(true);
+    this.showLoading(true, "firstTimeShowWords");
     for (let i = 0; i < wordsQuantity; i++) {
       let rusEl = document.querySelector(`.left-button-${i}`);
       let enEl = document.querySelector(`.right-button-${i}`);
@@ -855,7 +1028,7 @@ class WordGame {
         enEl.textContent = wordsArray[rightWords[`right${i}`]].word;
         rusEl.textContent = wordsArray[leftWords[`left${i}`]].wordTranslate;
         if (i === wordsQuantity - 1) {
-          this.showLoading(false);
+          this.showLoading(false, "firstTimeShowWords");
         }
       }, i * 200);
     }
@@ -1179,14 +1352,14 @@ class WordGame {
     let timeInterval = 75;
     let n = 0;
     let interval;
-    this.showLoading(true);
+    this.showLoading(true, "writeWord");
     this.showInstruments(false);
     transcript.textContent = "";
     speakerNext.style.opacity = 0;
     theWord.style.textAlign = isPhrasePronouncing ? "left" : "center";
     isPrinting = true;
     this.speakerListener().then(() => {
-      this.showLoading(false);
+      this.showLoading(false, "writeWord");
       interval = setInterval(() => {
         n++;
         theWord.innerHTML = `<span>${word.slice(
@@ -1197,6 +1370,7 @@ class WordGame {
         if (n >= symbolNumber) {
           this.showInstruments(true);
           clearInterval(interval);
+          setExampleButtonVisibility();
           isPrinting = false;
           theWord.innerHTML = `<span>${word}<span><span class='cursor-line'>|<span>`;
           transcript.textContent = transcriptForPronouncing;
@@ -1249,12 +1423,12 @@ class WordGame {
       let timeInterval = 75;
       let n = 0;
       let interval;
-      game.showLoading(true);
+      game.showLoading(true, "rewriteWord");
       transcript.textContent = "";
 
       isPrinting = true;
       game.speakerListener().then(() => {
-        game.showLoading(false);
+        game.showLoading(false, "rewriteWord");
         interval = setInterval(() => {
           n++;
           theWord.innerHTML = `<span>${word.slice(
@@ -1301,6 +1475,7 @@ class WordGame {
             })
             .catch((err) => {
               console.log("error occured:", err);
+              this.showErrorInformation(err);
               clearInterval(interval);
               return resolve();
             });
@@ -1344,24 +1519,26 @@ class WordGame {
             if (game.checkError(err)) {
               game.showInfo(`<p>Error happened: \r\n<span>${err}</span><p>`);
             }
+            game.showErrorInformation("Error happened: " + err);
           }
         })
         .finally(() => {
           game.setMicrophoneActive(true);
-          game.showLoading(false);
+          game.showLoading(false, "microphoneHandler");
           game.cancelMediaStream();
         });
       mySpeech
         .lookForSoundStart()
         .then((message) => {
           console.log(message);
-          game.showLoading(true);
+          game.showLoading(true, "microphoneHandler");
         })
         .catch((err) => {
           if (menu.pronouncing) {
             if (game.checkError(err)) {
               game.showInfo(`<p>Error happened: \r\n<span>${err}</span><p>`);
             }
+            this.showErrorInformation(err);
           }
           if (mediaRecorder) {
             mediaRecorder.stop();
@@ -1378,6 +1555,7 @@ class WordGame {
             if (game.checkError(err)) {
               game.showInfo(`<p>Error happened: \r\n<span>${err}</span><p>`);
             }
+            this.showErrorInformation(err);
           }
         });
     }
@@ -1398,18 +1576,19 @@ class WordGame {
   notRecognizeHandler() {
     console.log("notRecognizedHandler");
     game.showInfo(`<p>Not recognize! \r\n<span>Try again!</span><p>`);
+    game.showErrorInformation("Not recognize!Try again!");
     game.cancelMediaStream();
     isRecognizeFail = true;
     setTimeout(() => {
-    
-      game.microphoneHandler();
+      //game.microphoneHandler();
+      game.hideErrorInformation();
     }, 1500);
   }
 
   abortHandler() {
     console.log("abortHandler");
     game.showInfo(`<p>Your action: \r\n<span>STOP!</span><p>`);
-    
+    game.showErrorInformation("Your action: STOP!");
     game.cancelMediaStream();
   }
   processPronouncingResult(result) {
@@ -1484,6 +1663,9 @@ class WordGame {
       averageResultPlace.textContent = result;
       averageResultPlace.style.opacity = 1;
     }, 500);
+  }
+  hideAverageResult() {
+    averageResultPlace.style.opacity = 0;
   }
 
   setPronouncingResult(result = 0) {
@@ -1568,6 +1750,7 @@ class WordGame {
         mediaRecorder.addEventListener("stop", game.saveAudio);
       })
       .catch((err) => {
+        game.showErrorInformation(err);
         alert(err + "\r\n The page will be reloaded!");
         location.reload();
       });
@@ -1643,6 +1826,7 @@ class WordGame {
       game.hideInfo();
       game.eraseWord(wordForPronouncing).then(() => {
         //pronouncingWord.style.animationName = "go-forward";
+        game.hideExampleButton();
         setTimeout(() => {
           if (isPhrasePronouncing) {
             if (indexOfPhrases === undefined) {
@@ -1701,6 +1885,7 @@ class WordGame {
       stopAudio();
       game.hideInfo();
       game.eraseWord(wordForPronouncing).then(() => {
+        game.hideExampleButton();
         setTimeout(() => {
           if (isPhrasePronouncing) {
             if (indexOfPhrases === 0) {
@@ -1763,6 +1948,463 @@ class WordGame {
       ? +localStorage.getItem("averagePronouncingResult")
       : 0;
   }
+  getTheWordCoordinates() {
+    let left = theWord.getBoundingClientRect().left - 50;
+    let top = theWord.getBoundingClientRect().top - 50;
+    return { left, top };
+  }
+  showExampleButton() {
+    let left = this.getTheWordCoordinates().left;
+    let top = this.getTheWordCoordinates().top;
+    exampleButton.style.left = left + "px";
+    exampleButton.style.top = top + "px";
+    exampleButton.style.visibility = "visible";
+    exampleButton.style.opacity = 1;
+    exampleButton.style.animation = "button-flow infinite";
+    exampleButton.style.animationDuration = "2s";
+    exampleButton.addEventListener("pointerdown", this.exampleButtonHandler);
+  }
+  hideExampleButton() {
+    exampleButton.style.left = "-100px";
+    exampleButton.style.top = "-100px";
+    exampleButton.style.visibility = "hidden";
+    exampleButton.style.opacity = 0;
+    exampleButton.style.animation = "";
+    exampleButton.removeEventListener("pointerdown", this.exampleButtonHandler);
+  }
+
+  async exampleButtonHandler() {
+    game.removeSpeakerListener(lastAudioUrl);
+    game.showExampleCard();
+    game.hideExampleButton();
+    game.hideAIPhrase();
+    textExample = wordsArray?.[currentIndexOfWord].textExample;
+    wasHiddenByHandler = true;
+    if (lastIndexOfWord === currentIndexOfWord) {
+      AIphrase.textContent = "generate phrase by AI";
+      examplePhrase.innerHTML = textExample;
+      examplePhraseTranslate.innerHTML =
+        wordsArray?.[currentIndexOfWord].textExampleTranslate;
+      phraseSpeaker.style.visibility = "visible";
+      game.showAIPhrase();
+      isAbortedAIPhrase = true;
+      return;
+    } else {
+      lastIndexOfWord = currentIndexOfWord;
+      isAIPhrase = false;
+      isAbortedAIPhrase = false;
+      let imageEndpoint = wordsArray?.[currentIndexOfWord].image;
+      let audioEndpoint = wordsArray?.[currentIndexOfWord].audioExample;
+      let imageUrl = mainUrl + imageEndpoint;
+      myWorker.postMessage({ url: imageUrl });
+      game.showLoading(true);
+      game.drawProgress(0);
+      game.hideAIMention();
+      exampleCardImage.src = "";
+      let audioUrl = mainUrl + audioEndpoint;
+      examplePhrase.style.opacity = 0;
+      examplePhraseTranslate.style.opacity = 0;
+      exampleCardImage.style.opacity = 0;
+      phraseSpeaker.style.opacity = 0;
+
+      examplePhrase.innerHTML = textExample;
+      examplePhraseTranslate.innerHTML =
+        wordsArray?.[currentIndexOfWord].textExampleTranslate;
+      myWorker.onmessage = (e) => {
+        if (!(e.data instanceof Array)) {
+          exampleCardImage.src = URL.createObjectURL(e.data);
+          game.showAIMention();
+          game.showLoading(false);
+          let progress = 100;
+          game.drawProgress(progress);
+        } else {
+          let loaded = e.data[0];
+          let total = e.data[1];
+          let progress = +((loaded / total) * 100).toFixed(1);
+          game.drawProgress(progress);
+        }
+      };
+
+      setTimeout(() => {
+        examplePhrase.style.opacity = 1;
+        game.showAIPhrase();
+      }, 1200);
+      setTimeout(() => {
+        exampleCardImage.style.opacity = 1;
+      }, 800);
+      setTimeout(() => {
+        phraseSpeaker.style.opacity = 1;
+      }, 1600);
+      setTimeout(() => {
+        examplePhraseTranslate.style.opacity = 1;
+      }, 2000);
+
+      game.addSpeakerListener(audioUrl);
+      lastAudioUrl = audioUrl;
+    }
+  }
+  getAIImageHandler(e) {
+    if (!isGettingAIImage) {
+      e.stopPropagation();
+      game.showLoading(true);
+      game.inactiveAIMention();
+      isGettingAIImage = true;
+      getAIImage(textExample)
+        .then((img) => {
+          game.createNewImage(img);
+          game.activeAiMention();
+        })
+        .catch((err) => {
+          console.log(err);
+          game.showErrorInformation(err);
+        })
+        .finally(() => {
+          isGettingAIImage = false;
+        });
+    } else return;
+  }
+
+  createNewImage(img) {
+    exampleCardImage.src = `data:image/png;base64,${img}`;
+    game.showLoading(false);
+  }
+  generateAIPhrase(e) {
+    if (!isGettingAIPhrase) {
+      e.stopPropagation();
+      let currentWord = wordsArray?.[currentIndexOfWord].word;
+      let currentWordLength = currentWord.length;
+
+      let phrase = wordsArray?.[currentIndexOfWord].textExample;
+
+      if (!isAIPhrase) {
+        examplePhrase.innerHTML = phrase;
+        isAIPhrase = !isAIPhrase;
+        AIphrase.textContent = "generate phrase by AI";
+
+        phraseSpeaker.style.visibility = "visible";
+        examplePhraseTranslate.innerHTML =
+          wordsArray?.[currentIndexOfWord].textExampleTranslate;
+        return;
+      }
+      game.showLoading(true);
+      game.inactiveAIPhrase();
+      isGettingAIPhrase = true;
+      getAIExample(phrase)
+        .then((result) => {
+          if (!isAbortedAIPhrase) {
+            examplePhraseTranslate.textContent = "";
+            // isAIPhrase = !isAIPhrase;
+            let currentIndex = result.indexOf(currentWord);
+            console.log("result:", result);
+            console.log("current word:", currentWord);
+            console.log("current index:", currentIndex);
+
+            phraseSpeaker.style.visibility = "hidden";
+            getAIExample(result, {direction:"ENtoRU"})
+              .then((response) => {
+                game.showLoading(false);
+                examplePhraseTranslate.textContent = response;
+                game.activeAIPhrase();
+                AIphrase.textContent = "show origin phrase";
+              })
+              .catch((err) => {
+                console.log(err);
+                game.showLoading(false);
+                game.activeAIPhrase();
+                game.handleAIPhraseError();
+              })
+              .finally(() => {
+                isGettingAIPhrase = false;
+              });
+            let outputPhrase =
+              currentIndex !== -1
+                ? `${result.slice(
+                    0,
+                    currentIndex
+                  )}<b> ${currentWord}</b>${result.slice(
+                    currentIndex + currentWordLength
+                  )}`
+                : result;
+            isAIPhrase = !isAIPhrase;
+            examplePhrase.innerHTML = outputPhrase;
+          } else {
+            game.showLoading(false);
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+          game.showLoading(false);
+          game.activeAIPhrase();
+          game.handleAIPhraseError();
+          isGettingAIPhrase = false;
+        });
+    } else return;
+  }
+  handleAIPhraseError() {
+    AIphrase.textContent = "Error! Try again!";
+    AIphrase.style.color = "#990000";
+    setTimeout(() => {
+      AIphrase.textContent = "generate phrase by AI";
+      AIphrase.style.color = "#009900";
+    }, 2000);
+  }
+  drawProgress(progress) {
+    console.log("draw progress:", progress);
+    if (progress === 0) {
+      progressContainer.style.visibility = "visible";
+    }
+    setTimeout(() => {
+      progressLine.style.width = `${(200 * progress) / 100}px`;
+    }, progress * 10);
+    if (progress > 99) {
+      setTimeout(() => (progressContainer.style.visibility = "hidden"), 1200);
+    }
+  }
+  showExampleCard() {
+    wordExampleCard.style.transform = "translateY(0%) scale(1)";
+    buttonClose.addEventListener("pointerdown", this.hideExampleCard);
+    wordExampleCard.style.opacity = 1;
+    this.hideMenu();
+    this.hideInfo();
+  }
+  hideExampleCard() {
+    wordExampleCard.style.transform = "translateY(-200%) scale(0.1)";
+    wordExampleCard.style.opacity = 0;
+    buttonClose.removeEventListener("pointerdown", this.hideExampleCard);
+    if (wasHiddenByHandler) {
+      game.showExampleButton();
+      wasHiddenByHandler = false;
+    }
+  }
+  addSpeakerListener(src) {
+    phraseSpeaker.addEventListener("pointerdown", (e) => {
+      playAudio(src);
+      e.stopPropagation();
+    });
+  }
+  removeSpeakerListener(src) {
+    phraseSpeaker.removeEventListener("pointerdown", (e) => {
+      playAudio(src);
+      e.stopPropagation();
+    });
+  }
+  sayAndDrawingMicrophoneHandler() {
+    isSayAndDrawingError = false;
+    game.lockSelector();
+    sayAndDrawingTimer.textContent = "";
+    if (!isSaing) {
+      let recognizer = new Speech(voiceLang);
+      sayAndDrawingMicrophone.style.opacity = 0.1;
+      isSaing = true;
+      game.showLoading(true);
+      game.hideButtonDraw();
+      game.eraseSayAndDrawingText().then(() => {
+        recognizer
+          .speechRecognition()
+          .then((result) => {
+            game.showButtonDraw();
+            sayAndDrawingText.style.color = "#0d0";
+            game.printSayAndDrawingText(result.phrase);
+            game.sayAndDrawingDrawImage(result.phrase);
+          })
+          .catch((err) => {
+            console.log(err);
+            sayAndDrawingText.style.color = "#d00";
+            game.printSayAndDrawingText("Error! Try again.");
+            isSayAndDrawingError = true;
+
+            setTimeout(() => {
+              game.eraseSayAndDrawingText();
+            }, 4000);
+            game.sayAndDrawingDrawImage();
+          })
+          .finally(() => {
+            game.unlockSelector();
+          });
+      });
+    }
+  }
+
+  async sayAndDrawingDrawImage(txt = "") {
+    sayAndDrawingTimer.textContent = "";
+    isAbortedDrawImage = false;
+    if (txt === "") {
+      sayAndDrawingImage.src = "";
+      this.showLoading(false);
+      isSaing = false;
+      sayAndDrawingMicrophone.style.opacity = 0.5;
+    } else {
+      game.lockSelector();
+      if (voiceLang === "ru") {
+        txt = await getAIExample(txt,{direction:'RUtoEN'});
+      }
+      txt = txt + ", " + artStyle;
+      console.log('txt: ', txt)
+      this.hideButtonDraw();
+      let drawingTimer = new Timer();
+      let interval = setInterval(() => {
+        sayAndDrawingTimer.textContent = this.transformTime(
+          drawingTimer.getCurrentSecond()
+        );
+      }, 200);
+      drawingTimer.start(10).then(() => {
+        let prev = sayAndDrawingText.value;
+        drawingTimer.abort();
+        clearInterval(interval);
+        sayAndDrawingTimer.textContent = "";
+        this.eraseSayAndDrawingText().then(() => {
+          sayAndDrawingText.style.color = "#d00";
+          this.printSayAndDrawingText("It took too long time! Try again!");
+          isAbortedDrawImage = true;
+          setTimeout(() => {
+            this.eraseSayAndDrawingText().then(() => {
+              sayAndDrawingText.style.color = "#0d0";
+
+              this.printSayAndDrawingText(prev).then(() => {
+                game.showLoading(false);
+                isSaing = false;
+                game.unlockSelector();
+                sayAndDrawingMicrophone.style.opacity = 0.5;
+                if (sayAndDrawingText.value.trim().length > 2) {
+                  game.showButtonDraw();
+                }
+              });
+            });
+          }, 4000);
+        });
+      });
+
+      getAIImage(txt).then((img) => {
+        game.unlockSelector();
+        if (!isAbortedDrawImage) {
+          drawingTimer.abort();
+          clearInterval(interval);
+
+          sayAndDrawingImage.src = `data:image/png;base64,${img}`;
+          sayAndDrawingImage.style.animation = "appear-animation";
+          sayAndDrawingImage.style.animationDuration = "2s";
+          setTimeout(() => {
+            sayAndDrawingImage.style.animation = "";
+          }, 2000);
+        }
+        game.showLoading(false);
+        isSaing = false;
+        sayAndDrawingMicrophone.style.opacity = 0.5;
+        if (sayAndDrawingText.value.trim().length > 2) {
+          game.showButtonDraw();
+        }
+      });
+    }
+  }
+
+  transformTime(time) {
+    time = Number(time);
+    let minutes = 0;
+    let seconds = Math.floor(time);
+    let mseconds = ((time - seconds) * 1000).toFixed(0);
+    if (mseconds.length === 2) {
+      mseconds += "0";
+    }
+    if (mseconds.length === 1) {
+      mseconds += "00";
+    }
+    if (seconds > 59) {
+      minutes = Math.floor(seconds / 60);
+      seconds = seconds - minutes * 60;
+    }
+    if (minutes < 10) {
+      minutes = "0" + minutes.toString();
+    }
+    if (seconds < 10) {
+      seconds = "0" + seconds.toString();
+    }
+    return `${minutes}:${seconds}.${mseconds}`;
+  }
+  printSayAndDrawingText(word) {
+    return new Promise((resolve) => {
+      let symbolNumber = word.length;
+      let timeInterval = 75;
+      let n = 0;
+      let interval;
+      isPrinting = true;
+      interval = setInterval(() => {
+        n++;
+        sayAndDrawingText.value = `${word.slice(0, n)}`;
+        sayAndDrawingText.blur();
+        if (n >= symbolNumber) {
+          clearInterval(interval);
+          isPrinting = false;
+
+          sayAndDrawingText.value = `${word}`;
+          sayAndDrawingText.blur();
+          return resolve();
+        }
+      }, timeInterval);
+    });
+  }
+
+  eraseSayAndDrawingText() {
+    let word = sayAndDrawingText.value.slice(0, -1);
+
+    return new Promise((resolve, reject) => {
+      if (word === "") {
+        return resolve();
+      }
+      let symbolNumber = word.length;
+      let timeInterval = 30;
+      let n = symbolNumber;
+      let interval;
+      isPrinting = true;
+
+      interval = setInterval(() => {
+        n--;
+        sayAndDrawingText.blur();
+        sayAndDrawingText.value = `${word.slice(0, n)}`;
+
+        if (n === 0) {
+          clearInterval(interval);
+          isPrinting = false;
+          sayAndDrawingText.blur();
+          sayAndDrawingText.style.color = "#0d0";
+          return resolve();
+        }
+      }, timeInterval);
+    });
+  }
+
+  sayAndDrawingTextChangeHandler(e) {
+    let value = e.target.value;
+    sayAndDrawingText.style.color = "#0d0 !important";
+  }
+  sayAndDrawingTextInputHandler(e) {
+    isSayAndDrawingError = false;
+    let value = e ? e.target.value : sayAndDrawingText.value;
+    sayAndDrawingText.style.color = "#0d0 !important";
+    if (value.trim().length > 2 && !isSaing) {
+      game.showButtonDraw();
+    } else {
+      game.hideButtonDraw();
+    }
+  }
+
+  buttonDrawHandler() {
+    game.hideButtonDraw();
+    let text = sayAndDrawingText.value;
+    game.sayAndDrawingDrawImage(text);
+    game.showLoading(true);
+    isSaing = true;
+    sayAndDrawingMicrophone.style.opacity = 0.1;
+  }
+
+  artStyleSelectorHandler() {
+    artStyle = artStyleSelector.value;
+    let txt = sayAndDrawingText.value;
+    if (txt.length > 2 && !isSayAndDrawingError && !isSaing) {
+      isSaing = true;
+      game.showLoading(true);
+      game.sayAndDrawingDrawImage(txt);
+    }
+  }
 }
 const game = new WordGame();
 info.addEventListener("pointerdown", () => {
@@ -1796,32 +2438,35 @@ function init() {
   menuButton.addEventListener("pointerdown", handleMenu);
   toggle.addEventListener("pointerdown", handleToggle);
   menuPanel.addEventListener("pointerdown", () => game.hideMenu());
+  errorInformation.addEventListener("pointerdown", game.hideErrorInformation);
   mainContainer.addEventListener("pointerdown", () => {
     game.hideMenu();
     game.hideTranslatePanel();
+    game.hideExampleCard();
   });
   menuItem1.addEventListener("pointerdown", (e) => {
     e.stopPropagation();
-    if (!menu.matching) {
-      menu.matching = true;
-      menu.pronouncing = false;
-      game.processMenu();
-    } else {
-      game.hideMenu();
-    }
+    menu.matching = true;
+    menu.pronouncing = false;
+    menu.drawing = false;
+    game.processMenu();
   });
   menuItem2.addEventListener("pointerdown", (e) => {
     e.stopPropagation();
-    if (!menu.pronouncing) {
-      menu.matching = false;
-      menu.pronouncing = true;
-      game.processMenu();
-    } else {
-      game.hideMenu();
-    }
+    menu.matching = false;
+    menu.pronouncing = true;
+    menu.drawing = false;
+    game.processMenu();
+  });
+  menuItem4.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    menu.matching = false;
+    menu.pronouncing = false;
+    menu.drawing = true;
+    game.processMenu();
   });
   menuItem3.addEventListener("pointerdown", (e) => {
-    window.location.assign(ageByPhotoUrl);
+    window.open(ageByPhotoUrl, "_blank");
   });
   game.getLevel();
   game.getMaxLevel();
@@ -1832,6 +2477,11 @@ function init() {
   game.handleButtonStart();
   game.handleButtonStop();
   game.processMenu();
+  deviceOrientationListener();
+  deviceMotionListener();
+  window.addEventListener("offline", (event) => {
+    game.showErrorInformation("The network connection has been lost.");
+  });
 }
 
 async function initMatching() {
@@ -1844,8 +2494,10 @@ async function initMatching() {
   if (mySpeech) {
     mySpeech.stopRecognition();
   }
-  game.showAverageResult("");
-  game.showLoading(false);
+  voiceLang = "en";
+  game.hideSayAndDrawContainer();
+  game.hideAverageResult();
+  game.showLoading(false, "initMatching");
   game.cancelMediaStream();
   game.resetVisualisation();
   game.showButtonStart();
@@ -1853,19 +2505,18 @@ async function initMatching() {
   wordsArray = [...arr];
   game.hideExamples();
   game.showExamples();
+  game.hideExampleCard();
+  game.hideExampleButton();
   game.hidePronouncing();
   game.hideLeftArrow();
   game.hideRightArrow();
   game.hideTranslatePanel();
+  game.showLevelsContainer();
+
   stopAudio();
-  ear.removeEventListener("pointerdown", abortMicrophoneListener);
-  microphone.removeEventListener("pointerdown", abortMicrophoneListener);
+
   exampleContainer.addEventListener("pointerdown", listenExamples);
-  microphone.removeEventListener("pointerdown", game.microphoneHandler);
-  rightArrow.removeEventListener("pointerdown", game.rightArrowHandler);
-  leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
-  translatePanel.removeEventListener("pointerdown", game.hideTranslatePanel);
-  speakerNext.removeEventListener("pointerdown", game.rewriteWord);
+  removeListeners();
 
   if (theWord) {
     theWord.removeEventListener("pointerdown", translateButtonListener);
@@ -1873,16 +2524,49 @@ async function initMatching() {
   leftArrow.style.visibility = "hidden";
   rightArrow.style.visibility = "hidden";
 }
+function removeListeners() {
+  ear.removeEventListener("pointerdown", abortMicrophoneListener);
+  microphone.removeEventListener("pointerdown", game.microphoneHandler);
+  rightArrow.removeEventListener("pointerdown", game.rightArrowHandler);
+  leftArrow.removeEventListener("pointerdown", game.leftArrowHandler);
+  translatePanel.removeEventListener("pointerdown", game.hideTranslatePanel);
+  speakerNext.removeEventListener("pointerdown", game.rewriteWord);
+  AIphrase.removeEventListener("pointerdown", game.generateAIPhrase);
+  AImention.removeEventListener("pointerdown", game.getAIImageHandler);
+  sayAndDrawingMicrophone.removeEventListener(
+    "pointerdown",
+    game.sayAndDrawingMicrophoneHandler
+  );
+  sayAndDrawingText.removeEventListener(
+    "change",
+    game.sayAndDrawingTextChangeHandler
+  );
+  sayAndDrawingText.removeEventListener(
+    "change",
+    game.sayAndDrawingTextInputHandler
+  );
+  ruButton.removeEventListener("pointerdown", changeVoiceLanguage);
+  enButton.removeEventListener("pointerdown", changeVoiceLanguage);
+  // window.removeEventListener("deviceorientation", handleOrientationEvent, true);
+}
+
 function initPronouncing() {
   if (mySpeech) {
     mySpeech.stopRecognition();
   }
+  voiceLang = "en";
   audioCtx = undefined;
   mistakes = [];
+  stripsArray = [];
   listenSwype();
   isRecognizeFail = false;
+  removeListeners();
+  game.hideSayAndDrawContainer();
+  game.resetVisualisation();
+  game.hideExampleCard();
+  game.hideExampleButton();
   game.showAverageResult(averagePronouncingResult);
-  game.showLoading(false);
+  game.showLoading(false, "initPronouncing");
   game.hideInfo();
   game.hideClock();
   game.stopClock();
@@ -1899,7 +2583,8 @@ function initPronouncing() {
   game.setToggleStyle();
   game.showResult();
   ear.addEventListener("pointerdown", abortMicrophoneListener);
-  // microphone.addEventListener("pointerdown", abortMicrophoneListener);
+  AIphrase.addEventListener("pointerdown", game.generateAIPhrase);
+  AImention.addEventListener("pointerdown", game.getAIImageHandler);
   exampleContainer.removeEventListener("pointerdown", listenExamples);
   microphone.addEventListener("pointerdown", game.microphoneHandler);
   rightArrow.addEventListener("pointerdown", game.rightArrowHandler);
@@ -1914,6 +2599,69 @@ function initPronouncing() {
   game.setMicrophoneActive(true);
   game.createVisualisation();
   // game.listenMicrophone();
+}
+
+function initDrawing() {
+  if (mySpeech) {
+    mySpeech.stopRecognition();
+  }
+  stopAudio();
+  audioCtx = undefined;
+  mistakes = [];
+  removeListeners();
+  loadDrawingData();
+  game.hideExampleCard();
+  game.hideExampleButton();
+  game.showLoading(false, "initDrawing");
+  game.hideInfo();
+  game.hideClock();
+  game.stopClock();
+  game.hideExamples();
+  game.hideMistakesPad();
+  game.hideButtonStart();
+  game.hideButtonStop();
+  game.hideGamePad();
+  game.showScore(false);
+  game.hidePronouncing();
+  game.hideLeftArrow();
+  game.hideRightArrow();
+  game.hideLevelsContainer();
+  game.hideAverageResult();
+  game.showSayAndDrawContainer();
+  sayAndDrawingMicrophone.addEventListener(
+    "pointerdown",
+    game.sayAndDrawingMicrophoneHandler
+  );
+  sayAndDrawingText.addEventListener(
+    "change",
+    game.sayAndDrawingTextChangeHandler
+  );
+  sayAndDrawingText.addEventListener(
+    "input",
+    game.sayAndDrawingTextInputHandler
+  );
+  buttonDraw.addEventListener("pointerdown", game.buttonDrawHandler);
+  artStyleSelector.addEventListener("input", game.artStyleSelectorHandler);
+  ruButton.addEventListener("pointerdown", changeVoiceLanguage);
+  enButton.addEventListener("pointerdown", changeVoiceLanguage);
+}
+
+function changeVoiceLanguage(e) {
+  let button = e.target;
+  let lang = button.classList.contains("lang-ru") ? "ru" : "en";
+  if (voiceLang === lang) {
+    return;
+  } else {
+    voiceLang = voiceLang === "en" ? "ru" : "en";
+    toggleButtonClasses();
+  }
+}
+
+function toggleButtonClasses() {
+  enButton.classList.toggle("active-button");
+  enButton.classList.toggle("passive-button");
+  ruButton.classList.toggle("active-button");
+  ruButton.classList.toggle("passive-button");
 }
 
 function translateButtonListener(event) {
@@ -1949,6 +2697,7 @@ function playAudio(src) {
   audioPromise = audio.play();
   audioPromise.catch((err) => {
     console.log(err);
+    game.showErrorInformation(err);
     speakerNext.style.opacity = 0.1;
     audioErrors++;
     if (audioErrors < 2) {
@@ -2034,39 +2783,77 @@ function swypeMovingListener(e) {
   let width = pronouncingContainer.clientWidth;
   let deltaX = swypeStartX - currentX;
   console.log(swypeStartX, currentX, deltaX, width);
-  if (deltaX > 0) {
-    pronouncingContainer.style.backgroundImage = `linear-gradient(260deg, rgba(0, 255, 0, ${
-      deltaX / (width * 2)
-    }), rgba(255, 0, 0, 0) ${
-      (deltaX / (width * 3)) * 100
-    }%), linear-gradient(280deg, rgba(0, 255, 0, ${
-      deltaX / (width * 2)
-    }), rgba(255, 0, 0, 0) ${
-      (deltaX / (width * 3)) * 100
-    }%), linear-gradient(230deg, rgba(140, 255, 255, ${
-      deltaX / width
-    }), rgba(140, 255, 255, 0)  ${
-      (deltaX / (width * 3)) * 100
-    }%),  linear-gradient(320deg, rgba(140, 255, 255, ${
-      deltaX / width
-    }), rgba(140, 255, 255, 0)  ${(deltaX / (width * 3)) * 100}%)`;
-  }
-  if (deltaX < 0) {
-    pronouncingContainer.style.backgroundImage = `linear-gradient(80deg, rgba(0, 255, 0, ${
-      -deltaX / (width * 2)
-    }), rgba(255, 0, 0, 0) ${
-      (-deltaX / (width * 3)) * 100
-    }%), linear-gradient(100deg, rgba(0, 255, 0, ${
-      -deltaX / (width * 2)
-    }), rgba(255, 0, 0, 0) ${
-      (-deltaX / (width * 3)) * 100
-    }%), linear-gradient(50deg, rgba(140, 255, 255, ${
-      -deltaX / width
-    }), rgba(140, 255, 255, 0)  ${
-      (-deltaX / (width * 3)) * 100
-    }%),  linear-gradient(130deg, rgba(140, 255, 255, ${
-      -deltaX / width
-    }), rgba(140, 255, 255, 0)  ${(-deltaX / (width * 3)) * 100}%)`;
+  if (!isPrinting && isMicrophoneAvailable) {
+    if (deltaX > 0) {
+      pronouncingContainer.style.backgroundImage = `linear-gradient(260deg, rgba(0, 255, 0, ${
+        deltaX / (width * 2)
+      }), rgba(255, 0, 0, 0) ${
+        (deltaX / (width * 3)) * 100
+      }%), linear-gradient(280deg, rgba(0, 255, 0, ${
+        deltaX / (width * 2)
+      }), rgba(255, 0, 0, 0) ${
+        (deltaX / (width * 3)) * 100
+      }%), linear-gradient(230deg, rgba(140, 255, 255, ${
+        deltaX / width
+      }), rgba(140, 255, 255, 0)  ${
+        (deltaX / (width * 3)) * 100
+      }%),  linear-gradient(320deg, rgba(140, 255, 255, ${
+        deltaX / width
+      }), rgba(140, 255, 255, 0)  ${(deltaX / (width * 3)) * 100}%)`;
+    }
+    if (deltaX < 0) {
+      pronouncingContainer.style.backgroundImage = `linear-gradient(80deg, rgba(0, 255, 0, ${
+        -deltaX / (width * 2)
+      }), rgba(255, 0, 0, 0) ${
+        (-deltaX / (width * 3)) * 100
+      }%), linear-gradient(100deg, rgba(0, 255, 0, ${
+        -deltaX / (width * 2)
+      }), rgba(255, 0, 0, 0) ${
+        (-deltaX / (width * 3)) * 100
+      }%), linear-gradient(50deg, rgba(140, 255, 255, ${
+        -deltaX / width
+      }), rgba(140, 255, 255, 0)  ${
+        (-deltaX / (width * 3)) * 100
+      }%),  linear-gradient(130deg, rgba(140, 255, 255, ${
+        -deltaX / width
+      }), rgba(140, 255, 255, 0)  ${(-deltaX / (width * 3)) * 100}%)`;
+    }
+  } else {
+    //vibrate.wrong();
+    if (deltaX > 0) {
+      pronouncingContainer.style.backgroundImage = `linear-gradient(260deg, rgba(255, 0, 0, ${
+        deltaX / (width * 2)
+      }), rgba(0, 0, 0, 0) ${
+        (deltaX / (width * 3)) * 100
+      }%), linear-gradient(280deg, rgba(255, 0, 0, ${
+        deltaX / (width * 2)
+      }), rgba(0, 0, 0, 0) ${
+        (deltaX / (width * 3)) * 100
+      }%), linear-gradient(230deg, rgba(140, 255, 255, ${
+        deltaX / width
+      }), rgba(140, 255, 255, 0)  ${
+        (deltaX / (width * 3)) * 100
+      }%),  linear-gradient(320deg, rgba(140, 255, 255, ${
+        deltaX / width
+      }), rgba(140, 255, 255, 0)  ${(deltaX / (width * 3)) * 100}%)`;
+    }
+    if (deltaX < 0) {
+      pronouncingContainer.style.backgroundImage = `linear-gradient(80deg, rgba(255, 0, 0, ${
+        -deltaX / (width * 2)
+      }), rgba(255, 0, 0, 0) ${
+        (-deltaX / (width * 3)) * 100
+      }%), linear-gradient(100deg, rgba(255, 0, 0, ${
+        -deltaX / (width * 2)
+      }), rgba(255, 0, 0, 0) ${
+        (-deltaX / (width * 3)) * 100
+      }%), linear-gradient(50deg, rgba(140, 255, 255, ${
+        -deltaX / width
+      }), rgba(140, 255, 255, 0)  ${
+        (-deltaX / (width * 3)) * 100
+      }%),  linear-gradient(130deg, rgba(140, 255, 255, ${
+        -deltaX / width
+      }), rgba(140, 255, 255, 0)  ${(-deltaX / (width * 3)) * 100}%)`;
+    }
   }
 }
 
@@ -2098,10 +2885,185 @@ function handleToggle() {
     game.rightArrowHandler();
   }
 }
+function setExampleButtonVisibility() {
+  if (!isPhrasePronouncing && menu.pronouncing) {
+    game.showExampleButton();
+  } else {
+    game.hideExampleButton();
+  }
+}
+
+function getAIImage(txt) {
+  let text = txt.replace("<b>", "").replace("</b>", "");
+  return new Promise((resolve, reject) => {
+    const raw = JSON.stringify({
+      user_app_id: {
+        user_id: "borisdayma",
+        app_id: "generative-art",
+      },
+      inputs: [
+        {
+          data: {
+            text: {
+              raw: text,
+            },
+          },
+        },
+      ],
+    });
+
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: "Key " + "d5c7c4eebbba4c19a6e475d9d98d497e",
+      },
+      body: raw,
+    };
+
+    fetch(
+      `https://api.clarifai.com/v2/models/general-image-generator-dalle-mini/versions/86c0ae39083e45a8bf96fde91f4e1952/outputs`,
+      requestOptions
+    )
+      .then((response) => response.json())
+      .then((result) => {
+        console.log(result);
+        let img = result?.outputs[0]?.data?.image?.base64;
+        if (img !== undefined) {
+          return resolve(img);
+        } else {
+          return reject("no response");
+        }
+      })
+      .catch((error) => {
+        console.log("error ai image", error);
+        game.showErrorInformation(error);
+        game.showLoading(false);
+        game.activeAiMention();
+        isGettingAIImage = false;
+        return reject(error);
+      });
+  });
+}
+function getAIExample(txt, option) {
+  let command =
+    option === undefined
+      ? "перефразируй этот текст: "
+      : option.direction === "ENtoRU"
+      ? "translate to Russian this text: "
+      : option.direction === "RUtoEN"
+      ? "translate to English this text: "
+      : "";
+  let text = txt.replace("<b>", "").replace("</b>", "");
+  return new Promise((resolve, reject) => {
+    const raw = JSON.stringify({
+      user_app_id: {
+        user_id: "clarifai",
+        app_id: "LLM-auto-annotation-demo",
+      },
+      inputs: [
+        {
+          data: {
+            text: {
+              raw: command + text,
+            },
+          },
+        },
+      ],
+    });
+
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: "Key " + "d5c7c4eebbba4c19a6e475d9d98d497e",
+      },
+      body: raw,
+    };
+
+    // NOTE: MODEL_VERSION_ID is optional, you can also call prediction with the MODEL_ID only
+    // https://api.clarifai.com/v2/models/{YOUR_MODEL_ID}/outputs
+    // this will default to the latest version_id
+
+    fetch(
+      `https://api.clarifai.com/v2/models/chatgpt-3_5/versions/7ba93ee621c941268f0d96d86c4c4c98/outputs`,
+      requestOptions
+    )
+      .then((response) => response.json())
+      .then((result) => {
+        let txt = result.outputs[0].data.text.raw;
+        return resolve(txt);
+      })
+      .catch((error) => {
+        console.log("error ai phrase", error);
+        game.showErrorInformation(error + " Try again.");
+        isGettingAIPhrase = false;
+        game.activeAIPhrase();
+        return reject(error);
+      });
+  });
+}
+
 function beforeUnloadListener(event) {
   // event.preventDefault();
-  console.log("see you later!");
+  console.log("your data saved!");
+  saveDrawingData();
+}
+function saveDrawingData() {
+  localStorage.setItem("drawingPrompt", sayAndDrawingText.value);
+  localStorage.setItem("artStyle", artStyle);
+}
+function loadDrawingData() {
+  if (localStorage.getItem("drawingPrompt")) {
+    sayAndDrawingText.style.color = "#0d0 !important";
+    sayAndDrawingText.value = localStorage.getItem("drawingPrompt");
+  }
+  if (localStorage.getItem("artStyle")) {
+    artStyle = localStorage.getItem("artStyle");
+    document.querySelectorAll("option").forEach((item) => {
+      if (item.value === artStyle) {
+        item.setAttribute("selected", "selected");
+      }
+    });
+  }
+  game.sayAndDrawingTextInputHandler();
+}
+function deviceOrientationListener() {
+  if (window.DeviceOrientationEvent) {
+    console.log("DeviceOrientation present!");
+    window.addEventListener("deviceorientation", handleOrientationEvent, true);
+  } else {
+    console.log("DeviceOrientation is absent!");
+  }
+}
+function deviceMotionListener() {
+  window.addEventListener("devicemotion", handleMotionEvent, true);
+}
+
+function handleMotionEvent(event) {
+  const x = event.accelerationIncludingGravity.x;
+  const y = event.accelerationIncludingGravity.y;
+  const z = event.accelerationIncludingGravity.z;
+  maxAccelerationX = maxAccelerationX < x ? x : maxAccelerationX;
+  maxAccelerationY = maxAccelerationY < y ? y : maxAccelerationY;
+  maxAccelerationZ = maxAccelerationZ < z ? z : maxAccelerationZ;
+  if (maxAccelerationX !== 0) {
+    //game.showErrorInformation(`x: ${maxAccelerationX} y: ${maxAccelerationY} z: ${maxAccelerationZ}`)
+  }
+}
+function handleOrientationEvent(event) {
+  const rotateDegrees = event.alpha; // alpha: rotation around z-axis
+  const leftToRight = event.gamma; // gamma: left to right
+  const frontToBack = event.beta; // beta: front back motion
+
+  if (menu.matching) {
+    gamepad.style.transform = `translateX(${-leftToRight / 2}px)`;
+  }
+  if (menu.pronouncing) {
+    pronouncingContainer.style.transform = `translateX(${-leftToRight / 5}px)`;
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
 addEventListener("beforeunload", beforeUnloadListener, { capture: true });
+//document.body.addEventListener("pointerdown", (e)=>{console.log(e.target.className)})

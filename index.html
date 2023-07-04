@@ -65,10 +65,9 @@
         <div class="word-container">
           <div class="left-arrow"></div>
           <div class="pronouncing-word">
-            <p class='the-word'></p>
-            <span class='transcript'></span>
-            <div class="speaker-next" >
-            </div>
+            <p class="the-word"></p>
+            <span class="transcript"></span>
+            <div class="speaker-next"></div>
           </div>
           <div class="right-arrow"></div>
         </div>
@@ -77,7 +76,7 @@
           <div class="you-say"></div>
         </div>
         <div class="microphone"></div>
-        
+
         <div class="pronouncing-result">
           <div class="result-title">Your result:</div>
           <div class="result-digit-1">
@@ -135,13 +134,106 @@
       <div class="menu-container">
         <div class="menu-item menu-item-1">words matching</div>
         <div class="menu-item menu-item-2">words pronouncing</div>
-        <div class="menu-item menu-item-3">Try another app from this author: Age by photo</div>
+        <div class="menu-item menu-item-4">
+          say and draw with AI
+        </div>
+        <div class="menu-item menu-item-3">
+          try another app by this author: age by photo
+        </div>
       </div>
-     
     </div>
     <div class="translate-panel"></div>
     <div class="ear"></div>
+    <div class="example-button">example</div>
+    <div class="word-example-card">
+      <div class="button-close">close</div>
+      <img src="" alt="Image" class="example-card-image" />
+      <div class="progress-container"><div class="progress-line"></div></div>
+      <p class="AI-mention">create image with AI</p>
+
+      <div class="phrase-1-container">
+        <p class="example-phrase"></p>
+        <div class="phrase-speaker"></div>
+      </div>
+      <div class="AI-phrase">generate phrase by AI</div>
+      <div class="translate-container">
+        <p class="example-phrase-translate"></p>
+      </div>
+    </div>
+<div class="error-information">error:</div>
+<div class="say-and-drawing-container">
+  <div class="drawing-timer"></div>
+  <div class="select-block">
+  <label for="art-style-selector">choose art style</label>
+  <select name="art-style-selector" id="art-style-selector">
+    <option value="Style of children's book illustration" selected>Children's book</option>
+    <option value="Contemporary Art Illustrations">Contemporary Art</option>
+    <option value="Illustrations in the style of fantasy mythology">Fantasy mythology</option>
+    <option value="Poster design style of popular science films">Poster design</option>
+    <option value="Style of drawing cartoon portraits">Cartoon portraits</option>
+    <option value="Comic Book Style">Comic Book</option>
+    <option value="Cubism">Cubism</option>
+    <option value="Vector Graphics">Vector Graphics</option>
+    <option value="Graphic design style for websites">Style for websites</option>
+    <option value="Fashion illustration style">Fashion style</option>
+    <option value="Space Fiction Illustrations">Space Fiction</option>
+    <option value="cyberpunk graphics illustrations">Cyberpunk graphics</option>
+    <option value="Painting Techniques on Glass Bottles">Glass Bottles</option>
+    <option value="Manga style of drawing comics">Manga style</option>
+    <option value="Polymer Clay Molding Technique">Polymer Clay Molding Technique</option>
+    <option value="Paper weaving technique">Paper weaving technique</option>
+    <option value="Abstract Expressionist Style">Abstract Expressionism</option>
+    <option value="Style of drawing architectural models">Drawing architectural models</option>
+    <option value="Surrealist Poetry Illustrations">Surrealist Poetry</option>
+    <option value="Folk Art Style Illustrations">Folk Art</option>
+    <option value="Geometric style">Geometric style</option>
+    <option value="Comic Book Style noir">Comic Book noir</option>
+    <option value="Tattoo Style">Tattoo Style</option>
+    <option value="Contour technique">Contour technique</option>
+    <option value="Neon style">Neon style</option>
+    <option value="Glass mosaic style">Glass mosaic style</option>
+    <option value="Cartoon Style"> Cartoon Style</option>
+    <option value="Pop Art">Pop Art</option>
+    <option value="Minimalism">Minimalism</option>
+    <option value="Wall Painting Style">Wall Painting Style</option>
+    <option value="Illustrations in the style of psychedelic painting">Psychedelic painting</option>
+    <option value="Victorian-era illustrations">Victorian-era</option>
+    <option value="Horror Movie Illustrations"> Horror Movie</option>
+    <option value="Postmodernist illustrations">Postmodernism</option>
+    <option value="Origami technique">Origami technique</option>
+    <option value="Post-Apocalyptic World Illustrations">Post-Apocalyptic World</option>
+    <option value="Graphic design technique for logos">Graphic design for logos</option>
+    <option value="Disney style illustrations">Disney style</option>
+    <option value="Watercolor">Watercolor</option>
+    <option value="Impressionism">Impressionism</option>
+    <option value="Expressionism">Expressionism</option>
+    <option value="Surrealism">Surrealism</option>
+    <option value="Futurism">Futurism</option>
+    <option value="Realism">Realism</option>
+    <option value="Naturalism">Naturalism</option>
+    <option value="Soap Sculpture">Soap Sculpture</option>
+    <option value="Food Art">Food Art</option>
+    <option value="Creating sketches and illustrations on paper napkins">Paper napkins</option>
+    <option value="Pictogram Art "> Pictogram Art </option>
+    <option value="Ice Carving">Ice Carving</option>
+    <option value="Digital Illustration">Digital</option>
+    <option value="Storybook Illustration">Storybook</option>
+    <option value="Isometric 3D">Isometric 3D</option>
+    <option value="3D Rendering">3D Rendering</option>
+    <option value="Flat style">Flat style</option>
+    <option value="Ink Illustration">Ink</option>
+    <option value="2D illustration">2D</option>
+  </select>
+</div>
+  <img src="" alt="here will be your image" class="say-and-drawing-image" />
+  <textarea class="say-and-drawing-text" placeholder="You can say or write something..." lang='ru' ></textarea>
+  <div class="say-and-drawing-draw">Draw!</div>
+  <div class="lang-container">
+    <div class="lang-button passive-button lang-ru" >ru</div>
+    <div class="lang-button active-button lang-en" >en</div>
+  </div>
+  <div class="say-and-drawing-microphone"></div>
+</div>
     <script src="./index.js" type="module"></script>
   </body>
 </html>
-

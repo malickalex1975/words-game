@@ -10,25 +10,27 @@ export default class Speech {
     this.audiostartListener = undefined;
     this.speechendListener = undefined;
     this.speechstartListener = undefined;
+    this.nomatchListener=undefined
+    this.interval=undefined
   }
   lookForSoundStart() {
     return new Promise((resolve, reject) => {
-      const soundstartListener = () => resolve("ok, sound started");
+      this.soundstartListener = () => resolve("ok, sound started");
       if (this.recognition) {
-        this.recognition.addEventListener("speechstart", soundstartListener);
+        this.recognition.addEventListener("speechstart", this.soundstartListener);
       }
     });
   }
   lookForAudioStart() {
     return new Promise((resolve, reject) => {
-      const audiostartListener = () => resolve("ok, audio started");
+      this.audiostartListener = () => resolve("ok, audio started");
       if (this.recognition) {
-        this.recognition.addEventListener("audiostart", audiostartListener);
+        this.recognition.addEventListener("audiostart", this.audiostartListener);
       }
     });
   }
   speechRecognition() {
-    let interval;
+  
     return new Promise((resolve, reject) => {
       if ("webkitSpeechRecognition" in window) {
         this.recognition = new webkitSpeechRecognition();
@@ -39,17 +41,17 @@ export default class Speech {
         this.recognition.start();
         console.log("Ready to receive a command.");
         this.isStarted = true;
-        interval = setInterval(() => {
+        this.interval = setInterval(() => {
           if (this.isStarted) {
-            clearInterval(interval);
-           // this.stopRecognition();
+            clearInterval(this.interval);
+            this.stopRecognition();
             return reject("It took too long time!Try again!");
           }
         }, 10000);
 
         this.listener = (event) => {
           this.isStarted = false;
-          clearInterval(interval);
+          clearInterval(this.interval);
           const results = event.results;
           const phrase = event.results[0][0].transcript;
           const confidence = event.results[0][0].confidence;
@@ -58,30 +60,26 @@ export default class Speech {
           });
           console.dir(`Results: ${event.results}`);
           console.log(`Result received: ${phrase}`);
-          //this.recognition.stop();
+          this.recognition.stop();
 
           return resolve({ phrase, confidence, results });
         };
 
-        const nomatchListener = () => {
+        this.nomatchListener = () => {
           return reject("speech not recognized! Try again!");
         };
-        const soundstartListener = () => {
-          console.log("soundstart");
-        };
-        const soundendListener = () => {
+       
+        this.soundendListener = () => {
           console.log("soundend");
         };
-        const audiostartListener = () => {
-          console.log("audiostart");
-        };
-        const audioendListener = () => {
+        
+        this.audioendListener = () => {
           console.log("audioend");
         };
-        const speechstartListener = () => {
+        this.speechstartListener = () => {
           console.log("speechstart");
         };
-        const speechendListener = () => {
+        this.speechendListener = () => {
           console.log("speechdend");
         };
         this.recognition.addEventListener("result", this.listener);
@@ -106,6 +104,7 @@ export default class Speech {
 
         this.recognition.onerror = (event) => {
           this.isStarted = false;
+          clearInterval(this.interval)
           console.log("error:", event.error);
           this.recognition.stop();
           return reject(event.error);
@@ -118,6 +117,7 @@ export default class Speech {
   stopRecognition() {
     if (this.recognition) {
       this.isStarted = false;
+      clearInterval(this.interval)
       this.recognition.stop();
       console.log("Recognition stopped!");
       this.removeListeners();
@@ -126,6 +126,7 @@ export default class Speech {
   abortRecognition() {
     if (this.recognition) {
       this.isStarted = false;
+      clearInterval(this.interval)
       this.recognition.abort();
       console.log("Recognition aborted!");
       this.removeListeners();
