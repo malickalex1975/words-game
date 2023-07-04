@@ -2100,7 +2100,7 @@ class WordGame {
             console.log("current index:", currentIndex);
 
             phraseSpeaker.style.visibility = "hidden";
-            getAIExample(result, {direction:"ENtoRU"})
+            getAIExample(result, { direction: "ENtoRU" })
               .then((response) => {
                 game.showLoading(false);
                 examplePhraseTranslate.textContent = response;
@@ -2195,6 +2195,8 @@ class WordGame {
     if (!isSaing) {
       let recognizer = new Speech(voiceLang);
       sayAndDrawingMicrophone.style.opacity = 0.1;
+      enButton.style.opacity = 0.2;
+      ruButton.style.opacity = 0.2;
       isSaing = true;
       game.showLoading(true);
       game.hideButtonDraw();
@@ -2232,14 +2234,16 @@ class WordGame {
       sayAndDrawingImage.src = "";
       this.showLoading(false);
       isSaing = false;
+      enButton.style.opacity = 1;
+      ruButton.style.opacity = 1;
       sayAndDrawingMicrophone.style.opacity = 0.5;
     } else {
       game.lockSelector();
       if (voiceLang === "ru") {
-        txt = await getAIExample(txt,{direction:'RUtoEN'});
+        txt = await getAIExample(txt, { direction: "RUtoEN" });
       }
       txt = txt + ", " + artStyle;
-      console.log('txt: ', txt)
+      console.log("txt: ", txt);
       this.hideButtonDraw();
       let drawingTimer = new Timer();
       let interval = setInterval(() => {
@@ -2263,6 +2267,8 @@ class WordGame {
               this.printSayAndDrawingText(prev).then(() => {
                 game.showLoading(false);
                 isSaing = false;
+                enButton.style.opacity = 1;
+                ruButton.style.opacity = 1;
                 game.unlockSelector();
                 sayAndDrawingMicrophone.style.opacity = 0.5;
                 if (sayAndDrawingText.value.trim().length > 2) {
@@ -2289,6 +2295,8 @@ class WordGame {
         }
         game.showLoading(false);
         isSaing = false;
+        enButton.style.opacity = 1;
+        ruButton.style.opacity = 1;
         sayAndDrawingMicrophone.style.opacity = 0.5;
         if (sayAndDrawingText.value.trim().length > 2) {
           game.showButtonDraw();
@@ -2393,6 +2401,8 @@ class WordGame {
     game.sayAndDrawingDrawImage(text);
     game.showLoading(true);
     isSaing = true;
+    enButton.style.opacity = 0.2;
+    ruButton.style.opacity = 0.2;
     sayAndDrawingMicrophone.style.opacity = 0.1;
   }
 
@@ -2401,6 +2411,8 @@ class WordGame {
     let txt = sayAndDrawingText.value;
     if (txt.length > 2 && !isSayAndDrawingError && !isSaing) {
       isSaing = true;
+      enButton.style.opacity = 0.2;
+      ruButton.style.opacity = 0.2;
       game.showLoading(true);
       game.sayAndDrawingDrawImage(txt);
     }
@@ -2606,6 +2618,10 @@ function initDrawing() {
     mySpeech.stopRecognition();
   }
   stopAudio();
+  isSaing = false;
+  enButton.style.opacity = 1;
+  ruButton.style.opacity = 1;
+  sayAndDrawingMicrophone.style.opacity = 0.5;
   audioCtx = undefined;
   mistakes = [];
   removeListeners();
@@ -2647,14 +2663,16 @@ function initDrawing() {
 }
 
 function changeVoiceLanguage(e) {
-  let button = e.target;
-  let lang = button.classList.contains("lang-ru") ? "ru" : "en";
-  if (voiceLang === lang) {
-    return;
-  } else {
-    voiceLang = voiceLang === "en" ? "ru" : "en";
-    toggleButtonClasses();
-  }
+  if (!isSaing) {
+    let button = e.target;
+    let lang = button.classList.contains("lang-ru") ? "ru" : "en";
+    if (voiceLang === lang) {
+      return;
+    } else {
+      voiceLang = voiceLang === "en" ? "ru" : "en";
+      toggleButtonClasses();
+    }
+  } 
 }
 
 function toggleButtonClasses() {
@@ -3010,8 +3028,13 @@ function beforeUnloadListener(event) {
   saveDrawingData();
 }
 function saveDrawingData() {
-  localStorage.setItem("drawingPrompt", sayAndDrawingText.value);
+  let drawingPrompt =
+    sayAndDrawingText.value !== "Error! Try again."
+      ? sayAndDrawingText.value
+      : "";
+  localStorage.setItem("drawingPrompt", drawingPrompt);
   localStorage.setItem("artStyle", artStyle);
+  localStorage.setItem("voiceLang", voiceLang);
 }
 function loadDrawingData() {
   if (localStorage.getItem("drawingPrompt")) {
@@ -3025,6 +3048,9 @@ function loadDrawingData() {
         item.setAttribute("selected", "selected");
       }
     });
+  }
+  if (localStorage.getItem("voiceLang")) {
+    voiceLang = localStorage.getItem("voiceLang");
   }
   game.sayAndDrawingTextInputHandler();
 }
