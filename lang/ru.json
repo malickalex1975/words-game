@@ -2,5 +2,18 @@
   "start": "старт",
   "stop": "стоп",
   "Russian": "Русский",
-  "English": "Английский"
+  "English": "Английский",
+  "words matching":"подбор пары слов",
+    "words pronouncing":"произношение слов",
+    "say and draw with AI":"скажи и нарисуй с ИИ",
+    "try another app by this author: age by photo":"еще от автора: возраст по фото",
+    "example":"пример",
+    "close":"закрыть",
+    "Problem words:":"Трудные слова",
+    "Your result:":"Ваш результат:",
+    "word":"слово",
+    "phrase":"фраза",
+    "Words game":"Игра со словами",
+    "Draw!":"Рисовать!",
+    "prompt language:":"язык запроса:"
 }

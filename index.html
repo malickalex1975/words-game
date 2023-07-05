@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Words game</title>
+    <title lang-attribute="Words game"></title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
@@ -55,11 +55,11 @@
       <div class="button-stop" lang-attribute="stop"></div>
       <div class="pronouncing-container">
         <div class="toggle-container">
-          <div class="option-1">word</div>
+          <div class="option-1" lang-attribute="word"></div>
           <div class="toggle">
             <div class="toggle-element"></div>
           </div>
-          <div class="option-2">phrase</div>
+          <div class="option-2" lang-attribute="phrase"></div>
         </div>
         <div class="visualisation"></div>
         <div class="word-container">
@@ -78,7 +78,7 @@
         <div class="microphone"></div>
 
         <div class="pronouncing-result">
-          <div class="result-title">Your result:</div>
+          <div class="result-title" lang-attribute="Your result:"></div>
           <div class="result-digit-1">
             <div>&nbsp</div>
             <div>1</div>
@@ -118,7 +118,7 @@
     </div>
     <div class="info"></div>
     <div class="mistakes-pad">
-      <h2>Problem words:</h2>
+      <h2 lang-attribute="Problem words:"></h2>
       <div class="mistakes-container"></div>
     </div>
     <div class="warning-container">
@@ -136,21 +136,19 @@
           <option value="en" lang-attribute="English"></option>
           <option value="ru" lang-attribute="Russian"></option>
         </select>
-        <div class="menu-item menu-item-1">words matching</div>
-        <div class="menu-item menu-item-2">words pronouncing</div>
-        <div class="menu-item menu-item-4">
-          say and draw with AI
+        <div class="menu-item menu-item-1" lang-attribute="words matching"></div>
+        <div class="menu-item menu-item-2"  lang-attribute="words pronouncing"></div>
+        <div class="menu-item menu-item-4" lang-attribute="say and draw with AI">
         </div>
-        <div class="menu-item menu-item-3">
-          try another app by this author: age by photo
+        <div class="menu-item menu-item-3" lang-attribute="try another app by this author: age by photo"  >
         </div>
       </div>
     </div>
     <div class="translate-panel"></div>
     <div class="ear"></div>
-    <div class="example-button">example</div>
+    <div class="example-button" lang-attribute="example"></div>
     <div class="word-example-card">
-      <div class="button-close">close</div>
+      <div class="button-close" lang-attribute="close"></div>
       <img src="" alt="Image" class="example-card-image" />
       <div class="progress-container"><div class="progress-line"></div></div>
       <p class="AI-mention">create image with AI</p>
@@ -231,9 +229,9 @@
 </div>
   <img src="" alt="here will be your image" class="say-and-drawing-image" />
   <textarea class="say-and-drawing-text" placeholder="You can say or write something..." lang='ru' ></textarea>
-  <div class="say-and-drawing-draw">Draw!</div>
+  <div class="say-and-drawing-draw" lang-attribute="Draw!"></div>
   <div class="lang-container">
-    <p class="lang-title">prompt language: </p>
+    <p class="lang-title" lang-attribute="prompt language:"> </p>
     <div class="lang-button passive-button lang-ru" >ru</div>
     <div class="lang-button active-button lang-en" >en</div>
   </div>
