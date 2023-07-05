@@ -1138,5 +1138,10 @@ transition: 200ms;
 }
 .passive-button{
   box-shadow:  2px 2px 5px rgba(0, 0, 0, 0.2);
-  color: #999;
+  color: #ddd;
+}
+.lang-title{
+  color: #ddd;
+  font-size: 24px;
+  font-family: monospace;
 }

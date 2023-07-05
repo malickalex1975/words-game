@@ -12,6 +12,7 @@ let maxAccelerationX = 0,
   maxAccelerationY = 0,
   maxAccelerationZ = 0;
 let isSaing = false;
+let commonLang='en'
 let isSayAndDrawingError = false;
 let artStyle = "Style of children's book illustration";
 let isGettingAIImage = false;
@@ -118,6 +119,7 @@ const sayAndDrawingMicrophone = document.querySelector(
   ".say-and-drawing-microphone"
 );
 const artStyleSelector = document.querySelector("#art-style-selector");
+const languageSelector = document.querySelector("#language-selector");
 const buttonClose = document.querySelector(".button-close");
 const AImention = document.querySelector(".AI-mention");
 const AIphrase = document.querySelector(".AI-phrase");
@@ -2444,6 +2446,7 @@ function levelChooseHandler() {
   });
 }
 function init() {
+  loadLang()
   audioErrors = 0;
   wakeLock();
   game.loadUserData();
@@ -2494,6 +2497,8 @@ function init() {
   window.addEventListener("offline", (event) => {
     game.showErrorInformation("The network connection has been lost.");
   });
+  languageSelector.addEventListener('input', changeCommonLang)
+  languageSelector.addEventListener('pointerdown', stopPropag)
 }
 
 async function initMatching() {
@@ -2660,7 +2665,20 @@ function initDrawing() {
   artStyleSelector.addEventListener("input", game.artStyleSelectorHandler);
   ruButton.addEventListener("pointerdown", changeVoiceLanguage);
   enButton.addEventListener("pointerdown", changeVoiceLanguage);
+  
 }
+ 
+function stopPropag(e){
+  e.stopPropagation();
+}
+
+ function changeCommonLang(e){
+game.hideMenu();
+commonLang= languageSelector.value;
+useLang()
+console.log(commonLang)
+
+ }
 
 function changeVoiceLanguage(e) {
   if (!isSaing) {
@@ -3026,7 +3044,27 @@ function beforeUnloadListener(event) {
   // event.preventDefault();
   console.log("your data saved!");
   saveDrawingData();
+  saveLang()
 }
+function saveLang(){
+  localStorage.setItem("commonLang",commonLang)
+}
+function loadLang(){
+  commonLang=localStorage.getItem('commonLang')||'en';
+  languageSelector.value= commonLang;
+  useLang()
+}
+
+async function useLang(){
+let response= await fetch(`./lang/${commonLang}.json`);
+let dict=await response.json();
+let dom=Array.from(document.getElementsByTagName("*")) ;
+dom.forEach((el)=>{if(dict[el.getAttribute('lang-attribute')]!==undefined){
+  el.textContent= dict[el.getAttribute('lang-attribute')]
+}})
+
+}
+
 function saveDrawingData() {
   let drawingPrompt =
     sayAndDrawingText.value !== "Error! Try again."
@@ -3051,9 +3089,25 @@ function loadDrawingData() {
   }
   if (localStorage.getItem("voiceLang")) {
     voiceLang = localStorage.getItem("voiceLang");
+    setLangToggle()
   }
   game.sayAndDrawingTextInputHandler();
 }
+function setLangToggle(){
+  if(voiceLang==='en'){
+   enButton.classList.add("active-button") ;
+   enButton.classList.remove('passive-button');
+   ruButton.classList.add("passive-button") ;
+   ruButton.classList.remove('active-button');
+  }
+  if(voiceLang==='ru'){
+    enButton.classList.add("passive-button") ;
+    enButton.classList.remove('active-button');
+    ruButton.classList.add("active-button") ;
+    ruButton.classList.remove('passive-button');
+  }
+}
+
 function deviceOrientationListener() {
   if (window.DeviceOrientationEvent) {
     console.log("DeviceOrientation present!");
@@ -3092,4 +3146,4 @@ function handleOrientationEvent(event) {
 
 document.addEventListener("DOMContentLoaded", init);
 addEventListener("beforeunload", beforeUnloadListener, { capture: true });
-//document.body.addEventListener("pointerdown", (e)=>{console.log(e.target.className)})
+//document.body.addEventListener("pointerdown", (e)=>{console.log(e.target)});
