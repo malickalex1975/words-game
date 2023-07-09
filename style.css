@@ -66,6 +66,7 @@ body {
   top: 2vh;
   left: 5vw;
   width: 80vw;
+  max-width: 320px;
   height: 50px;
   display: flex;
   align-items: center;

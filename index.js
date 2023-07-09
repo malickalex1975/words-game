@@ -12,7 +12,7 @@ let maxAccelerationX = 0,
   maxAccelerationY = 0,
   maxAccelerationZ = 0;
 let isSaing = false;
-let commonLang='en'
+let commonLang = "en";
 let isSayAndDrawingError = false;
 let artStyle = "Style of children's book illustration";
 let isGettingAIImage = false;
@@ -2446,7 +2446,7 @@ function levelChooseHandler() {
   });
 }
 function init() {
-  loadLang()
+  loadLang();
   audioErrors = 0;
   wakeLock();
   game.loadUserData();
@@ -2497,8 +2497,8 @@ function init() {
   window.addEventListener("offline", (event) => {
     game.showErrorInformation("The network connection has been lost.");
   });
-  languageSelector.addEventListener('input', changeCommonLang)
-  languageSelector.addEventListener('pointerdown', stopPropag)
+  languageSelector.addEventListener("input", changeCommonLang);
+  languageSelector.addEventListener("pointerdown", stopPropag);
 }
 
 async function initMatching() {
@@ -2665,20 +2665,18 @@ function initDrawing() {
   artStyleSelector.addEventListener("input", game.artStyleSelectorHandler);
   ruButton.addEventListener("pointerdown", changeVoiceLanguage);
   enButton.addEventListener("pointerdown", changeVoiceLanguage);
-  
 }
- 
-function stopPropag(e){
+
+function stopPropag(e) {
   e.stopPropagation();
 }
 
- function changeCommonLang(e){
-game.hideMenu();
-commonLang= languageSelector.value;
-useLang()
-console.log(commonLang)
-
- }
+function changeCommonLang(e) {
+  //game.hideMenu();
+  commonLang = languageSelector.value;
+  useLang();
+  console.log(commonLang);
+}
 
 function changeVoiceLanguage(e) {
   if (!isSaing) {
@@ -2689,8 +2687,9 @@ function changeVoiceLanguage(e) {
     } else {
       voiceLang = voiceLang === "en" ? "ru" : "en";
       toggleButtonClasses();
+      processLang();
     }
-  } 
+  }
 }
 
 function toggleButtonClasses() {
@@ -3044,25 +3043,47 @@ function beforeUnloadListener(event) {
   // event.preventDefault();
   console.log("your data saved!");
   saveDrawingData();
-  saveLang()
+  saveLang();
 }
-function saveLang(){
-  localStorage.setItem("commonLang",commonLang)
+function saveLang() {
+  localStorage.setItem("commonLang", commonLang);
 }
-function loadLang(){
-  commonLang=localStorage.getItem('commonLang')||'en';
-  languageSelector.value= commonLang;
-  useLang()
-}
+const useLang = async () => {
+  let response = await fetch(`./lang/${commonLang}.json`);
+  let dict = await response.json();
+  let dom = Array.from(document.getElementsByTagName("*"));
+  dom.forEach((el) => {
+    if (dict[el.getAttribute("lang-attribute")] !== undefined) {
+      el.textContent = dict[el.getAttribute("lang-attribute")];
+    }
+  });
+  processLang();
+};
 
-async function useLang(){
-let response= await fetch(`./lang/${commonLang}.json`);
-let dict=await response.json();
-let dom=Array.from(document.getElementsByTagName("*")) ;
-dom.forEach((el)=>{if(dict[el.getAttribute('lang-attribute')]!==undefined){
-  el.textContent= dict[el.getAttribute('lang-attribute')]
-}})
-
+const processLang = () => {
+  const addPhrase =
+    commonLang === "ru"
+      ? voiceLang === "ru"
+        ? "по-русски"
+        : "по-английски"
+      : voiceLang === "en"
+      ? "in English"
+      : "по-русски";
+  const placeholder =
+    commonLang === "ru" || voiceLang === "ru"
+      ? `Вы можете сказать или написать что-то ${addPhrase}...`
+      : `You can say or write something ${addPhrase}...`;
+  const altText =
+    commonLang === "ru"
+      ? "тут будет ваше изображение..."
+      : "here will be your image...";
+  sayAndDrawingText.setAttribute("placeholder", placeholder);
+  sayAndDrawingImage.setAttribute("alt", altText);
+};
+function loadLang() {
+  commonLang = localStorage.getItem("commonLang") || "en";
+  languageSelector.value = commonLang;
+  useLang();
 }
 
 function saveDrawingData() {
@@ -3089,22 +3110,22 @@ function loadDrawingData() {
   }
   if (localStorage.getItem("voiceLang")) {
     voiceLang = localStorage.getItem("voiceLang");
-    setLangToggle()
+    setLangToggle();
   }
   game.sayAndDrawingTextInputHandler();
 }
-function setLangToggle(){
-  if(voiceLang==='en'){
-   enButton.classList.add("active-button") ;
-   enButton.classList.remove('passive-button');
-   ruButton.classList.add("passive-button") ;
-   ruButton.classList.remove('active-button');
+function setLangToggle() {
+  if (voiceLang === "en") {
+    enButton.classList.add("active-button");
+    enButton.classList.remove("passive-button");
+    ruButton.classList.add("passive-button");
+    ruButton.classList.remove("active-button");
   }
-  if(voiceLang==='ru'){
-    enButton.classList.add("passive-button") ;
-    enButton.classList.remove('active-button');
-    ruButton.classList.add("active-button") ;
-    ruButton.classList.remove('passive-button');
+  if (voiceLang === "ru") {
+    enButton.classList.add("passive-button");
+    enButton.classList.remove("active-button");
+    ruButton.classList.add("active-button");
+    ruButton.classList.remove("passive-button");
   }
 }
 
